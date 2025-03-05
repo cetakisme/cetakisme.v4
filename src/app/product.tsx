@@ -1,7 +1,6 @@
 "use client";
 
 import Card from "@/components/hasan/card";
-import { Combobox } from "@/components/hasan/combobox";
 import Img from "@/components/hasan/Image";
 import { PopoverButton } from "@/components/hasan/popover-button";
 import RenderList from "@/components/hasan/render-list";
@@ -11,41 +10,19 @@ import { Label } from "@/components/ui/label";
 import { ImageUploader, useImageUpload } from "@/hooks/useImageUpload";
 import { DB, supabase } from "@/lib/supabase/supabase";
 import { deleteFile, uploadFile } from "@/lib/uploadthing/utils";
-import {
-  addons$,
-  generateId,
-  products$,
-  productToAddons$,
-} from "@/server/local/db";
-import { asList, id } from "@/server/local/utils";
-import { batch, Observable, observable } from "@legendapp/state";
+import { addons$, products$, productToAddons$ } from "@/server/local/db";
+import { id } from "@/server/local/utils";
+import { Observable } from "@legendapp/state";
 import {
   Memo,
-  reactive,
   useMount,
-  useMountOnce,
   useObservable,
-  useObserve,
   useObserveEffect,
 } from "@legendapp/state/react";
-import { syncedSupabase } from "@legendapp/state/sync-plugins/supabase";
 import { LucideDot, LucideLoaderCircle, LucidePlus } from "lucide-react";
 import React from "react";
 import { createContext, useContext } from "react";
 import { toast } from "sonner";
-import { v4 } from "uuid";
-import { boolean } from "zod";
-
-// const products$ = observable(
-//   syncedSupabase({
-//     supabase,
-//     collection: "products",
-//     select: (from) => from.select("*"),
-//     actions: ["read", "create", "update"],
-//     fieldDeleted: "deleted",
-//     realtime: true,
-//   }),
-// );
 
 interface IProductContext extends DB<"Product"> {
   addons: DB<"Addon">[];
