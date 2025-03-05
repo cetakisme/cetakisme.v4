@@ -11,12 +11,10 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { DialogProps } from "@radix-ui/react-dialog";
+import { type DialogProps } from "@radix-ui/react-dialog";
 import React from "react";
 
 export function PopoverButton<TData extends { name: string }>({
-  open,
-  onOpenChange,
   renderTrigger,
   title,
   data,
@@ -25,7 +23,6 @@ export function PopoverButton<TData extends { name: string }>({
   renderItem,
   onInputChange,
   controlled = false,
-  ...props
 }: DialogProps & {
   title: string;
   data: TData[];
@@ -37,7 +34,7 @@ export function PopoverButton<TData extends { name: string }>({
   renderItem: (data: TData) => React.ReactNode;
 }) {
   return (
-    <Popover open={open} onOpenChange={onOpenChange}>
+    <Popover>
       {renderTrigger && (
         <PopoverTrigger asChild>{renderTrigger()}</PopoverTrigger>
       )}
@@ -59,7 +56,7 @@ export function PopoverButton<TData extends { name: string }>({
                 <CommandItem
                   key={i}
                   value={framework.name}
-                  onSelect={(currentValue) => {
+                  onSelect={() => {
                     onSelected(framework);
                   }}
                 >
@@ -67,7 +64,7 @@ export function PopoverButton<TData extends { name: string }>({
                 </CommandItem>
               ))}
             </CommandGroup>
-            {renderAddButton && renderAddButton()}
+            {renderAddButton?.()}
           </CommandList>
         </Command>
       </PopoverContent>

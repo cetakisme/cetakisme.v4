@@ -8,11 +8,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ImageUploader, useImageUpload } from "@/hooks/useImageUpload";
-import { DB, supabase } from "@/lib/supabase/supabase";
+import { type DB, supabase } from "@/lib/supabase/supabase";
 import { deleteFile, uploadFile } from "@/lib/uploadthing/utils";
 import { addons$, products$, productToAddons$ } from "@/server/local/db";
 import { id } from "@/server/local/utils";
-import { Observable } from "@legendapp/state";
+import { type Observable } from "@legendapp/state";
 import {
   Memo,
   useMount,
@@ -80,7 +80,7 @@ const ProductInfo = () => {
   const product$ = useContext(ProductContext);
 
   useMount(async () => {
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from("Product")
       .select("*")
       .eq("id", product$.id.get());
@@ -155,28 +155,32 @@ const ImageButton: React.FC<{
 }> = ({ image, onImageChange }) => {
   const [uploading, setUploading] = React.useState(false);
   const { imageRef, setImage } = useImageUpload(
-    async (newImage) => {
-      setUploading(true);
+    (newImage) => {
+      const upload = async () => {
+        setUploading(true);
 
-      if (image !== "") {
-        try {
-          await deleteFile(image);
-          toast.success("Image Delete Sukses");
-        } catch (error) {
-          toast.error("Sometings wrong when deleting");
-          return;
+        if (image !== "") {
+          try {
+            await deleteFile(image);
+            toast.success("Image Delete Sukses");
+          } catch {
+            toast.error("Sometings wrong when deleting");
+            return;
+          }
         }
-      }
 
-      try {
-        const _image = await uploadFile(newImage);
-        onImageChange(_image.ufsUrl);
-        toast.success("Image Upload Sukses");
-      } catch {
-        toast.error("Sometings wrong when uploading");
-      } finally {
-        setUploading(false);
-      }
+        try {
+          const _image = await uploadFile(newImage);
+          onImageChange(_image.ufsUrl);
+          toast.success("Image Upload Sukses");
+        } catch {
+          toast.error("Sometings wrong when uploading");
+        } finally {
+          setUploading(false);
+        }
+      };
+
+      void upload();
     },
     (message) => toast.error(message),
   );

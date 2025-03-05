@@ -1,4 +1,3 @@
-import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
   Command,
@@ -13,7 +12,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { DialogProps } from "@radix-ui/react-dialog";
+import { type DialogProps } from "@radix-ui/react-dialog";
 import { ChevronsUpDown } from "lucide-react";
 import React from "react";
 
@@ -58,7 +57,7 @@ export function Combobox<TData>({
                 <CommandItem
                   key={i}
                   value={i.toString()}
-                  onSelect={(currentValue) => {
+                  onSelect={() => {
                     setSelectedData(framework);
                     onSelected(framework);
                   }}
@@ -67,7 +66,7 @@ export function Combobox<TData>({
                 </CommandItem>
               ))}
             </CommandGroup>
-            {renderAddButton && renderAddButton()}
+            {renderAddButton?.()}
           </CommandList>
         </Command>
       </PopoverContent>

@@ -8,7 +8,7 @@ import {
   DialogTrigger,
   DialogDescription,
 } from "../ui/dialog";
-import { DialogProps } from "@radix-ui/react-dialog";
+import { type DialogProps } from "@radix-ui/react-dialog";
 
 const Dialog: React.FC<
   {
@@ -41,8 +41,8 @@ const Dialog: React.FC<
         </DialogHeader>
         {children}
         <DialogFooter>
-          {renderCancel && renderCancel()}
-          {renderAction && renderAction()}
+          {renderCancel?.()}
+          {renderAction?.()}
         </DialogFooter>
       </DialogContent>
     </D>

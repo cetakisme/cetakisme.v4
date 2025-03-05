@@ -30,7 +30,6 @@ export default function RenderList<TData>({
 export function List<TData>({
   data,
   render,
-  ...props
 }: {
   data: TData[] | undefined;
   render: (data: TData, index: number) => React.ReactNode;

@@ -1,6 +1,6 @@
 import RenderList from "@/components/hasan/render-list";
 import { Button } from "@/components/ui/button";
-import { DB } from "@/lib/supabase/supabase";
+import { type DB } from "@/lib/supabase/supabase";
 import { generateId, products$ } from "@/server/local/db";
 import { asList } from "@/server/local/utils";
 import { observer, use$ } from "@legendapp/state/react";
