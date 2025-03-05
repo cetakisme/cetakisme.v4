@@ -5,6 +5,15 @@
 import "./src/env.js";
 
 /** @type {import("next").NextConfig} */
-const config = {};
+const config = {
+  images: {
+    remotePatterns: [
+      {
+        hostname: "hsvl8iaen6.ufs.sh",
+        protocol: "https",
+      },
+    ],
+  },
+};
 
 export default config;

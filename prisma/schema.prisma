@@ -1,5 +1,5 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// // This is your Prisma schema file,
+// // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
     provider = "prisma-client-js"
@@ -10,11 +10,101 @@ datasource db {
     url      = env("DATABASE_URL")
 }
 
-model Post {
-    id        Int      @id @default(autoincrement())
-    name      String
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
+model Product {
+    id          String      @id @default(uuid())
+    name        String      @default("")
+    base_price  Int         @default(0)
+    images      String[]    @default(["","","","",""])
+    active      Boolean     @default(true)
+    deleted     Boolean     @default(false)
 
-    @@index([name])
+    addons      ProductToAddon[]
 }
+
+model ProductToAddon {
+    id          String      @id @default(uuid())
+    product_id  String
+    addon_id    String
+    product     Product     @relation(fields: [product_id], references: [id], onDelete: Cascade)
+    addon       Addon       @relation(fields: [addon_id],references: [id], onDelete: Cascade)
+    deleted     Boolean     @default(false)
+}
+
+model Addon {
+    id          String      @id @default(uuid())
+    name        String      @default("")
+    deleted     Boolean     @default(false)
+
+    products    ProductToAddon[]
+    values      AddonValue[]
+}
+
+model AddonValue {
+    id          String      @id @default(uuid())
+    name        String      @default("")
+    price       Int         @default(0)
+    deleted     Boolean     @default(false)
+
+    addon_id    String
+    addon       Addon       @relation(fields: [addon_id],references: [id], onDelete: Cascade)
+}
+
+// model Product {
+//     id          String      @id @default(uuid())
+//     name        String      @default("")
+//     base_price  Int         @default(0)
+//     images      String[]    @default([])
+//     active      Boolean     @default(false)
+//     deleted     Boolean     @default(false)
+
+//     attributes ProductAttribute[]
+
+//     // addons      String[]    @default([])
+//     // attributes  String[]    @default([])
+// }
+
+// model ProductAttribute {
+//     id          String      @id @default(uuid())
+//     name        String      @default("")
+//     deleted     Boolean     @default(false)
+
+//     product_id  String
+//     product     Product     @relation(fields: [product_id], references: [id])
+
+//     // values      String[]    @default([])
+// }
+
+// model ProductAttributeValue {
+//     id          String      @id @default(uuid())
+//     value       String      @default("")
+//     color       String      @default("")
+//     image       String      @default("")
+//     deleted     Boolean     @default(false)
+// }
+
+// model Addon {
+//     id          String      @id @default(uuid())
+//     name        String      @default("")
+//     deleted     Boolean     @default(false)
+
+//     // values      String[]    @default([])
+// }
+
+// model AddonValue {
+//     id          String      @id @default(uuid())
+//     name        String      @default("")
+//     price       Int         @default(0)
+//     deleted     Boolean     @default(false)
+// }
+
+// model Attribute {
+//     id          String      @id @default(uuid())
+//     name        String      @default("")
+//     deleted     Boolean     @default(false)
+// }
+
+// model Color {
+//     id          String      @id @default(uuid())
+//     color       String      @default("")
+//     deleted     Boolean     @default(false)
+// } 
