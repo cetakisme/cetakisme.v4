@@ -22,12 +22,14 @@ import {
   productAttributeValue$,
   products$,
   productToAddons$,
+  productVariants$,
 } from "@/server/local/db";
 import { asList, id } from "@/server/local/utils";
-import { type Observable } from "@legendapp/state";
+import { batch, type Observable } from "@legendapp/state";
 import {
   Memo,
   useMount,
+  useMountOnce,
   useObservable,
   useObserveEffect,
 } from "@legendapp/state/react";
@@ -108,6 +110,16 @@ const Product: React.FC<{ id: string }> = ({ id }) => {
         .where("product_id")
         .equals(product$.id.get())
         .toArray();
+
+      // batch(() => {
+      //   prevVariants.map((x) => {
+      //     productVariants$[x.id]?.deleted.set(true);
+      //   });
+
+      //   variants.map((x) => {
+      //     productVariants$[x.id]?.deleted.set(true);
+      //   });
+      // });
 
       const { error } = await supabase.rpc("update_product_variants", {
         prev_variant_ids: prevVariants.map((v) => v.id),
@@ -818,24 +830,43 @@ const EditColorAttribute: React.FC<{
   };
   return (
     <div className="flex gap-1">
-      <List
-        data={product$.attributes[index]!.values.get()}
-        render={(data, d_index) => (
-          <ColorDialog
-            value={data}
-            onImageChange={(image) => {
-              product$.attributes[index]!.values[d_index]!.image.set(image);
-            }}
-            onDelete={() => {
-              product$.attributes[index]!.values.set(
-                product$.attributes[index]!.values.get().filter(
-                  (x, i) => d_index !== i,
-                ),
-              );
-            }}
+      <Memo>
+        {() => (
+          <List
+            data={product$.attributes[index]!.values.get()}
+            render={(data, d_index) => (
+              <ColorDialog
+                value={data}
+                onImageChange={(image) => {
+                  product$.attributes[index]!.values[d_index]!.image.set(image);
+                }}
+                onDelete={() => {
+                  product$.attributes[index]!.values.set(
+                    product$.attributes[index]!.values.get().filter(
+                      (x, i) => d_index !== i,
+                    ),
+                  );
+                }}
+                onUpdated={(value) => {
+                  const values = product$.attributes[index]!.values.get().map(
+                    (x, i) => {
+                      return i === d_index ? value : x;
+                    },
+                  );
+
+                  const data = product$.attributes
+                    .get()
+                    .map((x, i) =>
+                      i === index ? { ...x, values: values } : x,
+                    );
+
+                  product$.attributes.set(data);
+                }}
+              />
+            )}
           />
         )}
-      />
+      </Memo>
       <Button
         className="aspect-square h-10 w-10 rounded-full"
         variant="outline"
@@ -850,12 +881,12 @@ const EditColorAttribute: React.FC<{
 const ColorDialog: React.FC<{
   value: DB<"ProductAttribteValue">;
   onImageChange: (image: string) => void;
+  onUpdated: (value: DB<"ProductAttribteValue">) => void;
   onDelete: () => void;
-}> = ({ value, onImageChange, onDelete }) => {
+}> = ({ value, onImageChange, onDelete, onUpdated }) => {
   const attribute$ = useObservable(value);
   const handleSave = () => {
     const _id = id(attribute$.attribute_id.get(), attribute$.value.get());
-
     productAttributeValue$[attribute$.id.get()]!.set({
       color: "",
       deleted: true,
@@ -870,6 +901,10 @@ const ColorDialog: React.FC<{
       id: _id,
       deleted: false,
     });
+
+    const t = { ...attribute$.get(), id: _id };
+
+    onUpdated(t);
   };
 
   return (
@@ -1082,7 +1117,7 @@ const VariantUpdater = () => {
     product$.variants.set(variants);
   });
 
-  useObserveEffect(() => {
+  useObserveEffect(async () => {
     const attributes = product$.attributes.get();
     if (attributes.length === 0) return;
 
@@ -1102,7 +1137,9 @@ const VariantUpdater = () => {
         isUnique: false,
       }));
 
-    product$.variants.set(mergeArrays(product$.variants.get(), newVariants));
+    const mergedVariants = mergeArrays(product$.variants.get(), newVariants);
+
+    product$.variants.set(mergedVariants);
   });
   return <></>;
 };
@@ -1118,6 +1155,9 @@ const QtyInput: React.FC<{ row: Row<ProductVariant> }> = ({ row }) => {
           .get()
           .map((x) => (x.id === row.original.id ? { ...x, qty: qty } : x)),
       );
+
+      // productVariants$[row.original.id]?.price.set(qty);
+      console.log(productVariants$[row.original.id]?.get());
     },
     [row, product$.variants],
   );
