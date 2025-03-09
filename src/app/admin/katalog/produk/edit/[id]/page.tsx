@@ -4,10 +4,9 @@ import { supabase } from "@/lib/supabase/supabase";
 export async function generateStaticParams() {
   const { data } = await supabase.from("Product").select("id");
   if (!data) {
-    return {
-      id: "",
-    };
+    return [];
   }
+
   return data.map((d) => ({
     id: d.id,
   }));
