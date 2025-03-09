@@ -16,7 +16,7 @@ const Dialog: React.FC<
     renderAction?: () => React.ReactNode;
     renderTrigger?: () => React.ReactNode;
     title: string;
-    description: string;
+    description: () => React.ReactNode;
     className?: string;
   } & DialogProps
 > = ({
@@ -37,7 +37,7 @@ const Dialog: React.FC<
       <DialogContent className={className}>
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
+          <DialogDescription>{description()}</DialogDescription>
         </DialogHeader>
         {children}
         <DialogFooter>

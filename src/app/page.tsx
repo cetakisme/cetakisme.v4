@@ -1,11 +1,5 @@
-"use client";
-import dynamic from "next/dynamic";
-const Table = dynamic(() => import("./read/table"), { ssr: false });
+import React from "react";
 
 export default function HomePage() {
-  return (
-    <div>
-      <Table />
-    </div>
-  );
+  return <div></div>;
 }

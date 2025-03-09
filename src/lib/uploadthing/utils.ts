@@ -24,3 +24,12 @@ export async function deleteFile(url: string) {
     throw new Error("Delete Failed");
   }
 }
+
+export async function deleteFiles(url: string[]) {
+  const key = url.map((x) => x.split("/f/")[1]!);
+  const response = await utapi.deleteFiles(key);
+
+  if (!response.success) {
+    throw new Error("Delete Failed");
+  }
+}

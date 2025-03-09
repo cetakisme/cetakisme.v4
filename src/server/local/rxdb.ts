@@ -11,12 +11,13 @@
 // import { supabase, type DB } from "@/lib/supabase/supabase";
 // import { SupabaseReplication } from "rxdb-supabase";
 // import { SupabaseClient } from "@supabase/supabase-js";
+// import { Product } from "@prisma/client";
 
 // addRxPlugin(RxDBDevModePlugin);
 
 // // Define RxDB types
-// type ProductDoc = RxDocument<DB<"products">>;
-// type ProductCollection = RxCollection<DB<"products">>;
+// type ProductDoc = RxDocument<Product>;
+// type ProductCollection = RxCollection<Product>;
 
 // export const myDatabase = await createRxDatabase({
 //   name: "mydatabase",

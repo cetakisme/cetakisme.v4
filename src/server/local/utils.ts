@@ -13,5 +13,7 @@ export const asList = <TData>(data: object | undefined) => {
 };
 
 export const id = (...s: string[]) => {
-  return s.join("-").toLowerCase();
+  return s
+    .flatMap((s) => s.trim().split(" ").join("-").toLowerCase())
+    .join("-");
 };

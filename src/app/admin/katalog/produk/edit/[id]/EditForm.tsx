@@ -1,14 +1,15 @@
 "use client";
 
-import Product from "@/app/product";
+import Product from "@/app/admin/katalog/produk/product";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { observer } from "@legendapp/state/react";
 import React from "react";
 
 const EditForm: React.FC<{ id: string }> = ({ id }) => {
   return (
-    <div>
+    <ScrollArea className="h-screen p-8">
       <Product id={id} />
-    </div>
+    </ScrollArea>
   );
 };
 
