@@ -3,7 +3,7 @@ import { DataTableViewOptions } from "./DataTableViewOptions";
 import { DataTableContent } from "./DataTableContent";
 import { DataTablePagination } from "./DataTablePagination";
 
-export function DataTable<TData>({
+export function DataTable<TData extends { id: string }>({
   table,
   header,
 }: {
