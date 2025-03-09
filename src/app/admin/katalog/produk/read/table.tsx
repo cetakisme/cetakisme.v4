@@ -10,7 +10,7 @@ import {
   productVariants$,
 } from "@/server/local/db";
 import { asList } from "@/server/local/utils";
-import { observer, use$, useMount, useMountOnce } from "@legendapp/state/react";
+import { observer, use$, useMount } from "@legendapp/state/react";
 import Link from "next/link";
 import React from "react";
 import { useTable } from "@/hooks/Table/useTable";
