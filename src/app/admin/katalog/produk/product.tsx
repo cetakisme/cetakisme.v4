@@ -1238,7 +1238,7 @@ const PriceInput: React.FC<{ row: Row<ProductVariant> }> = ({ row }) => {
           .map((x) => (x.id === row.original.id ? { ...x, price: price } : x)),
       );
 
-      productVariants$[row.original.id]?.price.set(price);
+      productVariants$[row.original.id]!.price.set(price);
     },
     [row, product$.variants],
   );
@@ -1304,7 +1304,7 @@ const PriceTable: React.FC<{ data: ProductVariant[] }> = ({ data }) => {
                 isUnique: false,
               });
 
-              productVariants$[element.original.id]?.price.set(
+              productVariants$[element.original.id]!.price.set(
                 product$.base_price.get(),
               );
             }
