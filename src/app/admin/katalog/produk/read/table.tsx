@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import {
   generateId,
+  productAttribute$,
   productAttributeValue$,
   products$,
   productToAddons$,
@@ -175,6 +176,7 @@ const Table = () => {
     console.log(productVariants$.get());
     console.log(productAttributeValue$.get());
     console.log(productToAddons$.get());
+    console.log(productAttribute$.get());
   });
 
   return (

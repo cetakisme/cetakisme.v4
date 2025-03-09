@@ -94,6 +94,13 @@ const Product: React.FC<{ id: string }> = ({ id }) => {
     product$.send.set(true);
   };
 
+  useMountOnce(() => {
+    console.log(productVariants$.get());
+    console.log(productAttributeValue$.get());
+    console.log(productToAddons$.get());
+    console.log(productAttribute$.get());
+  });
+
   useObserveEffect(async () => {
     if (product$.send.get()) {
       const variants: ProductVariant[] = product$.variants.get().map((x) => ({
