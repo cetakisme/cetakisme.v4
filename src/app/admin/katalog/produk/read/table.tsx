@@ -1,8 +1,6 @@
 "use client";
 
-import RenderList from "@/components/hasan/render-list";
 import { Button } from "@/components/ui/button";
-import { type DB } from "@/lib/supabase/supabase";
 import {
   generateId,
   productAttributeValue$,
@@ -14,26 +12,21 @@ import { asList } from "@/server/local/utils";
 import { observer, use$, useMountOnce } from "@legendapp/state/react";
 import Link from "next/link";
 import React from "react";
-import { useLiveQuery } from "dexie-react-hooks";
-import { dexie } from "@/server/local/dexie";
 import { useTable } from "@/hooks/Table/useTable";
 import { DataTableColumnHeader } from "@/hooks/Table/DataColumnHeader";
 import { DataTableContent } from "@/hooks/Table/DataTableContent";
 import { DataTableFilterName } from "@/hooks/Table/DataTableFilterName";
 import { DataTablePagination } from "@/hooks/Table/DataTablePagination";
-import { DataTableSelectorHeader } from "@/hooks/Table/DataTableSelectorHeader";
 import { DataTableViewOptions } from "@/hooks/Table/DataTableViewOptions";
 import { type ColumnDef } from "@tanstack/react-table";
 import Image from "next/image";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Switch } from "@/components/ui/switch";
-import { Product } from "@prisma/client";
+import { type Product } from "@prisma/client";
 import Dialog from "@/components/hasan/dialog";
 import DataTableAction from "@/hooks/Table/DataTableAction";
 import { LucidePlus } from "lucide-react";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import Title from "@/components/hasan/title";
-import DataTableDeleteSelection from "@/hooks/Table/DataTableDeleteSelection";
 
 const EditButton: React.FC<{ data: Product }> = ({ data }) => {
   return (

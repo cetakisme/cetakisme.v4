@@ -25,11 +25,10 @@ import {
   productVariants$,
 } from "@/server/local/db";
 import { asList, id } from "@/server/local/utils";
-import { batch, type Observable } from "@legendapp/state";
+import { type Observable } from "@legendapp/state";
 import {
   Memo,
   useMount,
-  useMountOnce,
   useObservable,
   useObserveEffect,
 } from "@legendapp/state/react";
