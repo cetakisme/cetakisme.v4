@@ -1157,8 +1157,8 @@ const QtyInput: React.FC<{ row: Row<ProductVariant> }> = ({ row }) => {
           .map((x) => (x.id === row.original.id ? { ...x, qty: qty } : x)),
       );
 
-      // productVariants$[row.original.id]?.price.set(qty);
-      console.log(productVariants$[row.original.id]?.get());
+      productVariants$[row.original.id]?.qty.set(qty);
+      // console.log(productVariants$[row.original.id]?.get());
     },
     [row, product$.variants],
   );
@@ -1237,6 +1237,8 @@ const PriceInput: React.FC<{ row: Row<ProductVariant> }> = ({ row }) => {
           .get()
           .map((x) => (x.id === row.original.id ? { ...x, price: price } : x)),
       );
+
+      productVariants$[row.original.id]?.price.set(price);
     },
     [row, product$.variants],
   );
@@ -1301,6 +1303,10 @@ const PriceTable: React.FC<{ data: ProductVariant[] }> = ({ data }) => {
                 ...element.original,
                 isUnique: false,
               });
+
+              productVariants$[element.original.id]?.price.set(
+                product$.base_price.get(),
+              );
             }
 
             product$.variants.set(Array.from(map.values()));
