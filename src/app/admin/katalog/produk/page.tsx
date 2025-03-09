@@ -2,8 +2,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import ClientPage from "./cilent";
 import React from "react";
 
-export const dynamic = "force-dynamic";
-
 export default function HomePage() {
   return (
     <ScrollArea className="h-screen p-8">

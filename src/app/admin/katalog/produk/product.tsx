@@ -53,6 +53,7 @@ import { DataTableFilterName } from "@/hooks/Table/DataTableFilterName";
 import { Popover, PopoverClose } from "@radix-ui/react-popover";
 import DataTableDeleteSelection from "@/hooks/Table/DataTableDeleteSelection";
 import { PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { refreshPath } from "@/lib/path";
 
 interface IProductContext extends Omit<DB<"Product">, "created_at"> {
   addons: (DB<"Addon"> & { values: DB<"AddonValue">[] })[];
@@ -129,6 +130,7 @@ const Product: React.FC<{ id: string }> = ({ id }) => {
 
       product$.send.set(false);
       toast.success("Produk Berhasil Diupdate");
+      void refreshPath("/admin/katalog/produk");
     }
   });
 
