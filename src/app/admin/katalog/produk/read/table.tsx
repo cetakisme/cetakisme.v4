@@ -10,7 +10,7 @@ import {
   productVariants$,
 } from "@/server/local/db";
 import { asList } from "@/server/local/utils";
-import { observer, use$, useMountOnce } from "@legendapp/state/react";
+import { observer, use$, useMount, useMountOnce } from "@legendapp/state/react";
 import Link from "next/link";
 import React from "react";
 import { useTable } from "@/hooks/Table/useTable";
@@ -172,7 +172,7 @@ const ProdukTable: React.FC<{ products?: Product[] }> = ({ products }) => {
 const Table = () => {
   const products = use$(products$.get());
 
-  useMountOnce(() => {
+  useMount(() => {
     console.log(productVariants$.get());
     console.log(productAttributeValue$.get());
     console.log(productToAddons$.get());
