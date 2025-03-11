@@ -10,6 +10,17 @@ datasource db {
     url      = env("DATABASE_URL")
 }
 
+model Customer {
+    id          String      @id @default(uuid())
+    name        String      @default("")
+    address     String      @default("")
+    phone       String      @default("")
+    job         String      @default("")
+    notes       String      @default("")
+    age         Int         @default(0)
+    deleted     Boolean     @default(false)
+}
+
 model Product {
     id          String      @id @default(uuid())
     name        String      @default("")

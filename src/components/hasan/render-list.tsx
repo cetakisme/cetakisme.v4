@@ -27,7 +27,7 @@ export default function RenderList<TData>({
   );
 }
 
-export function List<TData>({
+export function List<TData extends { id: string }>({
   data,
   render,
 }: {
@@ -44,7 +44,7 @@ export function List<TData>({
   return (
     <>
       {data.map((x, i) => (
-        <React.Fragment key={i}>{render(x, i)}</React.Fragment>
+        <React.Fragment key={x.id}>{render(x, i)}</React.Fragment>
       ))}
     </>
   );

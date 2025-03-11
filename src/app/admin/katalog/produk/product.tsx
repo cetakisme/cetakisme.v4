@@ -55,10 +55,23 @@ import DataTableDeleteSelection from "@/hooks/Table/DataTableDeleteSelection";
 import { PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { refreshPath } from "@/lib/path";
 
+function debounce<T extends (...args: any[]) => void>(
+  func: T,
+  delay: number,
+): (...args: Parameters<T>) => void {
+  let timer: ReturnType<typeof setTimeout>;
+
+  return (...args: Parameters<T>) => {
+    clearTimeout(timer);
+    timer = setTimeout(() => func(...args), delay);
+  };
+}
+
 interface IProductContext extends Omit<DB<"Product">, "created_at"> {
   addons: (DB<"Addon"> & { values: DB<"AddonValue">[] })[];
   send: boolean;
   attributes: (DB<"ProductAttribute"> & {
+    name: string;
     values: DB<"ProductAttribteValue">[];
   })[];
   variants: (DB<"ProductVariant"> & { isUnique: boolean })[];
@@ -68,12 +81,54 @@ const ProductContext = createContext<Observable<IProductContext>>(
   undefined as any,
 );
 
+function combineArrays<T extends { id: number | string }>(
+  arr1: T[],
+  arr2: T[],
+): T[] {
+  const map = new Map(arr1.map((item) => [item.id, item]));
+
+  arr2.forEach((item) => {
+    map.set(item.id, item); // Override if id exists
+  });
+
+  return Array.from(map.values());
+}
+
+const updateVariantsRPC = async (product: IProductContext) => {
+  const variants: ProductVariant[] = product.variants.map((x) => ({
+    deleted: x.deleted,
+    id: x.id,
+    name: x.name,
+    price: x.isUnique ? x.price : product.base_price,
+    product_id: x.product_id,
+    qty: x.qty,
+  }));
+
+  const prevVariants = await dexie.productVariants
+    .where("product_id")
+    .equals(product.id)
+    .toArray();
+
+  const p = prevVariants.map((x) => ({ ...x, deleted: true }));
+  const combine = combineArrays(p, variants);
+
+  await dexie.productVariants.bulkPut(p);
+
+  const { error } = await supabase.rpc("update_product_variants", {
+    prev_variant_ids: prevVariants.map((v) => v.id),
+    current_variants: variants,
+  });
+
+  if (error) console.error("Error updating variants:", error);
+};
+
 const Product: React.FC<{ id: string }> = ({ id }) => {
   const product$ = useObservable<
     Omit<DB<"Product">, "created_at"> & {
       addons: (DB<"Addon"> & { values: DB<"AddonValue">[] })[];
       send: boolean;
       attributes: (DB<"ProductAttribute"> & {
+        name: string;
         values: DB<"ProductAttribteValue">[];
       })[];
       variants: (DB<"ProductVariant"> & { isUnique: boolean })[];
@@ -91,47 +146,18 @@ const Product: React.FC<{ id: string }> = ({ id }) => {
     variants: [],
   });
 
-  const send = () => {
-    product$.send.set(true);
-  };
+  const debouncedUpdate = React.useCallback(
+    debounce(() => {
+      console.log("Attribute Changed");
+      updateVariantsRPC(product$.get());
+    }, 1000),
+    [product$], // Dependencies (if applicable)
+  );
 
-  useObserveEffect(async () => {
-    if (product$.send.get()) {
-      const variants: ProductVariant[] = product$.variants.get().map((x) => ({
-        deleted: x.deleted,
-        id: x.id,
-        name: x.name,
-        price: x.isUnique ? x.price : product$.base_price.get(),
-        product_id: x.product_id,
-        qty: x.qty,
-      }));
-
-      const prevVariants = await dexie.productVariants
-        .where("product_id")
-        .equals(product$.id.get())
-        .toArray();
-
-      // batch(() => {
-      //   prevVariants.map((x) => {
-      //     productVariants$[x.id]?.deleted.set(true);
-      //   });
-
-      //   variants.map((x) => {
-      //     productVariants$[x.id]?.deleted.set(true);
-      //   });
-      // });
-
-      const { error } = await supabase.rpc("update_product_variants", {
-        prev_variant_ids: prevVariants.map((v) => v.id),
-        current_variants: variants,
-      });
-
-      if (error) console.error("Error updating variants:", error);
-
-      product$.send.set(false);
-      toast.success("Produk Berhasil Diupdate");
-      void refreshPath("/admin/katalog/produk");
-    }
+  useMount(() => {
+    product$.attributes.onChange(() => {
+      debouncedUpdate();
+    });
   });
 
   return (
@@ -143,9 +169,6 @@ const Product: React.FC<{ id: string }> = ({ id }) => {
         <VariantUpdater />
         <PriceVariants />
         <QtyVariants />
-        <Button className="float-right" onClick={() => send()}>
-          Simpan
-        </Button>
       </div>
     </ProductContext.Provider>
   );
@@ -652,13 +675,20 @@ const Attributes = () => {
     const result: Record<
       string,
       DB<"ProductAttribute"> & {
+        name: string;
         values: DB<"ProductAttribteValue">[];
       }
     > = {};
 
     for (const element of data) {
+      const name = await dexie.attributes
+        .where("id")
+        .equals(element.attribute_id)
+        .first();
+
       result[element.id] = {
         ...element,
+        name: name?.name ?? "",
         values: valueMap.get(element.id) ?? [],
       };
     }
@@ -672,7 +702,10 @@ const Attributes = () => {
         {() => (
           <RenderList
             data={asList<
-              DB<"ProductAttribute"> & { values: DB<"ProductAttribteValue">[] }
+              DB<"ProductAttribute"> & {
+                name: string;
+                values: DB<"ProductAttribteValue">[];
+              }
             >(product$.attributes.get())}
             render={(data, i) => (
               <Button asChild variant="outline">
@@ -688,7 +721,7 @@ const Attributes = () => {
                     >
                       <LucideDot />
                     </Button>
-                    <span>{attributes$[data.attribute_id]?.name.get()}</span>
+                    <span>{data.name}</span>
                   </div>
                   <EditAttributeButton attribute={data} index={i} />
                 </div>
@@ -724,11 +757,12 @@ const AddAttributeButton = () => {
 
   const addAttribute = (attribute: DB<"Attribute">) => {
     const productAttributeId = id(product$.id.get(), attribute.name);
-    const newProductAttribute: DB<"ProductAttribute"> = {
+    const newProductAttribute: DB<"ProductAttribute"> & { name: string } = {
       id: productAttributeId,
       attribute_id: attribute.id,
       product_id: product$.id.get(),
       deleted: false,
+      name: attribute.name,
     };
 
     console.log(newProductAttribute);
@@ -841,12 +875,18 @@ const EditColorAttribute: React.FC<{
                 onImageChange={(image) => {
                   product$.attributes[index]!.values[d_index]!.image.set(image);
                 }}
-                onDelete={() => {
-                  product$.attributes[index]!.values.set(
-                    product$.attributes[index]!.values.get().filter(
-                      (x, i) => d_index !== i,
-                    ),
-                  );
+                onDelete={(value) => {
+                  const values = product$.attributes[
+                    index
+                  ]!.values.get().filter((x) => x.id !== value.id);
+
+                  const data = product$.attributes
+                    .get()
+                    .map((x, i) =>
+                      i === index ? { ...x, values: values } : x,
+                    );
+
+                  product$.attributes.set(data);
                 }}
                 onUpdated={(value) => {
                   const values = product$.attributes[index]!.values.get().map(
@@ -883,7 +923,7 @@ const ColorDialog: React.FC<{
   value: DB<"ProductAttribteValue">;
   onImageChange: (image: string) => void;
   onUpdated: (value: DB<"ProductAttribteValue">) => void;
-  onDelete: () => void;
+  onDelete: (value: DB<"ProductAttribteValue">) => void;
 }> = ({ value, onImageChange, onDelete, onUpdated }) => {
   const attribute$ = useObservable(value);
   const handleSave = () => {
@@ -964,7 +1004,7 @@ const ColorDialog: React.FC<{
 
               void f();
               productAttributeValue$[attribute$.id.get()]!.deleted.set(true);
-              onDelete();
+              onDelete(attribute$.get());
             }}
           >
             Hapus
@@ -1085,12 +1125,10 @@ function mergeArrays<TData extends Item>(
 ): TData[] {
   const mergedMap: Record<string, TData> = {};
 
-  // Add items from the first array
   for (const item of arr2) {
     mergedMap[item.id] = { ...item };
   }
 
-  // Add items from the second array, but keep existing values if id already exists
   for (const item of arr1) {
     if (mergedMap[item.id]) {
       mergedMap[item.id] = { ...item };
@@ -1099,6 +1137,8 @@ function mergeArrays<TData extends Item>(
 
   return Object.values(mergedMap);
 }
+
+import { useDebounce } from "@uidotdev/usehooks";
 
 const VariantUpdater = () => {
   const product$ = useContext(ProductContext);

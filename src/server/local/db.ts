@@ -78,7 +78,7 @@ export const productToAddons$ = observable(
   syncedSupabase({
     supabase,
     collection: "ProductToAddon",
-    select: (from) => from.select("*").eq("deleted", false),
+    select: (from) => from.select("*"),
     transform: {
       load: async (value) => {
         await dexie.productToAddons.put(value);
@@ -170,6 +170,17 @@ export const addonValues$ = observable(
         return value;
       },
     },
+    actions: ["read", "create", "update"],
+    fieldDeleted: "deleted",
+    realtime: true,
+  }),
+);
+
+export const customer$ = observable(
+  syncedSupabase({
+    supabase,
+    collection: "Customer",
+    select: (from) => from.select("*").eq("deleted", false),
     actions: ["read", "create", "update"],
     fieldDeleted: "deleted",
     realtime: true,
