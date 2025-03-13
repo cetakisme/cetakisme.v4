@@ -30,10 +30,10 @@ export function Combobox<TData>({
   data: TData[];
   onSelected: (data: TData) => void;
   renderAddButton?: () => React.ReactNode;
-  renderSelected: (data: TData) => React.ReactNode;
+  renderSelected: () => React.ReactNode;
   renderItem: (data: TData) => React.ReactNode;
 }) {
-  const [selectedData, setSelectedData] = React.useState<TData | null>(null);
+  // const [selectedData, setSelectedData] = React.useState<TData | null>(null);
   return (
     <Popover open={open} {...props}>
       <PopoverTrigger asChild>
@@ -43,7 +43,7 @@ export function Combobox<TData>({
           aria-expanded={open}
           className="w-[200px] justify-between"
         >
-          {selectedData ? renderSelected(selectedData) : `Pilih ${title}...`}
+          {renderSelected ? renderSelected?.() : "Pilih " + title}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
@@ -51,14 +51,14 @@ export function Combobox<TData>({
         <Command>
           <CommandInput placeholder={`Cari ${title}...`} />
           <CommandList>
-            <CommandEmpty>${title} Tidak Ditemukan</CommandEmpty>
+            <CommandEmpty>{title} Tidak Ditemukan</CommandEmpty>
             <CommandGroup>
               {data?.map((framework, i) => (
                 <CommandItem
                   key={i}
                   value={i.toString()}
                   onSelect={() => {
-                    setSelectedData(framework);
+                    // setSelectedData(framework);
                     onSelected(framework);
                   }}
                 >

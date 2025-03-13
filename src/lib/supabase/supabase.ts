@@ -6,6 +6,7 @@ export const supabase = createClient<Database>(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
 );
 
-type Key = keyof Database["public"]["Tables"];
+export type TableName = keyof Database["public"]["Tables"];
 
-export type DB<TKey extends Key> = Database["public"]["Tables"][TKey]["Row"];
+export type DB<TKey extends TableName> =
+  Database["public"]["Tables"][TKey]["Row"];

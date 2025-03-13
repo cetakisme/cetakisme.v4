@@ -1,21 +1,20 @@
 "use client";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Customer } from "@prisma/client";
-import { ColumnDef } from "@tanstack/react-table";
+import type { Customer } from "@prisma/client";
+import type { ColumnDef } from "@tanstack/react-table";
 import React, { createContext, useContext } from "react";
 import { Button } from "@/components/ui/button";
 import ControlledSheet from "@/components/hasan/controlled-sheet";
 import InputWithLabel from "@/components/hasan/input-with-label";
 import { customer$, generateId } from "@/server/local/db";
-import { Memo, useObservable, useObserveEffect } from "@legendapp/state/react";
-import { asList, id } from "@/server/local/utils";
+import { Memo, useObservable } from "@legendapp/state/react";
 import { useTable } from "@/hooks/Table/useTable";
 import { DataTableContent } from "@/hooks/Table/DataTableContent";
 import { DataTablePagination } from "@/hooks/Table/DataTablePagination";
 import { DataTableFilterName } from "@/hooks/Table/DataTableFilterName";
 import { DataTableViewOptions } from "@/hooks/Table/DataTableViewOptions";
 import { LucidePlus, MoreHorizontal } from "lucide-react";
-import { Observable } from "@legendapp/state";
+import { type Observable } from "@legendapp/state";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,6 +25,8 @@ import { useDialog } from "@/hooks/useDialog";
 import Sheet from "@/components/hasan/sheet";
 import { DataTableColumnHeader } from "@/hooks/Table/DataColumnHeader";
 import Alert from "@/components/hasan/alert";
+import { useLiveQuery } from "dexie-react-hooks";
+import { dexie } from "@/server/local/dexie";
 
 const CustomerContext = createContext<Observable<ICustomerContext>>(
   undefined as any,
@@ -116,17 +117,16 @@ const Actions: React.FC<{ customer: Customer }> = ({ customer }) => {
 };
 
 const Page = () => {
-  const _customers$ = useObservable<Customer[]>([]);
-  const customer = useObservable({ customerId: "" });
+  const customerId = useObservable({ customerId: "" });
 
-  useObserveEffect(() => {
-    _customers$.set(asList<Customer>(customer$.get()));
-  });
+  const customers = useLiveQuery(() =>
+    dexie.customers.filter((x) => x.deleted === false).toArray(),
+  );
 
   return (
     <ScrollArea className="h-screen p-8">
-      <CustomerContext.Provider value={customer}>
-        <Memo>{() => <Table data={_customers$.get()} />}</Memo>
+      <CustomerContext.Provider value={customerId}>
+        <Table data={customers ?? []} />
       </CustomerContext.Provider>
     </ScrollArea>
   );
@@ -137,7 +137,6 @@ interface ICustomerContext {
 }
 
 const Table: React.FC<{ data: Customer[] }> = ({ data }) => {
-  const _customer$ = useContext(CustomerContext);
   const table = useTable({
     columns: columns,
     data: data,

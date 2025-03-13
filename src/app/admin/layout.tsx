@@ -7,6 +7,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import Link from "next/link";
+import Loader from "./loader";
 
 interface Menu {
   title: string;
@@ -102,6 +103,7 @@ const menus: Menu[] = [
 const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
     <main className="flex h-screen">
+      <Loader />
       <div className="w-72 shrink-0 bg-black p-4 text-white">
         <h1 className="text-3xl font-extrabold">Cetakisme</h1>
         <div className="mt-6 flex flex-col gap-2">

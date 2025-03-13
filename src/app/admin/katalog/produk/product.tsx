@@ -53,19 +53,6 @@ import { DataTableFilterName } from "@/hooks/Table/DataTableFilterName";
 import { Popover, PopoverClose } from "@radix-ui/react-popover";
 import DataTableDeleteSelection from "@/hooks/Table/DataTableDeleteSelection";
 import { PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { refreshPath } from "@/lib/path";
-
-function debounce<T extends (...args: any[]) => void>(
-  func: T,
-  delay: number,
-): (...args: Parameters<T>) => void {
-  let timer: ReturnType<typeof setTimeout>;
-
-  return (...args: Parameters<T>) => {
-    clearTimeout(timer);
-    timer = setTimeout(() => func(...args), delay);
-  };
-}
 
 interface IProductContext extends Omit<DB<"Product">, "created_at"> {
   addons: (DB<"Addon"> & { values: DB<"AddonValue">[] })[];
@@ -112,7 +99,7 @@ const updateVariantsRPC = async (product: IProductContext) => {
   const p = prevVariants.map((x) => ({ ...x, deleted: true }));
   const combine = combineArrays(p, variants);
 
-  await dexie.productVariants.bulkPut(p);
+  await dexie.productVariants.bulkPut(combine);
 
   const { error } = await supabase.rpc("update_product_variants", {
     prev_variant_ids: prevVariants.map((v) => v.id),
@@ -120,7 +107,20 @@ const updateVariantsRPC = async (product: IProductContext) => {
   });
 
   if (error) console.error("Error updating variants:", error);
+  console.log("Success");
 };
+
+export function URLChangeListener() {
+  const product$ = useContext(ProductContext);
+
+  React.useEffect(() => {
+    return () => {
+      void updateVariantsRPC(product$.get());
+    };
+  }, [product$]);
+
+  return null;
+}
 
 const Product: React.FC<{ id: string }> = ({ id }) => {
   const product$ = useObservable<
@@ -146,23 +146,24 @@ const Product: React.FC<{ id: string }> = ({ id }) => {
     variants: [],
   });
 
-  const debouncedUpdate = React.useCallback(
-    debounce(() => {
-      console.log("Attribute Changed");
-      updateVariantsRPC(product$.get());
-    }, 1000),
-    [product$], // Dependencies (if applicable)
-  );
+  // const debouncedUpdate = React.useCallback(
+  //   debounce(() => {
+  //     console.log("Attribute Changed");
+  //     updateVariantsRPC(product$.get());
+  //   }, 1000),
+  //   [product$], // Dependencies (if applicable)
+  // );
 
-  useMount(() => {
-    product$.attributes.onChange(() => {
-      debouncedUpdate();
-    });
-  });
+  // useMount(() => {
+  //   product$.attributes.onChange(() => {
+  //     debouncedUpdate();
+  //   });
+  // });
 
   return (
     <ProductContext.Provider value={product$}>
       <div className="mx-auto max-w-2xl">
+        <URLChangeListener />
         <ProductInfo />
         <Addons />
         <Attributes />
@@ -767,7 +768,12 @@ const AddAttributeButton = () => {
 
     console.log(newProductAttribute);
 
-    productAttribute$[newProductAttribute.id]?.set(newProductAttribute);
+    productAttribute$[newProductAttribute.id]?.set({
+      id: newProductAttribute.id,
+      attribute_id: newProductAttribute.attribute_id,
+      product_id: newProductAttribute.product_id,
+      deleted: newProductAttribute.deleted,
+    });
 
     product$.attributes.set([
       ...product$.attributes.get(),
@@ -1138,8 +1144,6 @@ function mergeArrays<TData extends Item>(
   return Object.values(mergedMap);
 }
 
-import { useDebounce } from "@uidotdev/usehooks";
-
 const VariantUpdater = () => {
   const product$ = useContext(ProductContext);
 
@@ -1197,7 +1201,7 @@ const QtyInput: React.FC<{ row: Row<ProductVariant> }> = ({ row }) => {
           .map((x) => (x.id === row.original.id ? { ...x, qty: qty } : x)),
       );
 
-      productVariants$[row.original.id]?.qty.set(qty);
+      // productVariants$[row.original.id]?.qty.set(qty);
       // console.log(productVariants$[row.original.id]?.get());
     },
     [row, product$.variants],
@@ -1278,7 +1282,7 @@ const PriceInput: React.FC<{ row: Row<ProductVariant> }> = ({ row }) => {
           .map((x) => (x.id === row.original.id ? { ...x, price: price } : x)),
       );
 
-      productVariants$[row.original.id]!.price.set(price);
+      // productVariants$[row.original.id]!.price.set(price);
     },
     [row, product$.variants],
   );

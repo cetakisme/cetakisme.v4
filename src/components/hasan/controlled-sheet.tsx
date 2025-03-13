@@ -6,7 +6,6 @@ import {
   SheetDescription,
   SheetHeader,
   SheetTitle,
-  SheetTrigger,
 } from "@/components/ui/sheet";
 import { useDialog } from "@/hooks/useDialog";
 
@@ -15,7 +14,7 @@ const ControlledSheet: React.FC<{
   title: string;
   description?: string;
   content: (dissmiss: () => void) => React.ReactNode;
-}> = ({ trigger, title, description, content, ...props }) => {
+}> = ({ trigger, title, description, content }) => {
   const dialog = useDialog();
   return (
     <S {...dialog.props}>

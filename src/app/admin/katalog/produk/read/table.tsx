@@ -1,16 +1,8 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import {
-  generateId,
-  productAttribute$,
-  productAttributeValue$,
-  products$,
-  productToAddons$,
-  productVariants$,
-} from "@/server/local/db";
-import { asList } from "@/server/local/utils";
-import { observer, use$, useMount } from "@legendapp/state/react";
+import { generateId, products$ } from "@/server/local/db";
+import { observer } from "@legendapp/state/react";
 import Link from "next/link";
 import React from "react";
 import { useTable } from "@/hooks/Table/useTable";
@@ -28,6 +20,8 @@ import Dialog from "@/components/hasan/dialog";
 import DataTableAction from "@/hooks/Table/DataTableAction";
 import { LucidePlus } from "lucide-react";
 import Title from "@/components/hasan/title";
+import { useLiveQuery } from "dexie-react-hooks";
+import { dexie } from "@/server/local/dexie";
 
 const EditButton: React.FC<{ data: Product }> = ({ data }) => {
   return (
@@ -134,14 +128,6 @@ const ProdukTable: React.FC<{ products?: Product[] }> = ({ products }) => {
         <div className="flex h-9 justify-between">
           <DataTableFilterName table={table} />
           <div className="flex gap-2">
-            {/* <DataTableDeleteSelection
-              onDelete={(rows) => {
-                for (const element of rows) {
-                  products$[element.original.id]!.deleted.set(true);
-                }
-              }}
-              table={table}
-            /> */}
             <Button
               variant="outline"
               onClick={() => {
@@ -170,20 +156,10 @@ const ProdukTable: React.FC<{ products?: Product[] }> = ({ products }) => {
 };
 
 const Table = () => {
-  const products = use$(products$.get());
-
-  useMount(() => {
-    console.log(productVariants$.get());
-    console.log(productAttributeValue$.get());
-    console.log(productToAddons$.get());
-    console.log(productAttribute$.get());
-  });
-
-  return (
-    <ProdukTable
-      products={asList<Product>(products).filter((x) => !x.deleted)}
-    />
+  const products = useLiveQuery(() =>
+    dexie.products.filter((x) => x.deleted === false).toArray(),
   );
+  return <ProdukTable products={products} />;
 };
 
 export default observer(Table);

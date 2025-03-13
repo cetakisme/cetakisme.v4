@@ -3,7 +3,7 @@ import {
   configureSyncedSupabase,
   syncedSupabase,
 } from "@legendapp/state/sync-plugins/supabase";
-import { supabase } from "@/lib/supabase/supabase";
+import { type DB, supabase, type TableName } from "@/lib/supabase/supabase";
 import { v4 as uuidv4 } from "uuid";
 import { dexie } from "./dexie";
 
@@ -13,198 +13,144 @@ configureSyncedSupabase({
   generateId,
 });
 
-export const products$ = observable(
-  syncedSupabase({
-    supabase,
-    collection: "Product",
-    select: (from) => {
-      return from.select("*").eq("deleted", false);
-    },
-    transform: {
-      load: async (value) => {
-        await dexie.products.put({
-          ...value,
-          images: value.images ?? [],
-        });
-        return value;
+function createSupabaseObservable<TCollection extends TableName>(opts: {
+  collection: TCollection;
+  transform:
+    | ((data: DB<TCollection>) => DB<TCollection>)
+    | ((data: DB<TCollection>) => Promise<DB<TCollection>>);
+}) {
+  return observable(
+    syncedSupabase({
+      supabase,
+      collection: opts.collection,
+      select: (from) => from.select("*"),
+      transform: {
+        load: opts.transform,
+        save: opts.transform,
       },
-    },
-    actions: ["read", "create", "update"],
-    fieldDeleted: "deleted",
-    realtime: true,
-  }),
-);
+      actions: ["read", "create", "update"],
+      fieldDeleted: "deleted",
+      realtime: true,
+    }),
+  );
+}
 
-// export const productAttributes$ = observable(
-//   syncedSupabase({
-//     supabase,
-//     collection: "ProductAttribute",
-//     select: (from) => from.select("*").eq("deleted", false),
-//     actions: ["read", "create", "update"],
-//     fieldDeleted: "deleted",
-//     realtime: true,
-//   }),
-// );
+export const products$ = createSupabaseObservable({
+  collection: "Product",
+  transform: async (value) => {
+    await dexie.products.put({
+      ...value,
+      images: value.images ?? [],
+      created_at: new Date(value.created_at),
+    });
+    return value;
+  },
+});
 
-// export const productAttributeValues$ = observable(
-//   syncedSupabase({
-//     supabase,
-//     collection: "ProductAttributeValue",
-//     select: (from) => from.select("*").eq("deleted", false),
-//     actions: ["read", "create", "update"],
-//     fieldDeleted: "deleted",
-//     realtime: true,
-//   }),
-// );
+export const addons$ = createSupabaseObservable({
+  collection: "Addon",
+  transform: async (value) => {
+    await dexie.addons.put(value);
+    return value;
+  },
+});
 
-export const addons$ = observable(
-  syncedSupabase({
-    supabase,
-    collection: "Addon",
-    select: (from) => from.select("*").eq("deleted", false),
-    transform: {
-      load: async (value) => {
-        await dexie.addons.put(value);
-        return value;
-      },
-    },
-    actions: ["read", "create", "update"],
-    fieldDeleted: "deleted",
-    realtime: true,
-  }),
-);
+export const productToAddons$ = createSupabaseObservable({
+  collection: "ProductToAddon",
+  transform: async (value) => {
+    await dexie.productToAddons.put(value);
+    return value;
+  },
+});
 
-export const productToAddons$ = observable(
-  syncedSupabase({
-    supabase,
-    collection: "ProductToAddon",
-    select: (from) => from.select("*"),
-    transform: {
-      load: async (value) => {
-        await dexie.productToAddons.put(value);
-        return value;
-      },
-    },
-    actions: ["read", "create", "update"],
-    fieldDeleted: "deleted",
-    realtime: true,
-  }),
-);
+export const attributes$ = createSupabaseObservable({
+  collection: "Attribute",
+  transform: async (value) => {
+    await dexie.attributes.put(value);
+    return value;
+  },
+});
 
-export const attributes$ = observable(
-  syncedSupabase({
-    supabase,
-    collection: "Attribute",
-    select: (from) => from.select("*").eq("deleted", false),
-    transform: {
-      load: async (value) => {
-        await dexie.attributes.put(value);
-        return value;
-      },
-    },
-    actions: ["read", "create", "update"],
-    fieldDeleted: "deleted",
-    realtime: true,
-  }),
-);
+export const productAttribute$ = createSupabaseObservable({
+  collection: "ProductAttribute",
+  transform: async (value) => {
+    await dexie.productAttributes.put(value);
+    return value;
+  },
+});
 
-export const productAttribute$ = observable(
-  syncedSupabase({
-    supabase,
-    collection: "ProductAttribute",
-    select: (from) => from.select("*"),
-    transform: {
-      load: async (value) => {
-        await dexie.productAttributes.put(value);
-        return value;
-      },
-    },
-    actions: ["read", "create", "update"],
-    fieldDeleted: "deleted",
-    realtime: true,
-  }),
-);
+export const productAttributeValue$ = createSupabaseObservable({
+  collection: "ProductAttribteValue",
+  transform: async (value) => {
+    await dexie.productAttributeValues.put(value);
+    return value;
+  },
+});
 
-export const productAttributeValue$ = observable(
-  syncedSupabase({
-    supabase,
-    collection: "ProductAttribteValue",
-    select: (from) => from.select("*"),
-    transform: {
-      load: async (value) => {
-        await dexie.productAttributeValues.put(value);
-        return value;
-      },
-    },
-    actions: ["read", "create", "update"],
-    fieldDeleted: "deleted",
-    realtime: true,
-  }),
-);
+export const productVariants$ = createSupabaseObservable({
+  collection: "ProductVariant",
+  transform: async (value) => {
+    await dexie.productVariants.put(value);
+    return value;
+  },
+});
 
-export const productVariants$ = observable(
-  syncedSupabase({
-    supabase,
-    collection: "ProductVariant",
-    select: (from) => from.select("*"),
-    transform: {
-      load: async (value) => {
-        await dexie.productVariants.put(value);
-        return value;
-      },
-    },
-    actions: ["read", "create", "update"],
-    fieldDeleted: "deleted",
-    realtime: true,
-  }),
-);
+export const addonValues$ = createSupabaseObservable({
+  collection: "AddonValue",
+  transform: async (value) => {
+    await dexie.addonValues.put(value);
+    return value;
+  },
+});
 
-export const addonValues$ = observable(
-  syncedSupabase({
-    supabase,
-    collection: "AddonValue",
-    select: (from) => from.select("*"),
-    transform: {
-      load: async (value) => {
-        await dexie.addonValues.put(value);
-        return value;
-      },
-    },
-    actions: ["read", "create", "update"],
-    fieldDeleted: "deleted",
-    realtime: true,
-  }),
-);
+export const customer$ = createSupabaseObservable({
+  collection: "Customer",
+  transform: async (value) => {
+    await dexie.customers.put(value);
+    return value;
+  },
+});
 
-export const customer$ = observable(
-  syncedSupabase({
-    supabase,
-    collection: "Customer",
-    select: (from) => from.select("*").eq("deleted", false),
-    actions: ["read", "create", "update"],
-    fieldDeleted: "deleted",
-    realtime: true,
-  }),
-);
+export const discounts$ = createSupabaseObservable({
+  collection: "Discount",
+  transform: async (value) => {
+    await dexie.discounts.put(value);
+    return value;
+  },
+});
 
-// export const attributes$ = observable(
-//   syncedSupabase({
-//     supabase,
-//     collection: "Attribute",
-//     select: (from) => from.select("*").eq("deleted", false),
-//     actions: ["read", "create", "update"],
-//     fieldDeleted: "deleted",
-//     realtime: true,
-//   }),
-// );
+export const costs$ = createSupabaseObservable({
+  collection: "Cost",
+  transform: async (value) => {
+    await dexie.costs.put(value);
+    return value;
+  },
+});
 
-// export const colors$ = observable(
-//   syncedSupabase({
-//     supabase,
-//     collection: "Color",
-//     select: (from) => from.select("*").eq("deleted", false),
-//     actions: ["read", "create", "update"],
-//     fieldDeleted: "deleted",
-//     realtime: true,
-//   }),
-// );
+export const orders$ = createSupabaseObservable({
+  collection: "Order",
+  transform: async (value) => {
+    await dexie.orders.put({
+      ...value,
+      created_at: new Date(value.created_at),
+      deadline: value.deadline ? new Date(value.deadline) : null,
+    });
+    return value;
+  },
+});
+
+export const orderVariants$ = createSupabaseObservable({
+  collection: "OrderVariant",
+  transform: async (value) => {
+    await dexie.orderVariants.put(value);
+    return value;
+  },
+});
+
+export const orderVariantAddons$ = createSupabaseObservable({
+  collection: "OrderVariantAddon",
+  transform: async (value) => {
+    await dexie.orderVariantAddons.put(value);
+    return value;
+  },
+});

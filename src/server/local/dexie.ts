@@ -2,6 +2,12 @@ import type {
   Addon,
   AddonValue,
   Attribute,
+  Cost,
+  Customer,
+  Discount,
+  Order,
+  OrderVariant,
+  OrderVariantAddon,
   Product,
   ProductAttribteValue,
   ProductAttribute,
@@ -15,7 +21,7 @@ const dexie = new Dexie("FriendsDatabase", {
   addons: [relationships],
 }) as Dexie & {
   products: EntityTable<
-    Omit<Product, "created_at">,
+    Product,
     "id" // primary key "id" (for the typings only)
   >;
   addons: EntityTable<Addon, "id">;
@@ -25,6 +31,12 @@ const dexie = new Dexie("FriendsDatabase", {
   productAttributeValues: EntityTable<ProductAttribteValue, "id">;
   productToAddons: EntityTable<ProductToAddon, "id">;
   productVariants: EntityTable<ProductVariant, "id">;
+  discounts: EntityTable<Discount, "id">;
+  costs: EntityTable<Cost, "id">;
+  orders: EntityTable<Order, "id">;
+  orderVariants: EntityTable<OrderVariant, "id">;
+  orderVariantAddons: EntityTable<OrderVariantAddon, "id">;
+  customers: EntityTable<Customer, "id">;
 };
 
 // Schema declaration:
@@ -37,6 +49,12 @@ dexie.version(1).stores({
   productAttributeValues: "id, name, attribute_id, deleted",
   productToAddons: "id, product_id, attribute_id, deleted",
   productVariants: "id, product_id, deleted",
+  discounts: "id, order_id, deleted",
+  costs: "id, order_id, deleted",
+  orders: "id, deleted, order_status, payment_status",
+  orderVariants: "id, deleted, order_id, variant_id",
+  orderVariantAddons: "id, deleted, orderVariantId, addonValueId",
+  customers: "id, deleted",
 });
 
 export { dexie };

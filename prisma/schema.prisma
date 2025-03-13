@@ -10,6 +10,61 @@ datasource db {
     url      = env("DATABASE_URL")
 }
 
+model Discount {
+    id          String      @id @default(uuid())
+    name        String      @default("")
+    value       Int         @default(0)
+    type        String      @default("")
+    deleted         Boolean     @default(false)
+
+    order_id     String      @default("")
+}
+
+model Cost {
+    id          String      @id @default(uuid())
+    name        String      @default("")
+    value       Int         @default(0)
+    type        String      @default("")
+    deleted     Boolean     @default(false)
+
+    order_id    String      @default("")
+}
+
+model Order {
+    id                  String      @id @default(uuid())
+    payment_type        String      @default("")
+    order_status        String      @default("")
+    payment_status      String      @default("")
+    payment_provider    String      @default("")
+    paid                Int         @default(0)
+    deleted             Boolean     @default(false)
+    created_at          DateTime    @default(now())
+    notes               String      @default("")            
+    deadline            DateTime?   
+
+    customer_id         String      @default("")
+}
+
+model OrderVariantAddon {
+    id          String          @id @default(uuid())
+    qty         Int             @default(0)
+    deleted     Boolean         @default(false)
+
+    addonValueId        String          @default("")
+
+    orderVariantId  String          @default("")
+}
+
+model OrderVariant {
+    id          String          @id @default(uuid())
+    qty         Int             @default(0)
+    deleted     Boolean         @default(false)
+
+    order_id     String             @default("")
+
+    variant_id   String             @default("")
+}
+
 model Customer {
     id          String      @id @default(uuid())
     name        String      @default("")
