@@ -126,13 +126,13 @@ const Page = () => {
   );
 
   return (
-    <Authenticated permission="pelanggan" fallback={AuthFallback}>
-      <ScrollArea className="h-screen p-8">
-        <CustomerContext.Provider value={customerId}>
-          <Table data={customers ?? []} />
-        </CustomerContext.Provider>
-      </ScrollArea>
-    </Authenticated>
+    // <Authenticated permission="pelanggan" fallback={AuthFallback}>
+    <ScrollArea className="h-screen p-8">
+      <CustomerContext.Provider value={customerId}>
+        <Table data={customers ?? []} />
+      </CustomerContext.Provider>
+    </ScrollArea>
+    // </Authenticated>
   );
 };
 
