@@ -125,6 +125,8 @@ const Page = () => {
     dexie.customers.filter((x) => x.deleted === false).toArray(),
   );
 
+  console.log(customers);
+
   return (
     <Authenticated permission="pelanggan" fallback={AuthFallback}>
       <ScrollArea className="h-screen p-8">
