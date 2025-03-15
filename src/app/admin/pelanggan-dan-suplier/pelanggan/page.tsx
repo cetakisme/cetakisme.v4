@@ -27,6 +27,8 @@ import { DataTableColumnHeader } from "@/hooks/Table/DataColumnHeader";
 import Alert from "@/components/hasan/alert";
 import { useLiveQuery } from "dexie-react-hooks";
 import { dexie } from "@/server/local/dexie";
+import Authenticated from "@/components/hasan/auth/authenticated";
+import AuthFallback from "@/components/hasan/auth/auth-fallback";
 
 const CustomerContext = createContext<Observable<ICustomerContext>>(
   undefined as any,
@@ -124,11 +126,13 @@ const Page = () => {
   );
 
   return (
-    <ScrollArea className="h-screen p-8">
-      <CustomerContext.Provider value={customerId}>
-        <Table data={customers ?? []} />
-      </CustomerContext.Provider>
-    </ScrollArea>
+    <Authenticated permission="pelanggan" fallback={AuthFallback}>
+      <ScrollArea className="h-screen p-8">
+        <CustomerContext.Provider value={customerId}>
+          <Table data={customers ?? []} />
+        </CustomerContext.Provider>
+      </ScrollArea>
+    </Authenticated>
   );
 };
 
@@ -143,7 +147,7 @@ const Table: React.FC<{ data: Customer[] }> = ({ data }) => {
   });
 
   return (
-    <div>
+    <div className="space-y-2">
       <div className="flex h-9 justify-between">
         <DataTableFilterName table={table} />
         <div className="flex gap-2">

@@ -2,7 +2,7 @@
 
 import { user$ } from "@/server/local/auth";
 import { roles$, users$ } from "@/server/local/db";
-import { Memo, use$, useObserve } from "@legendapp/state/react";
+import { Memo } from "@legendapp/state/react";
 import React from "react";
 
 const Authenticated: React.FC<

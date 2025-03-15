@@ -88,6 +88,8 @@ import Alert from "@/components/hasan/alert";
 import { useDialog } from "@/hooks/useDialog";
 import { LucideDot, LucidePlus } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
+import Authenticated from "@/components/hasan/auth/authenticated";
+import AuthFallback from "@/components/hasan/auth/auth-fallback";
 
 interface IKasirContext {
   isLoadFromSave: boolean;
@@ -360,143 +362,147 @@ const Page = () => {
   };
 
   return (
-    <KasirContext.Provider value={ctx$}>
-      <ResizablePanelGroup direction="horizontal" className="gap-2 p-8">
-        <ResizablePanel defaultSize={50}>
-          <div className="flex h-full flex-col gap-2">
-            <div className="flex items-center gap-4">
-              <Label>Pelanggan : </Label>
-              <Memo>
-                {() => <CustomerSelector customer={ctx$.customer.get()} />}
-              </Memo>
-            </div>
-            <ScrollArea className="flex-1 space-y-2">
-              <Memo>
-                {() => <VariantTable variants={ctx$.variants.get()} />}
-              </Memo>
-              <div className="mt-4 font-bold">Diskon</div>
-              <Memo>
-                {() => {
-                  const _t = total.get();
-                  return (
-                    <RenderList
-                      data={ctx$.discounts.get().filter((x) => !x.deleted)}
-                      renderEmpty={() => <div className="p-2 px-4">-</div>}
-                      render={(data, index) => (
-                        <Button
-                          onClick={() => {
-                            ctx$.discountsToDelete.push(data);
-                            ctx$.discounts.splice(index, 1);
-                          }}
-                          className="w-full justify-between hover:bg-destructive hover:text-destructive-foreground"
-                          variant="ghost"
-                        >
-                          <span>
-                            Diskon {data.name}{" "}
-                            {data.type === "percent" && data.value + "%"}
-                          </span>
-                          <span>
-                            -{" "}
-                            {data.type === "flat"
-                              ? toRupiah(data.value)
-                              : toRupiah(_t * data.value * 0.01)}
-                          </span>
-                        </Button>
-                      )}
-                    />
-                  );
-                }}
-              </Memo>
-              <div className="mt-4 font-bold">Biaya Tambahan</div>
-              <Memo>
-                {() => {
-                  const _t = total.get();
-                  const _d = totalDiscount.get();
-
-                  return (
-                    <RenderList
-                      data={ctx$.costs.get().filter((x) => !x.deleted)}
-                      renderEmpty={() => <div className="p-2 px-4">-</div>}
-                      render={(data, index) => (
-                        <Button
-                          onClick={() => {
-                            ctx$.costsToDelete.push(data);
-                            ctx$.costs.splice(index, 1);
-                          }}
-                          className="w-full justify-between hover:bg-destructive hover:text-destructive-foreground"
-                          variant="ghost"
-                        >
-                          <span>
-                            Biaya {data.name}{" "}
-                            {data.type === "percent" && data.value + "%"}
-                          </span>
-                          <span>
-                            {" "}
-                            {data.type === "flat"
-                              ? toRupiah(data.value)
-                              : toRupiah((_t - _d) * data.value * 0.01)}
-                          </span>
-                        </Button>
-                      )}
-                    />
-                  );
-                }}
-              </Memo>
-            </ScrollArea>
-            <div className="border-t pt-2">
-              <div className="flex h-5 items-center justify-between">
-                <Label>Total</Label>
-                <Memo>{() => <Label>{toRupiah(total.get())}</Label>}</Memo>
-              </div>
-              <div className="flex h-5 items-center justify-between">
-                <Label>Total Diskon</Label>
+    <Authenticated permission="kasir" fallback={AuthFallback}>
+      <KasirContext.Provider value={ctx$}>
+        <ResizablePanelGroup direction="horizontal" className="gap-2 p-8">
+          <ResizablePanel defaultSize={50}>
+            <div className="flex h-full flex-col gap-2">
+              <div className="flex items-center gap-4">
+                <Label>Pelanggan : </Label>
                 <Memo>
-                  {() => <Label>- {toRupiah(totalDiscount.get())}</Label>}
+                  {() => <CustomerSelector customer={ctx$.customer.get()} />}
                 </Memo>
               </div>
-              <div className="flex h-5 items-center justify-between">
-                <Label>Total Biaya Tambahan</Label>
-                <Memo>{() => <Label>{toRupiah(totalCosts.get())}</Label>}</Memo>
+              <ScrollArea className="flex-1 space-y-2">
+                <Memo>
+                  {() => <VariantTable variants={ctx$.variants.get()} />}
+                </Memo>
+                <div className="mt-4 font-bold">Diskon</div>
+                <Memo>
+                  {() => {
+                    const _t = total.get();
+                    return (
+                      <RenderList
+                        data={ctx$.discounts.get().filter((x) => !x.deleted)}
+                        renderEmpty={() => <div className="p-2 px-4">-</div>}
+                        render={(data, index) => (
+                          <Button
+                            onClick={() => {
+                              ctx$.discountsToDelete.push(data);
+                              ctx$.discounts.splice(index, 1);
+                            }}
+                            className="w-full justify-between hover:bg-destructive hover:text-destructive-foreground"
+                            variant="ghost"
+                          >
+                            <span>
+                              Diskon {data.name}{" "}
+                              {data.type === "percent" && data.value + "%"}
+                            </span>
+                            <span>
+                              -{" "}
+                              {data.type === "flat"
+                                ? toRupiah(data.value)
+                                : toRupiah(_t * data.value * 0.01)}
+                            </span>
+                          </Button>
+                        )}
+                      />
+                    );
+                  }}
+                </Memo>
+                <div className="mt-4 font-bold">Biaya Tambahan</div>
+                <Memo>
+                  {() => {
+                    const _t = total.get();
+                    const _d = totalDiscount.get();
+
+                    return (
+                      <RenderList
+                        data={ctx$.costs.get().filter((x) => !x.deleted)}
+                        renderEmpty={() => <div className="p-2 px-4">-</div>}
+                        render={(data, index) => (
+                          <Button
+                            onClick={() => {
+                              ctx$.costsToDelete.push(data);
+                              ctx$.costs.splice(index, 1);
+                            }}
+                            className="w-full justify-between hover:bg-destructive hover:text-destructive-foreground"
+                            variant="ghost"
+                          >
+                            <span>
+                              Biaya {data.name}{" "}
+                              {data.type === "percent" && data.value + "%"}
+                            </span>
+                            <span>
+                              {" "}
+                              {data.type === "flat"
+                                ? toRupiah(data.value)
+                                : toRupiah((_t - _d) * data.value * 0.01)}
+                            </span>
+                          </Button>
+                        )}
+                      />
+                    );
+                  }}
+                </Memo>
+              </ScrollArea>
+              <div className="border-t pt-2">
+                <div className="flex h-5 items-center justify-between">
+                  <Label>Total</Label>
+                  <Memo>{() => <Label>{toRupiah(total.get())}</Label>}</Memo>
+                </div>
+                <div className="flex h-5 items-center justify-between">
+                  <Label>Total Diskon</Label>
+                  <Memo>
+                    {() => <Label>- {toRupiah(totalDiscount.get())}</Label>}
+                  </Memo>
+                </div>
+                <div className="flex h-5 items-center justify-between">
+                  <Label>Total Biaya Tambahan</Label>
+                  <Memo>
+                    {() => <Label>{toRupiah(totalCosts.get())}</Label>}
+                  </Memo>
+                </div>
+                <div className="mt-4 flex h-5 items-center justify-between">
+                  <Label>Total Keseluruhan</Label>
+                  <Memo>{() => <Label>{toRupiah(totalAll.get())}</Label>}</Memo>
+                </div>
               </div>
-              <div className="mt-4 flex h-5 items-center justify-between">
-                <Label>Total Keseluruhan</Label>
-                <Memo>{() => <Label>{toRupiah(totalAll.get())}</Label>}</Memo>
+              <div className="flex justify-between">
+                <div className="flex gap-1">
+                  <SavedOrdersSheet />
+                  <Button variant="outline" size="icon" onClick={() => save()}>
+                    <MdDownload />
+                  </Button>
+                  <NewOrder />
+                  <DeleteOrder />
+                </div>
+                <div className="flex gap-1">
+                  <DiscountPopover
+                    title="Diskon"
+                    Icon={RiDiscountPercentLine}
+                    onSubmit={(data) => ctx$.discounts.push(data)}
+                  />
+                  <DiscountPopover
+                    title="Biaya"
+                    Icon={RiMoneyDollarCircleLine}
+                    onSubmit={(data) => ctx$.costs.push(data)}
+                  />
+                </div>
+                <div className="">
+                  <PaySheet />
+                </div>
               </div>
             </div>
-            <div className="flex justify-between">
-              <div className="flex gap-1">
-                <SavedOrdersSheet />
-                <Button variant="outline" size="icon" onClick={() => save()}>
-                  <MdDownload />
-                </Button>
-                <NewOrder />
-                <DeleteOrder />
-              </div>
-              <div className="flex gap-1">
-                <DiscountPopover
-                  title="Diskon"
-                  Icon={RiDiscountPercentLine}
-                  onSubmit={(data) => ctx$.discounts.push(data)}
-                />
-                <DiscountPopover
-                  title="Biaya"
-                  Icon={RiMoneyDollarCircleLine}
-                  onSubmit={(data) => ctx$.costs.push(data)}
-                />
-              </div>
-              <div className="">
-                <PaySheet />
-              </div>
-            </div>
-          </div>
-        </ResizablePanel>
-        <ResizablePanel defaultSize={50}>
-          <ScrollArea className="h-full">
-            <ProductKatalog />
-          </ScrollArea>
-        </ResizablePanel>
-      </ResizablePanelGroup>
-    </KasirContext.Provider>
+          </ResizablePanel>
+          <ResizablePanel defaultSize={50}>
+            <ScrollArea className="h-full">
+              <ProductKatalog />
+            </ScrollArea>
+          </ResizablePanel>
+        </ResizablePanelGroup>
+      </KasirContext.Provider>
+    </Authenticated>
   );
 };
 

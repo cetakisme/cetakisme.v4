@@ -10,13 +10,13 @@ import { useTable } from "@/hooks/Table/useTable";
 import { dexie } from "@/server/local/dexie";
 import { useLiveQuery } from "dexie-react-hooks";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { ColumnDef } from "@tanstack/react-table";
-import { CustomUser, Role } from "@prisma/client";
+import type { ColumnDef } from "@tanstack/react-table";
+import type { Role } from "@prisma/client";
 import Dialog from "@/components/hasan/dialog";
 import { Button } from "@/components/ui/button";
 import { LucidePlus, MoreHorizontal } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { getNavigations, menus } from "../../layout";
+import { getNavigations } from "../../layout";
 import ControlledSheet from "@/components/hasan/controlled-sheet";
 import { Memo, useObservable } from "@legendapp/state/react";
 import InputWithLabel from "@/components/hasan/input-with-label";
@@ -32,12 +32,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useDialog } from "@/hooks/useDialog";
-import { DialogProps } from "@radix-ui/react-dialog";
+import type { DialogProps } from "@radix-ui/react-dialog";
 import Alert from "@/components/hasan/alert";
 import {
   Table,
   TableBody,
-  TableCaption,
   TableCell,
   TableHead,
   TableHeader,
@@ -45,8 +44,9 @@ import {
 } from "@/components/ui/table";
 import { asList } from "@/server/local/utils";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Observable } from "@legendapp/state";
+import type { Observable } from "@legendapp/state";
 import Authenticated from "@/components/hasan/auth/authenticated";
+import AuthFallback from "@/components/hasan/auth/auth-fallback";
 
 const columns: ColumnDef<Role>[] = [
   {
@@ -70,9 +70,13 @@ const columns: ColumnDef<Role>[] = [
       <Authenticated
         permission="role-update"
         fallback={() => (
-          <Button variant="outline">
-            {row.original.permissions.length} Izin
-          </Button>
+          <Memo>
+            {() => (
+              <Button variant="outline">
+                {roles$[row.original.id]!.permissions.get()?.length ?? 0} Izin
+              </Button>
+            )}
+          </Memo>
         )}
       >
         <AddDialog role={row.original} />
@@ -145,22 +149,24 @@ const Page = () => {
   });
 
   return (
-    <ScrollArea className="h-screen p-8">
-      <div className="space-y-2">
-        <div className="flex h-9 justify-between">
-          <DataTableFilterName table={table} />
-          <div className="flex gap-2">
-            {/* <AddDialog /> */}
-            <Authenticated permission="role-created">
-              <AddSheet />
-            </Authenticated>
-            <DataTableViewOptions table={table} />
+    <Authenticated permission="role" fallback={AuthFallback}>
+      <ScrollArea className="h-screen p-8">
+        <div className="space-y-2">
+          <div className="flex h-9 justify-between">
+            <DataTableFilterName table={table} />
+            <div className="flex gap-2">
+              {/* <AddDialog /> */}
+              <Authenticated permission="role-created">
+                <AddSheet />
+              </Authenticated>
+              <DataTableViewOptions table={table} />
+            </div>
           </div>
+          <DataTableContent table={table} />
+          <DataTablePagination table={table} />
         </div>
-        <DataTableContent table={table} />
-        <DataTablePagination table={table} />
-      </div>
-    </ScrollArea>
+      </ScrollArea>
+    </Authenticated>
   );
 };
 
@@ -175,7 +181,7 @@ const AddSheet = () => {
         </Button>
       )}
       title="Tambah User Baru"
-      content={(dismiss) => <AddForm onSuccess={() => dismiss()} />}
+      content={() => <AddForm />}
     />
   );
 };
@@ -184,7 +190,7 @@ const schema = z.object({
   role: z.string().min(1, "Nama Harus Diisi"),
 });
 
-const AddForm: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) => {
+const AddForm = () => {
   const role = useObservable({
     role: "",
   });
@@ -246,34 +252,40 @@ const AddDialog: React.FC<{ role: Role }> = ({ role }) => {
         className="max-h-[32rem] overflow-hidden overflow-y-auto"
         description={() => "Mengatur Perizinan Role Pada Aplikasi"}
         renderTrigger={() => (
-          <Button variant="outline">{role.permissions.length} Izin</Button>
+          <Button variant="outline">
+            <Memo>
+              {() => (
+                <>{roles$[role.id]!.permissions.get()?.length ?? 0} Izin</>
+              )}
+            </Memo>
+          </Button>
         )}
       >
         <Tabs
-          defaultValue={navigations["pos"]!.permission}
+          defaultValue={navigations.pos!.permission}
           className="overflow-hidden"
         >
           <ScrollArea className="-12 w-full">
             <TabsList>
               {parents.map((x) => (
                 <TabsTrigger value={x.permission} key={x.permission}>
-                  {x.permission!.replaceAll("-", " ")}
+                  {x.permission.replaceAll("-", " ")}
                 </TabsTrigger>
               ))}
             </TabsList>
 
             <ScrollBar orientation="horizontal" />
           </ScrollArea>
-          <RolePermissionTabsContent permission={navigations["pos"]!} />
+          <RolePermissionTabsContent permission={navigations.pos!} />
           <RolePermissionTabsContent
             permission={navigations["sales-and-purchasing"]!}
           />
-          <RolePermissionTabsContent permission={navigations["katalog"]!} />
+          <RolePermissionTabsContent permission={navigations.katalog!} />
           <RolePermissionTabsContent
             permission={navigations["pelanggan-dan-suplier"]!}
           />
-          <RolePermissionTabsContent permission={navigations["orderan"]!} />
-          <RolePermissionTabsContent permission={navigations["akun"]!} />
+          <RolePermissionTabsContent permission={navigations.orderan!} />
+          <RolePermissionTabsContent permission={navigations.akun!} />
         </Tabs>
       </Dialog>
     </RoleContext.Provider>

@@ -19,11 +19,11 @@ import {
 import { dexie } from "@/server/local/dexie";
 import { whenReady } from "@legendapp/state";
 import { useMount } from "@legendapp/state/react";
-import { UserWithRole } from "better-auth/plugins/admin";
+import type { UserWithRole } from "better-auth/plugins/admin";
 import React from "react";
 
 const Loader = () => {
-  const { data: session, isPending, refetch } = authClient.useSession();
+  const { data: session } = authClient.useSession();
 
   React.useEffect(() => {
     if (!session) return;

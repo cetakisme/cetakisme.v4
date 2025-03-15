@@ -51,7 +51,7 @@ const Page = () => {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSigning(true);
     try {
-      const data = await authClient.signUp.email({
+      await authClient.signUp.email({
         email: values.email,
         name: values.username,
         password: values.password,

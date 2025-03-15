@@ -22,38 +22,45 @@ import { LucidePlus } from "lucide-react";
 import Title from "@/components/hasan/title";
 import { useLiveQuery } from "dexie-react-hooks";
 import { dexie } from "@/server/local/dexie";
+import Authenticated from "@/components/hasan/auth/authenticated";
 
 const EditButton: React.FC<{ data: Product }> = ({ data }) => {
   return (
-    <DropdownMenuItem asChild>
-      <Link href={"/admin/katalog/produk/edit/" + data.id}>Ubah</Link>
-    </DropdownMenuItem>
+    <Authenticated permission="produk-update">
+      <DropdownMenuItem asChild>
+        <Link href={"/admin/katalog/produk/edit/" + data.id}>Ubah</Link>
+      </DropdownMenuItem>
+    </Authenticated>
   );
 };
 
 const DeleteButton: React.FC<{ data: Product }> = ({ data }) => {
   return (
-    <Dialog
-      title="Apa Anda Yakin?"
-      description={() => (
-        <>
-          Apa Anda Benar Benar Ingin Menghapus Produk Dengan Nama{" "}
-          <span className="font-bold text-black">{data.name}</span>
-        </>
-      )}
-      renderTrigger={() => <Button variant="destructive">Hapus Produk</Button>}
-      renderCancel={() => <Button variant="outline">Tidak</Button>}
-      renderAction={() => (
-        <Button
-          variant="destructive"
-          onClick={() => {
-            products$[data.id]!.deleted.set(true);
-          }}
-        >
-          Ya
-        </Button>
-      )}
-    ></Dialog>
+    <Authenticated permission="produk-delete">
+      <Dialog
+        title="Apa Anda Yakin?"
+        description={() => (
+          <>
+            Apa Anda Benar Benar Ingin Menghapus Produk Dengan Nama{" "}
+            <span className="font-bold text-black">{data.name}</span>
+          </>
+        )}
+        renderTrigger={() => (
+          <Button variant="destructive">Hapus Produk</Button>
+        )}
+        renderCancel={() => <Button variant="outline">Tidak</Button>}
+        renderAction={() => (
+          <Button
+            variant="destructive"
+            onClick={() => {
+              products$[data.id]!.deleted.set(true);
+            }}
+          >
+            Ya
+          </Button>
+        )}
+      />
+    </Authenticated>
   );
 };
 
@@ -107,7 +114,16 @@ const columns: ColumnDef<Product>[] = [
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Active" />
     ),
-    cell: ({ row }) => <ActiveSwtich data={row.original} />,
+    cell: ({ row }) => (
+      <Authenticated
+        permission="produk-update"
+        fallback={() => (
+          <Switch defaultChecked={row.original.active} disabled />
+        )}
+      >
+        <ActiveSwtich data={row.original} />
+      </Authenticated>
+    ),
   },
   DataTableAction({
     actions: [EditButton, DeleteButton],
@@ -128,23 +144,26 @@ const ProdukTable: React.FC<{ products?: Product[] }> = ({ products }) => {
         <div className="flex h-9 justify-between">
           <DataTableFilterName table={table} />
           <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={() => {
-                const id = generateId();
-                products$[id]!.set({
-                  id: id,
-                  name: "Produk Baru",
-                  active: true,
-                  deleted: false,
-                  base_price: 0,
-                  images: ["", "", "", "", ""],
-                  created_at: new Date().toISOString(),
-                });
-              }}
-            >
-              <LucidePlus />
-            </Button>
+            <Authenticated permission="produk-create">
+              <Button
+                size="icon"
+                variant="outline"
+                onClick={() => {
+                  const id = generateId();
+                  products$[id]!.set({
+                    id: id,
+                    name: "Produk Baru",
+                    active: true,
+                    deleted: false,
+                    base_price: 0,
+                    images: ["", "", "", "", ""],
+                    created_at: new Date().toISOString(),
+                  });
+                }}
+              >
+                <LucidePlus />
+              </Button>
+            </Authenticated>
             <DataTableViewOptions table={table} />
           </div>
         </div>

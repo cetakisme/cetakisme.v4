@@ -1,11 +1,11 @@
 "use client";
 
 import Alert from "@/components/hasan/alert";
+import AuthFallback from "@/components/hasan/auth/auth-fallback";
 import Authenticated from "@/components/hasan/auth/authenticated";
 import ControlledSheet from "@/components/hasan/controlled-sheet";
 import InputWithLabel from "@/components/hasan/input-with-label";
 import RenderList from "@/components/hasan/render-list";
-import Sheet from "@/components/hasan/sheet";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -22,16 +22,14 @@ import { DataTableViewOptions } from "@/hooks/Table/DataTableViewOptions";
 import { useTable } from "@/hooks/Table/useTable";
 import { useDialog } from "@/hooks/useDialog";
 import { authClient } from "@/lib/better-auth/auth-client";
-import { user$ } from "@/server/local/auth";
 import { roles$, users$ } from "@/server/local/db";
 import { dexie } from "@/server/local/dexie";
-import { generateId } from "@/server/local/utils";
 import { Memo, useObservable, useObserve } from "@legendapp/state/react";
-import { CustomUser } from "@prisma/client";
-import { DialogProps } from "@radix-ui/react-dialog";
+import type { CustomUser } from "@prisma/client";
+import type { DialogProps } from "@radix-ui/react-dialog";
 import { DropdownMenuSeparator } from "@radix-ui/react-dropdown-menu";
 import { ScrollArea } from "@radix-ui/react-scroll-area";
-import { ColumnDef } from "@tanstack/react-table";
+import type { ColumnDef } from "@tanstack/react-table";
 import { useLiveQuery } from "dexie-react-hooks";
 import { LucidePlus, MoreHorizontal } from "lucide-react";
 import React from "react";
@@ -63,7 +61,7 @@ const columns: ColumnDef<CustomUser>[] = [
           <Button variant="ghost">
             {row.original.password
               .split("")
-              .map((x) => "*")
+              .map(() => "*")
               .join("")}
           </Button>
         )}
@@ -168,7 +166,7 @@ const DeleteUser: React.FC<{ user: CustomUser } & DialogProps> = ({
   ...props
 }) => {
   const remove = async () => {
-    const { data, error } = await authClient.admin.removeUser({
+    const { error } = await authClient.admin.removeUser({
       userId: user.id,
     });
 
@@ -208,7 +206,7 @@ const Password: React.FC<{ user: CustomUser }> = ({ user }) => {
             ? user.password
             : user.password
                 .split("")
-                .map((x) => "*")
+                .map(() => "*")
                 .join("")}
         </Button>
       )}
@@ -226,21 +224,23 @@ const Page = () => {
   });
 
   return (
-    <ScrollArea className="h-screen p-8">
-      <div className="space-y-2">
-        <div className="flex h-9 justify-between">
-          <DataTableFilterName table={table} />
-          <div className="flex gap-2">
-            <Authenticated permission="user-create">
-              <AddSheet />
-            </Authenticated>
-            <DataTableViewOptions table={table} />
+    <Authenticated permission="user" fallback={AuthFallback}>
+      <ScrollArea className="h-screen p-8">
+        <div className="space-y-2">
+          <div className="flex h-9 justify-between">
+            <DataTableFilterName table={table} />
+            <div className="flex gap-2">
+              <Authenticated permission="user-create">
+                <AddSheet />
+              </Authenticated>
+              <DataTableViewOptions table={table} />
+            </div>
           </div>
+          <DataTableContent table={table} />
+          <DataTablePagination table={table} />
         </div>
-        <DataTableContent table={table} />
-        <DataTablePagination table={table} />
-      </div>
-    </ScrollArea>
+      </ScrollArea>
+    </Authenticated>
   );
 };
 
@@ -314,7 +314,7 @@ const AddForm: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) => {
       });
 
       onSuccess();
-    } catch (e) {
+    } catch {
       saving.set(false);
     }
   };

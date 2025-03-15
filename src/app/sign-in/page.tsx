@@ -52,12 +52,12 @@ const Page = () => {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSigning(true);
     try {
-      const data = await authClient.signIn.username({
+      await authClient.signIn.username({
         username: values.username,
         password: values.password,
       });
       router.push("/admin");
-    } catch (error) {
+    } catch {
       toast.error("Username atau password salah");
       setIsSigning(false);
     }
