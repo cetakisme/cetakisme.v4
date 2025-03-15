@@ -5,8 +5,8 @@ import {
   costs$,
   customer$,
   discounts$,
-  materials$,
-  orderMaterials$,
+  // materials$,
+  // orderMaterials$,
   orderProducts$,
   orders$,
   orderVariantAddons$,
@@ -17,8 +17,8 @@ import {
   productToAddons$,
   productVariants$,
   roles$,
-  supplierContactPersons$,
-  suppliers$,
+  // supplierContactPersons$,
+  // suppliers$,
   users$,
 } from "@/server/local/db";
 import { dexie } from "@/server/local/dexie";
@@ -55,11 +55,11 @@ const Loader = () => {
     void whenReady(products$.get());
     void whenReady(users$.get());
     void whenReady(roles$.get());
-    void whenReady(materials$.get());
-    void whenReady(orderMaterials$.get());
+    // void whenReady(materials$.get());
+    // void whenReady(orderMaterials$.get());
     void whenReady(orderProducts$.get());
-    void whenReady(supplierContactPersons$.get());
-    void whenReady(suppliers$.get());
+    // void whenReady(supplierContactPersons$.get());
+    // void whenReady(suppliers$.get());
   });
   return <></>;
 };

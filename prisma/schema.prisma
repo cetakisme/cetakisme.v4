@@ -61,7 +61,7 @@ model OrderMaterial {
 
   materialId  String   @default("")
   orderId     String   @default("")
-  suppplierId String    @default("")
+  supplierId String    @default("")
 }
 
 model OrderProduct {
@@ -72,7 +72,7 @@ model OrderProduct {
 
   productId   String  @default("")
   orderId     String  @default("")
-  suppplierId String  @default("")
+  supplierId String  @default("")
 }
 
 model Order {
