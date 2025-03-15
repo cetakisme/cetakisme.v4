@@ -2,162 +2,176 @@
 // // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-    provider = "prisma-client-js"
+  provider = "prisma-client-js"
 }
 
 datasource db {
-    provider = "postgresql"
-    url      = env("DATABASE_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Role {
+  id          String    @id @default(uuid())
+  permissions String[]  @default([])
+  deleted     Boolean   @default(false)
+}
+
+model CustomUser {
+  id          String    @id @default(uuid())
+  username    String    @default("")
+  password    String    @default("")
+  deleted     Boolean   @default(false)
+
+  roleId      String    @default("")
 }
 
 model Discount {
-    id          String      @id @default(uuid())
-    name        String      @default("")
-    value       Int         @default(0)
-    type        String      @default("")
-    deleted         Boolean     @default(false)
+  id      String  @id @default(uuid())
+  name    String  @default("")
+  value   Int     @default(0)
+  type    String  @default("")
+  deleted Boolean @default(false)
 
-    order_id     String      @default("")
+  order_id String @default("")
 }
 
 model Cost {
-    id          String      @id @default(uuid())
-    name        String      @default("")
-    value       Int         @default(0)
-    type        String      @default("")
-    deleted     Boolean     @default(false)
+  id      String  @id @default(uuid())
+  name    String  @default("")
+  value   Int     @default(0)
+  type    String  @default("")
+  deleted Boolean @default(false)
 
-    order_id    String      @default("")
+  order_id String @default("")
 }
 
 model Order {
-    id                  String      @id @default(uuid())
-    payment_type        String      @default("")
-    order_status        String      @default("")
-    payment_status      String      @default("")
-    payment_provider    String      @default("")
-    paid                Int         @default(0)
-    deleted             Boolean     @default(false)
-    created_at          DateTime    @default(now())
-    notes               String      @default("")            
-    deadline            DateTime?   
-
-    customer_id         String      @default("")
+  id               String    @id @default(uuid())
+  payment_type     String    @default("")
+  order_status     String    @default("")
+  payment_status   String    @default("")
+  payment_provider String    @default("")
+  paid             Int       @default(0)
+  deleted          Boolean   @default(false)
+  created_at       DateTime  @default(now())
+  notes            String    @default("")
+  deadline         DateTime?
+  customer_id      String    @default("")
 }
 
 model OrderVariantAddon {
-    id          String          @id @default(uuid())
-    qty         Int             @default(0)
-    deleted     Boolean         @default(false)
+  id      String  @id @default(uuid())
+  qty     Int     @default(0)
+  deleted Boolean @default(false)
 
-    addonValueId        String          @default("")
+  addonValueId String @default("")
 
-    orderVariantId  String          @default("")
+  orderVariantId String @default("")
 }
 
 model OrderVariant {
-    id          String          @id @default(uuid())
-    qty         Int             @default(0)
-    deleted     Boolean         @default(false)
+  id      String  @id @default(uuid())
+  qty     Int     @default(0)
+  deleted Boolean @default(false)
 
-    order_id     String             @default("")
+  order_id String @default("")
 
-    variant_id   String             @default("")
+  variant_id String @default("")
 }
 
 model Customer {
-    id          String      @id @default(uuid())
-    name        String      @default("")
-    address     String      @default("")
-    phone       String      @default("")
-    job         String      @default("")
-    notes       String      @default("")
-    age         Int         @default(0)
-    deleted     Boolean     @default(false)
+  id      String  @id @default(uuid())
+  name    String  @default("")
+  address String  @default("")
+  phone   String  @default("")
+  job     String  @default("")
+  notes   String  @default("")
+  age     Int     @default(0)
+  deleted Boolean @default(false)
 }
 
 model Product {
-    id          String      @id @default(uuid())
-    name        String      @default("")
-    base_price  Int         @default(0)
-    images      String[]    @default(["","","","",""])
-    active      Boolean     @default(true)
-    deleted     Boolean     @default(false)
-    created_at  DateTime    @default(now())
+  id         String   @id @default(uuid())
+  name       String   @default("")
+  base_price Int      @default(0)
+  images     String[] @default(["", "", "", "", ""])
+  active     Boolean  @default(true)
+  deleted    Boolean  @default(false)
+  created_at DateTime @default(now())
 
-    addons      ProductToAddon[]
-    attributes  ProductAttribute[]
-    variants    ProductVariant[]
+  addons     ProductToAddon[]
+  attributes ProductAttribute[]
+  variants   ProductVariant[]
 }
 
 model ProductToAddon {
-    id          String      @id @default(uuid())
-    product_id  String
-    addon_id    String
-    product     Product     @relation(fields: [product_id], references: [id], onDelete: Cascade)
-    addon       Addon       @relation(fields: [addon_id],references: [id], onDelete: Cascade)
-    deleted     Boolean     @default(false)
+  id         String  @id @default(uuid())
+  product_id String
+  addon_id   String
+  product    Product @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  addon      Addon   @relation(fields: [addon_id], references: [id], onDelete: Cascade)
+  deleted    Boolean @default(false)
 }
 
 model Addon {
-    id          String      @id @default(uuid())
-    name        String      @default("")
-    deleted     Boolean     @default(false)
+  id      String  @id @default(uuid())
+  name    String  @default("")
+  deleted Boolean @default(false)
 
-    products    ProductToAddon[]
-    values      AddonValue[]
+  products ProductToAddon[]
+  values   AddonValue[]
 }
 
 model AddonValue {
-    id          String      @id @default(uuid())
-    name        String      @default("")
-    price       Int         @default(0)
-    deleted     Boolean     @default(false)
+  id      String  @id @default(uuid())
+  name    String  @default("")
+  price   Int     @default(0)
+  deleted Boolean @default(false)
 
-    addon_id    String
-    addon       Addon       @relation(fields: [addon_id],references: [id], onDelete: Cascade)
+  addon_id String
+  addon    Addon  @relation(fields: [addon_id], references: [id], onDelete: Cascade)
 }
 
 model Attribute {
-    id          String      @id @default(uuid())
-    name        String      @default("")
-    deleted     Boolean     @default(false)
+  id      String  @id @default(uuid())
+  name    String  @default("")
+  deleted Boolean @default(false)
 
-    products    ProductAttribute[]
+  products ProductAttribute[]
 }
 
 model ProductAttribute {
-    id          String      @id @default(uuid())
-    deleted     Boolean     @default(false)
+  id      String  @id @default(uuid())
+  deleted Boolean @default(false)
 
-    product_id      String
-    product         Product     @relation(fields: [product_id], references: [id], onDelete: Cascade)
-    attribute_id    String
-    attribute       Attribute   @relation(fields: [attribute_id],references: [id], onDelete: Cascade)
+  product_id   String
+  product      Product   @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  attribute_id String
+  attribute    Attribute @relation(fields: [attribute_id], references: [id], onDelete: Cascade)
 
-    values          ProductAttribteValue[]
+  values ProductAttribteValue[]
 }
 
 model ProductAttribteValue {
-    id          String      @id @default(uuid())
-    value       String      @default("")
-    color       String      @default("")
-    image       String      @default("")
-    deleted     Boolean     @default(false)
+  id      String  @id @default(uuid())
+  value   String  @default("")
+  color   String  @default("")
+  image   String  @default("")
+  deleted Boolean @default(false)
 
-    attribute_id    String
-    attribute       ProductAttribute @relation(fields: [attribute_id], references: [id], onDelete: Cascade)
+  attribute_id String
+  attribute    ProductAttribute @relation(fields: [attribute_id], references: [id], onDelete: Cascade)
 }
 
 model ProductVariant {
-    id          String      @id @default(uuid())
-    name        String      @default("")
-    price       Int         @default(0)
-    qty         Int         @default(0)
-    deleted     Boolean     @default(false)
+  id      String  @id @default(uuid())
+  name    String  @default("")
+  price   Int     @default(0)
+  qty     Int     @default(0)
+  deleted Boolean @default(false)
 
-    product_id  String
-    product     Product     @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  product_id String
+  product    Product @relation(fields: [product_id], references: [id], onDelete: Cascade)
 }
 
 // model Product {
@@ -219,3 +233,73 @@ model ProductVariant {
 //     color       String      @default("")
 //     deleted     Boolean     @default(false)
 // } 
+
+model User {
+  id              String    @id
+  name            String
+  email           String
+  emailVerified   Boolean
+  image           String?
+  createdAt       DateTime
+  updatedAt       DateTime
+  username        String?
+  displayUsername String?
+  sessions        Session[]
+  accounts        Account[]
+
+  role       String?
+  banned     Boolean?
+  banReason  String?
+  banExpires DateTime?
+
+  @@unique([email])
+  @@unique([username])
+  @@map("user")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String
+  createdAt DateTime
+  updatedAt DateTime
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  impersonatedBy String?
+
+  @@unique([token])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime
+  updatedAt             DateTime
+
+  @@map("account")
+}
+
+model Verification {
+  id         String    @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime?
+  updatedAt  DateTime?
+
+  @@map("verification")
+}

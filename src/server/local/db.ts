@@ -154,3 +154,19 @@ export const orderVariantAddons$ = createSupabaseObservable({
     return value;
   },
 });
+
+export const roles$ = createSupabaseObservable({
+  collection: "Role",
+  transform: async (value) => {
+    await dexie.roles.put({ ...value, permissions: value.permissions ?? [] });
+    return value;
+  },
+});
+
+export const users$ = createSupabaseObservable({
+  collection: "CustomUser",
+  transform: async (value) => {
+    await dexie.users.put(value);
+    return value;
+  },
+});

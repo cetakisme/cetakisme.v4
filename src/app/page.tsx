@@ -1,5 +1,10 @@
+import User from "@/components/hasan/auth/user";
 import React from "react";
 
 export default function HomePage() {
-  return <div></div>;
+  return (
+    <div>
+      <User />
+    </div>
+  );
 }

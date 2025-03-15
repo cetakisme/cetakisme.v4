@@ -4,6 +4,7 @@ import type {
   Attribute,
   Cost,
   Customer,
+  CustomUser,
   Discount,
   Order,
   OrderVariant,
@@ -13,6 +14,7 @@ import type {
   ProductAttribute,
   ProductToAddon,
   ProductVariant,
+  Role,
 } from "@prisma/client";
 import Dexie, { type EntityTable } from "dexie";
 import relationships from "dexie-relationships";
@@ -37,6 +39,8 @@ const dexie = new Dexie("FriendsDatabase", {
   orderVariants: EntityTable<OrderVariant, "id">;
   orderVariantAddons: EntityTable<OrderVariantAddon, "id">;
   customers: EntityTable<Customer, "id">;
+  users: EntityTable<CustomUser, "id">;
+  roles: EntityTable<Role, "id">;
 };
 
 // Schema declaration:
@@ -55,6 +59,8 @@ dexie.version(1).stores({
   orderVariants: "id, deleted, order_id, variant_id",
   orderVariantAddons: "id, deleted, orderVariantId, addonValueId",
   customers: "id, deleted",
+  users: "id, userId, roleId",
+  roles: "id, userId",
 });
 
 export { dexie };
