@@ -1,3 +1,5 @@
+"use client";
+
 import { ScrollArea } from "@/components/ui/scroll-area";
 import ClientPage from "./cilent";
 import React from "react";
