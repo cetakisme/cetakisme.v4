@@ -80,7 +80,6 @@ export const menus: Menu[] = [
       },
       {
         title: "Suplier",
-        url: "/admin/pelanggan-dan-suplier/suplier",
         permission: "suplier",
         children: [],
       },

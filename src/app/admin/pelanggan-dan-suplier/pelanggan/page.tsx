@@ -129,7 +129,7 @@ const Page = () => {
     <Authenticated permission="pelanggan" fallback={AuthFallback}>
       <ScrollArea className="h-screen p-8">
         <CustomerContext.Provider value={customerId}>
-          <Table data={customers} />
+          <Table data={customers ?? []} />
         </CustomerContext.Provider>
       </ScrollArea>
     </Authenticated>
@@ -140,11 +140,10 @@ interface ICustomerContext {
   customerId: string;
 }
 
-const Table: React.FC<{ data?: Customer[] }> = ({ data }) => {
-  const d = React.useMemo(() => data ?? [], [data]);
+const Table: React.FC<{ data: Customer[] }> = ({ data }) => {
   const table = useTable({
     columns: columns,
-    data: d,
+    data: data,
   });
 
   return (
