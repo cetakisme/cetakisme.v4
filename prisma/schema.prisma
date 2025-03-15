@@ -11,18 +11,18 @@ datasource db {
 }
 
 model Role {
-  id          String    @id @default(uuid())
-  permissions String[]  @default([])
-  deleted     Boolean   @default(false)
+  id          String   @id @default(uuid())
+  permissions String[] @default([])
+  deleted     Boolean  @default(false)
 }
 
 model CustomUser {
-  id          String    @id @default(uuid())
-  username    String    @default("")
-  password    String    @default("")
-  deleted     Boolean   @default(false)
+  id       String  @id @default(uuid())
+  username String  @default("")
+  password String  @default("")
+  deleted  Boolean @default(false)
 
-  roleId      String    @default("")
+  roleId String @default("")
 }
 
 model Discount {
@@ -45,6 +45,36 @@ model Cost {
   order_id String @default("")
 }
 
+model Material {
+  id      String  @id @default(uuid())
+  name    String  @default("")
+  qty     Int     @default(0)
+  unit    String  @default("")
+  deleted Boolean @default(false)
+}
+
+model OrderMaterial {
+  id      String  @id @default(uuid())
+  qty     Int     @default(0)
+  type    String  @default("")
+  deleted Boolean @default(false)
+
+  materialId  String   @default("")
+  orderId     String   @default("")
+  suppplierId String    @default("")
+}
+
+model OrderProduct {
+  id      String  @id @default(uuid())
+  qty     Int     @default(0)
+  type    String  @default("")
+  deleted Boolean @default(false)
+
+  productId   String  @default("")
+  orderId     String  @default("")
+  suppplierId String  @default("")
+}
+
 model Order {
   id               String    @id @default(uuid())
   payment_type     String    @default("")
@@ -55,6 +85,7 @@ model Order {
   deleted          Boolean   @default(false)
   created_at       DateTime  @default(now())
   notes            String    @default("")
+  driveUrl         String    @default("")
   deadline         DateTime?
   customer_id      String    @default("")
 }
@@ -90,14 +121,37 @@ model Customer {
   deleted Boolean @default(false)
 }
 
+model Supplier {
+  id      String  @id @default(uuid())
+  name    String  @default("")
+  address String  @default("")
+  phone   String  @default("")
+  notes   String  @default("")
+  deleted Boolean @default(false)
+}
+
+model SupplierContactPerson {
+  id      String  @id @default(uuid())
+  name    String  @default("")
+  address String  @default("")
+  phone   String  @default("")
+  job     String  @default("")
+  notes   String  @default("")
+  age     Int     @default(0)
+  deleted Boolean @default(false)
+
+  supplierId String @default("")
+}
+
 model Product {
-  id         String   @id @default(uuid())
-  name       String   @default("")
-  base_price Int      @default(0)
-  images     String[] @default(["", "", "", "", ""])
-  active     Boolean  @default(true)
-  deleted    Boolean  @default(false)
-  created_at DateTime @default(now())
+  id          String   @id @default(uuid())
+  name        String   @default("")
+  base_price  Int      @default(0)
+  images      String[] @default(["", "", "", "", ""])
+  active      Boolean  @default(true)
+  deleted     Boolean  @default(false)
+  description String   @default("")
+  created_at  DateTime @default(now())
 
   addons     ProductToAddon[]
   attributes ProductAttribute[]

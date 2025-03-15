@@ -91,7 +91,7 @@ export const menus: Menu[] = [
     children: [
       {
         title: "Pending",
-        url: "/admin/order?status=peding",
+        url: "/admin/orderan/pending",
         permission: "pending",
         children: [],
       },
@@ -99,21 +99,25 @@ export const menus: Menu[] = [
         title: "DP",
         children: [],
         permission: "dp",
+        url: "/admin/orderan/dp",
       },
       {
         title: "Desain",
         children: [],
         permission: "desain",
+        url: "/admin/orderan/desain",
       },
       {
         title: "Ready",
         children: [],
         permission: "ready",
+        url: "/admin/orderan/ready",
       },
       {
         title: "Selesai",
         children: [],
         permission: "selesai",
+        url: "/admin/orderan/selesai",
       },
     ],
   },

@@ -226,6 +226,7 @@ const Page = () => {
       payment_type: "",
       notes: "",
       payment_provider: "",
+      driveUrl: "",
     });
 
     discounts$.set((prev) => {
@@ -555,6 +556,7 @@ const PaySheet = () => {
     orders$[ctx$.orderId.get()]!.set({
       id: ctx$.orderId.get(),
       created_at: new Date().toISOString(),
+      driveUrl: "",
       customer_id: customer.id,
       deadline: null,
       deleted: false,
@@ -851,6 +853,7 @@ const DeleteOrder = () => {
       payment_type: "",
       notes: "",
       payment_provider: "",
+      driveUrl: "",
     }));
 
     discounts$.set((prev) => {

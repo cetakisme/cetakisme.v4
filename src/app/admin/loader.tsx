@@ -5,6 +5,9 @@ import {
   costs$,
   customer$,
   discounts$,
+  materials$,
+  orderMaterials$,
+  orderProducts$,
   orders$,
   orderVariantAddons$,
   orderVariants$,
@@ -14,6 +17,8 @@ import {
   productToAddons$,
   productVariants$,
   roles$,
+  supplierContactPersons$,
+  suppliers$,
   users$,
 } from "@/server/local/db";
 import { dexie } from "@/server/local/dexie";
@@ -31,11 +36,11 @@ const Loader = () => {
   }, [session]);
 
   useMount(async () => {
-    // await dexie.transaction("rw", dexie.tables, async () => {
-    //   for (const table of dexie.tables) {
-    //     await table.clear();
-    //   }
-    // });
+    await dexie.transaction("rw", dexie.tables, async () => {
+      for (const table of dexie.tables) {
+        await table.clear();
+      }
+    });
 
     void whenReady(orderVariants$.get());
     void whenReady(orderVariantAddons$.get());
@@ -50,6 +55,11 @@ const Loader = () => {
     void whenReady(products$.get());
     void whenReady(users$.get());
     void whenReady(roles$.get());
+    void whenReady(materials$.get());
+    void whenReady(orderMaterials$.get());
+    void whenReady(orderProducts$.get());
+    void whenReady(supplierContactPersons$.get());
+    void whenReady(suppliers$.get());
   });
   return <></>;
 };

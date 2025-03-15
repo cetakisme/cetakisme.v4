@@ -38,7 +38,7 @@ const columns: ColumnDef<Customer>[] = [
   {
     id: "name",
     accessorKey: "name",
-    size: 2000,
+    // size: 2000,
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Nama" />
     ),
@@ -50,6 +50,34 @@ const columns: ColumnDef<Customer>[] = [
           </div>
         )}
       </Memo>
+    ),
+  },
+  {
+    id: "umur",
+    accessorKey: "age",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Umur" />
+    ),
+  },
+  {
+    id: "alamat",
+    accessorKey: "address",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Alamat" />
+    ),
+  },
+  {
+    id: "telepon",
+    accessorKey: "phone",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Telepon" />
+    ),
+  },
+  {
+    id: "pekerjaan",
+    accessorKey: "job",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Pekerjaan" />
     ),
   },
   {
@@ -220,6 +248,14 @@ const CustomerForm = () => {
           defaultValue: customer$[_customer$.customerId.get()]!.address.get(),
           onBlur: (e) =>
             customer$[_customer$.customerId.get()]!.address.set(e.target.value),
+        }}
+      />
+      <InputWithLabel
+        label="Telepon"
+        inputProps={{
+          defaultValue: customer$[_customer$.customerId.get()]!.phone.get(),
+          onBlur: (e) =>
+            customer$[_customer$.customerId.get()]!.phone.set(e.target.value),
         }}
       />
       <InputWithLabel

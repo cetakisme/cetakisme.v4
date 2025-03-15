@@ -170,3 +170,45 @@ export const users$ = createSupabaseObservable({
     return value;
   },
 });
+
+export const materials$ = createSupabaseObservable({
+  collection: "Material",
+  transform: async (value) => {
+    await dexie.materials.put(value);
+    return value;
+  },
+});
+
+export const orderMaterials$ = createSupabaseObservable({
+  collection: "OrderMaterial",
+  transform: async (value) => {
+    await dexie.orderMaterials.put(value);
+    return value;
+  },
+});
+
+export const orderProducts$ = createSupabaseObservable({
+  collection: "OrderProduct",
+  transform: async (value) => {
+    await dexie.orderProducts.put(value);
+    return value;
+  },
+});
+
+export const suppliers$ = createSupabaseObservable({
+  collection: "Supplier",
+  transform: async (value) => {
+    await dexie.suppliers.put(value);
+    return value;
+  },
+});
+
+export const supplierContactPersons$ = createSupabaseObservable({
+  collection: "SupplierContactPerson",
+  transform: async (value) => {
+    await dexie.supplierContactPersons.put(value);
+    return value;
+  },
+});
+
+export const orderStatuses = ["pending", "dp", "desain", "ready", "selesai"];

@@ -53,6 +53,7 @@ import { DataTableFilterName } from "@/hooks/Table/DataTableFilterName";
 import { Popover, PopoverClose } from "@radix-ui/react-popover";
 import DataTableDeleteSelection from "@/hooks/Table/DataTableDeleteSelection";
 import { PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Textarea } from "@/components/ui/textarea";
 
 interface IProductContext extends Omit<DB<"Product">, "created_at"> {
   addons: (DB<"Addon"> & { values: DB<"AddonValue">[] })[];
@@ -144,6 +145,7 @@ const Product: React.FC<{ id: string }> = ({ id }) => {
     send: false,
     attributes: [],
     variants: [],
+    description: "",
   });
 
   // const debouncedUpdate = React.useCallback(
@@ -223,6 +225,25 @@ const ProductInfo = () => {
                     )
                   }
                   type="number"
+                />
+              </>
+            )}
+          </Memo>
+        </div>
+        <div className="">
+          <Memo>
+            {() => (
+              <>
+                <Label>Deskripsi</Label>
+                <Textarea
+                  key={product$.id.get()}
+                  value={product$.description.get()}
+                  onChange={(e) => product$.description.set(e.target.value)}
+                  onBlur={(e) =>
+                    products$[product$.id.get()]?.description.set(
+                      e.target.value,
+                    )
+                  }
                 />
               </>
             )}
