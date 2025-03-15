@@ -119,6 +119,14 @@ const Actions: React.FC<{ customer: Customer }> = ({ customer }) => {
 };
 
 const Page = () => {
+  return (
+    <Authenticated permission="pelanggan" fallback={AuthFallback}>
+      <Customers />
+    </Authenticated>
+  );
+};
+
+const Customers = () => {
   const customerId = useObservable({ customerId: "" });
 
   const customers = useLiveQuery(() =>
@@ -126,13 +134,11 @@ const Page = () => {
   );
 
   return (
-    // <Authenticated permission="pelanggan" fallback={AuthFallback}>
     <ScrollArea className="h-screen p-8">
       <CustomerContext.Provider value={customerId}>
         <Table data={customers ?? []} />
       </CustomerContext.Provider>
     </ScrollArea>
-    // </Authenticated>
   );
 };
 
