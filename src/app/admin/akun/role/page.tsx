@@ -140,6 +140,16 @@ const DeleteUser: React.FC<{ role: Role } & DialogProps> = ({
 };
 
 const Page = () => {
+  return (
+    <Authenticated permission="role" fallback={AuthFallback}>
+      <Roles />
+    </Authenticated>
+  );
+};
+
+export default Page;
+
+const Roles = () => {
   const users = useLiveQuery(() =>
     dexie.roles.filter((x) => !x.deleted).toArray(),
   );
@@ -147,30 +157,25 @@ const Page = () => {
     data: users ?? [],
     columns: columns,
   });
-
   return (
-    <Authenticated permission="role" fallback={AuthFallback}>
-      <ScrollArea className="h-screen p-8">
-        <div className="space-y-2">
-          <div className="flex h-9 justify-between">
-            <DataTableFilterName table={table} />
-            <div className="flex gap-2">
-              {/* <AddDialog /> */}
-              <Authenticated permission="role-created">
-                <AddSheet />
-              </Authenticated>
-              <DataTableViewOptions table={table} />
-            </div>
+    <ScrollArea className="h-screen p-8">
+      <div className="space-y-2">
+        <div className="flex h-9 justify-between">
+          <DataTableFilterName table={table} />
+          <div className="flex gap-2">
+            {/* <AddDialog /> */}
+            <Authenticated permission="role-created">
+              <AddSheet />
+            </Authenticated>
+            <DataTableViewOptions table={table} />
           </div>
-          <DataTableContent table={table} />
-          <DataTablePagination table={table} />
         </div>
-      </ScrollArea>
-    </Authenticated>
+        <DataTableContent table={table} />
+        <DataTablePagination table={table} />
+      </div>
+    </ScrollArea>
   );
 };
-
-export default Page;
 
 const AddSheet = () => {
   return (

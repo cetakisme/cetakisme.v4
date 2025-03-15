@@ -215,6 +215,16 @@ const Password: React.FC<{ user: CustomUser }> = ({ user }) => {
 };
 
 const Page = () => {
+  return (
+    <Authenticated permission="user" fallback={AuthFallback}>
+      <Users />
+    </Authenticated>
+  );
+};
+
+export default Page;
+
+const Users = () => {
   const users = useLiveQuery(() =>
     dexie.users.filter((x) => !x.deleted).toArray(),
   );
@@ -222,29 +232,24 @@ const Page = () => {
     data: users ?? [],
     columns: columns,
   });
-
   return (
-    <Authenticated permission="user" fallback={AuthFallback}>
-      <ScrollArea className="h-screen p-8">
-        <div className="space-y-2">
-          <div className="flex h-9 justify-between">
-            <DataTableFilterName table={table} />
-            <div className="flex gap-2">
-              <Authenticated permission="user-create">
-                <AddSheet />
-              </Authenticated>
-              <DataTableViewOptions table={table} />
-            </div>
+    <ScrollArea className="h-screen p-8">
+      <div className="space-y-2">
+        <div className="flex h-9 justify-between">
+          <DataTableFilterName table={table} />
+          <div className="flex gap-2">
+            <Authenticated permission="user-create">
+              <AddSheet />
+            </Authenticated>
+            <DataTableViewOptions table={table} />
           </div>
-          <DataTableContent table={table} />
-          <DataTablePagination table={table} />
         </div>
-      </ScrollArea>
-    </Authenticated>
+        <DataTableContent table={table} />
+        <DataTablePagination table={table} />
+      </div>
+    </ScrollArea>
   );
 };
-
-export default Page;
 
 const AddSheet = () => {
   return (
