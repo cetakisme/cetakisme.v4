@@ -243,6 +243,7 @@ const AturBarangSheet: React.FC<DialogProps & { order: Order }> = ({
                 productId: e.id,
                 qty: 0,
                 type: "inventory",
+                supplierId: "",
               });
             }}
             data={products ?? []}
