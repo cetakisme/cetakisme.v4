@@ -31,11 +31,11 @@ const Loader = () => {
   }, [session]);
 
   useMount(async () => {
-    await dexie.transaction("rw", dexie.tables, async () => {
-      for (const table of dexie.tables) {
-        await table.clear();
-      }
-    });
+    // await dexie.transaction("rw", dexie.tables, async () => {
+    //   for (const table of dexie.tables) {
+    //     await table.clear();
+    //   }
+    // });
 
     void whenReady(orderVariants$.get());
     void whenReady(orderVariantAddons$.get());
