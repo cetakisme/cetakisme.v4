@@ -158,6 +158,7 @@ const ProdukTable: React.FC<{ products?: Product[] }> = ({ products }) => {
                     base_price: 0,
                     images: ["", "", "", "", ""],
                     created_at: new Date().toISOString(),
+                    description: "",
                   });
                 }}
               >
