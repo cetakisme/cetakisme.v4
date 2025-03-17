@@ -2,6 +2,7 @@
 import { authClient } from "@/lib/better-auth/auth-client";
 import { user$ } from "@/server/local/auth";
 import {
+  addons$,
   costs$,
   customer$,
   discounts$,
@@ -49,6 +50,7 @@ const Loader = () => {
     void whenReady(productVariants$.get());
     void whenReady(productAttributeValue$.get());
     void whenReady(productToAddons$.get());
+    void whenReady(addons$.get());
     void whenReady(productAttribute$.get());
     void whenReady(orders$.get());
     void whenReady(customer$.get());

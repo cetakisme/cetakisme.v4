@@ -62,6 +62,12 @@ export const menus: Menu[] = [
         permission: "produk",
       },
       {
+        title: "Bahan Dan Aset",
+        children: [],
+        url: "/admin/katalog/bahan-dan-aset",
+        permission: "bahan-dan-aset",
+      },
+      {
         title: "Inventori",
         permission: "inventori",
         children: [],

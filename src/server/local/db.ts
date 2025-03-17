@@ -171,13 +171,13 @@ export const users$ = createSupabaseObservable({
   },
 });
 
-// export const materials$ = createSupabaseObservable({
-//   collection: "Material",
-//   transform: async (value) => {
-//     await dexie.materials.put(value);
-//     return value;
-//   },
-// });
+export const materials$ = createSupabaseObservable({
+  collection: "Material",
+  transform: async (value) => {
+    await dexie.materials.put(value);
+    return value;
+  },
+});
 
 // export const orderMaterials$ = createSupabaseObservable({
 //   collection: "OrderMaterial",
