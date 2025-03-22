@@ -256,6 +256,7 @@ const Form = () => {
               label="Qty"
               inputProps={{
                 defaultValue: materials$[ctx$.id.get()]!.qty.get(),
+                type: "number",
                 onBlur: (e) =>
                   materials$[ctx$.id.get()]!.qty.set(+e.target.value),
               }}
