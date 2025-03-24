@@ -6,8 +6,10 @@ import {
   costs$,
   customer$,
   discounts$,
+  expenses$,
+  incomes$,
   materials$,
-  // orderMaterials$,
+  orderMaterials$,
   orderProducts$,
   orders$,
   orderVariantAddons$,
@@ -58,10 +60,12 @@ const Loader = () => {
     void whenReady(users$.get());
     void whenReady(roles$.get());
     void whenReady(materials$.get());
-    // void whenReady(orderMaterials$.get());
+    void whenReady(orderMaterials$.get());
     void whenReady(orderProducts$.get());
     void whenReady(supplierContactPersons$.get());
     void whenReady(suppliers$.get());
+    void whenReady(expenses$.get());
+    void whenReady(incomes$.get());
   });
   return <></>;
 };

@@ -6,9 +6,11 @@ import type {
   Customer,
   CustomUser,
   Discount,
+  Expense,
+  Income,
   Material,
   Order,
-  // OrderMaterial,
+  OrderMaterial,
   OrderProduct,
   OrderVariant,
   OrderVariantAddon,
@@ -47,10 +49,12 @@ const dexie = new Dexie("FriendsDatabase", {
   users: EntityTable<CustomUser, "id">;
   roles: EntityTable<Role, "id">;
   materials: EntityTable<Material, "id">;
-  // orderMaterials: EntityTable<OrderMaterial, "id">;
+  orderMaterials: EntityTable<OrderMaterial, "id">;
   orderProducts: EntityTable<OrderProduct, "id">;
   suppliers: EntityTable<Supplier, "id">;
   supplierContactPersons: EntityTable<SupplierContactPerson, "id">;
+  income: EntityTable<Income, "id">;
+  expense: EntityTable<Expense, "id">;
 };
 
 // Schema declaration:
@@ -72,10 +76,12 @@ dexie.version(1).stores({
   users: "id, userId, roleId",
   roles: "id, userId",
   materials: "id",
-  // orderMaterials: "id, orderId",
+  orderMaterials: "id, orderId",
   orderProducts: "id, orderId",
   suppliers: "id",
   supplierContactPersons: "id, supplierId",
+  income: "id",
+  expense: "id",
 });
 
 export { dexie };

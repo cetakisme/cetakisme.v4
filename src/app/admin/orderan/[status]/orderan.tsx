@@ -7,14 +7,19 @@ import { DataTablePagination } from "@/hooks/Table/DataTablePagination";
 import { useTable } from "@/hooks/Table/useTable";
 import {
   customer$,
+  expenses$,
   generateId,
+  materials$,
+  orderMaterials$,
   orderProducts$,
   orders$,
   orderStatuses,
   products$,
+  productVariants$,
+  suppliers$,
 } from "@/server/local/db";
 import { dexie } from "@/server/local/dexie";
-import type { Order } from "@prisma/client";
+import type { Order, OrderMaterial, OrderProduct } from "@prisma/client";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useLiveQuery } from "dexie-react-hooks";
 import React from "react";
@@ -53,6 +58,9 @@ import { Label } from "@/components/ui/label";
 import type { DialogProps } from "@radix-ui/react-dialog";
 import RenderList from "@/components/hasan/render-list";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Combobox } from "@/components/hasan/combobox";
+import { toast } from "sonner";
+import Title from "@/components/hasan/title";
 
 const columns: ColumnDef<Order>[] = [
   {
@@ -166,6 +174,218 @@ const AturBarangSheet: React.FC<DialogProps & { order: Order }> = ({
   order,
   ...props
 }) => {
+  return (
+    <Sheet
+      {...props}
+      title="Atur Barang"
+      content={() => (
+        <div className="space-y-12">
+          <div className="space-y-2">
+            <Label className="font-bold">Produk</Label>
+            <OrderProucts order={order} />
+          </div>
+          <div className="space-y-2">
+            <Label className="font-bold">Bahan</Label>
+            <OrderMaterials order={order} />
+          </div>
+        </div>
+      )}
+    />
+  );
+};
+
+const OrderMaterials: React.FC<{ order: Order }> = ({ order }) => {
+  const orderMaterials = useLiveQuery(() =>
+    dexie.orderMaterials
+      .where("orderId")
+      .equals(order.id)
+      .and((a) => !a.deleted)
+      .toArray(),
+  );
+  const materials = useLiveQuery(() =>
+    dexie.materials.filter((a) => !a.deleted).toArray(),
+  );
+  return (
+    <>
+      <RenderList
+        className="space-y-4"
+        data={orderMaterials ?? []}
+        getKey={(data) => data.id}
+        render={(data, index) => (
+          <div className={`w-full space-y-2 border-b pb-4`}>
+            <div className="flex w-full items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Button
+                  variant={"destructive"}
+                  size={"icon"}
+                  className="h-4 w-4"
+                  onClick={() => {
+                    if (data.type === "vendor") {
+                      expenses$[data.id]!.set((p) => ({
+                        ...p,
+                        deleted: true,
+                        expense: 0,
+                        notes: "",
+                        type: "",
+                      }));
+                    }
+
+                    if (data.type === "inventory") {
+                      materials$[data.materialId]?.qty.set((p) => p + data.qty);
+                    }
+
+                    orderMaterials$[data.id]!.set((p) => ({
+                      ...p,
+                      orderId: "",
+                      pay: 0,
+                      deleted: true,
+                      productId: "",
+                      supplierId: "",
+                      qty: 0,
+                      type: "",
+                      variantId: "",
+                    }));
+                  }}
+                >
+                  <LucideDot />
+                </Button>
+                <Memo>
+                  {() => (
+                    <Label>{materials$[data.materialId]!.name.get()}</Label>
+                  )}
+                </Memo>
+              </div>
+              {materials$[data.materialId]!.aset.get() === false && (
+                <Checkbox
+                  checked={data.type === "vendor"}
+                  onCheckedChange={(e) => {
+                    if (e === true) {
+                      materials$[data.materialId]?.qty.set((p) => p + data.qty);
+
+                      orderMaterials$[data.id]!.set((p) => {
+                        return {
+                          ...p,
+                          type: "vendor",
+                          qty: 0,
+                        };
+                      });
+
+                      if (expenses$[data.id]?.get() === undefined) {
+                        expenses$[data.id]!.set({
+                          id: data.id,
+                          deleted: false,
+                          createdAt: new Date().toISOString(),
+                          expense: 0,
+                          notes: "",
+                          type: "",
+                          updatedAt: new Date().toISOString(),
+                        });
+                      } else {
+                        expenses$[data.id]!.set((p) => ({
+                          ...p,
+                          deleted: false,
+                          type: "bahan",
+                        }));
+                      }
+
+                      return;
+                    }
+
+                    if (e === false) {
+                      orderMaterials$[data.id]!.set((p) => {
+                        return {
+                          ...p,
+                          type: "inventory",
+                          qty: 0,
+                        };
+                      });
+
+                      expenses$[data.id]!.set((p) => ({
+                        ...p,
+                        deleted: true,
+                        expense: 0,
+                        notes: "",
+                        type: "",
+                      }));
+
+                      return;
+                    }
+                  }}
+                />
+              )}
+            </div>
+
+            {materials$[data.materialId]!.aset.get() === false && (
+              <>
+                {data.type === "vendor" ? (
+                  <>
+                    <InputWithLabel
+                      label="Bayar"
+                      inputProps={{
+                        defaultValue: data.pay,
+                        onBlur: (e) => {
+                          orderMaterials$[data.id]!.pay.set(+e.target.value);
+                          expenses$[data.id]!.set((p) => ({
+                            id: data.id,
+                            deleted: false,
+                            createdAt: p?.createdAt ?? new Date().toISOString(),
+                            expense: +e.target.value,
+                            notes: `Bayar ${materials$[data.materialId]!.name.get()} Ke ${suppliers$[data.supplierId]!.name.get()}`,
+                            type: "bahan",
+                            updatedAt: new Date().toISOString(),
+                          }));
+                        },
+                      }}
+                    />
+                    <SupplierSelectorMaterial data={data} />
+                  </>
+                ) : (
+                  <InputWithLabel
+                    label="Qty"
+                    inputProps={{
+                      defaultValue: data.qty,
+                      onBlur: (e) => {
+                        materials$[data.materialId]?.qty.set(
+                          (p) => p - (+e.target.value - data.qty),
+                        );
+                        orderMaterials$[data.id]!.qty.set(+e.target.value);
+                      },
+                    }}
+                  />
+                )}
+              </>
+            )}
+          </div>
+        )}
+      />
+      <PopoverButton
+        title="Order Produk"
+        onSelected={(e) => {
+          const id = generateId();
+          orderMaterials$[id]!.set({
+            deleted: false,
+            id: id,
+            orderId: order.id,
+            materialId: e.id,
+            qty: 0,
+            type: "inventory",
+            supplierId: "",
+            pay: 0,
+          });
+        }}
+        data={materials ?? []}
+        renderItem={(data) => data.name}
+        renderTrigger={() => (
+          <Button>
+            <LucidePlus /> Tambah Order Bahan
+          </Button>
+        )}
+      />
+    </>
+  );
+};
+
+const OrderProucts: React.FC<{ order: Order }> = ({ order }) => {
   const orderProducts = useLiveQuery(() =>
     dexie.orderProducts
       .where("orderId")
@@ -177,85 +397,273 @@ const AturBarangSheet: React.FC<DialogProps & { order: Order }> = ({
     dexie.products.filter((a) => !a.deleted).toArray(),
   );
   return (
-    <Sheet
-      {...props}
-      title="Atur Barang"
-      content={() => (
-        <div className="space-y-2">
-          <Label className="font-bold">Produk</Label>
-          <RenderList
-            data={orderProducts ?? []}
-            render={(data) => (
-              <div className="w-full space-y-2">
-                <div className="flex w-full items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant={"destructive"}
-                      size={"icon"}
-                      className="h-4 w-4"
-                      onClick={() => orderProducts$[data.id]!.deleted.set(true)}
-                    >
-                      <LucideDot />
-                    </Button>
-                    <Memo>
-                      {() => (
-                        <Label>{products$[data.productId]!.name.get()}</Label>
-                      )}
-                    </Memo>
-                  </div>
-                  <Checkbox
-                    checked={data.type === "vendor"}
-                    onCheckedChange={(e) => {
-                      if (e === true) {
-                        orderProducts$[data.id]!.type.set("vendor");
-                        return;
-                      }
+    <>
+      <RenderList
+        className="space-y-4"
+        data={orderProducts ?? []}
+        getKey={(data) => data.id}
+        render={(data, index) => (
+          <div className={`w-full space-y-2 border-b pb-4`}>
+            <div className="flex w-full items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Button
+                  variant={"destructive"}
+                  size={"icon"}
+                  className="h-4 w-4"
+                  onClick={() => {
+                    if (data.type === "vendor") {
+                      expenses$[data.id]!.set((p) => ({
+                        ...p,
+                        deleted: true,
+                        expense: 0,
+                        notes: "",
+                        type: "",
+                      }));
+                    }
 
-                      if (e === false) {
-                        orderProducts$[data.id]!.type.set("inventory");
-                        return;
-                      }
-                    }}
-                  />
-                </div>
+                    if (data.type === "inventory") {
+                      productVariants$[data.variantId]?.qty.set(
+                        (p) => p + data.qty,
+                      );
+                    }
+
+                    orderProducts$[data.id]!.set((p) => ({
+                      ...p,
+                      orderId: "",
+                      pay: 0,
+                      deleted: true,
+                      productId: "",
+                      supplierId: "",
+                      qty: 0,
+                      type: "",
+                      variantId: "",
+                    }));
+                  }}
+                >
+                  <LucideDot />
+                </Button>
+                <Memo>
+                  {() => <Label>{products$[data.productId]!.name.get()}</Label>}
+                </Memo>
+              </div>
+              <Checkbox
+                checked={data.type === "vendor"}
+                onCheckedChange={(e) => {
+                  if (e === true) {
+                    productVariants$[data.variantId]?.qty.set(
+                      (p) => p + data.qty,
+                    );
+
+                    orderProducts$[data.id]!.set((p) => {
+                      return {
+                        ...p,
+                        type: "vendor",
+                        qty: 0,
+                      };
+                    });
+
+                    if (expenses$[data.id]?.get() === undefined) {
+                      expenses$[data.id]!.set({
+                        id: data.id,
+                        deleted: false,
+                        createdAt: new Date().toISOString(),
+                        expense: 0,
+                        notes: "",
+                        type: "",
+                        updatedAt: new Date().toISOString(),
+                      });
+                    } else {
+                      expenses$[data.id]!.set((p) => ({
+                        ...p,
+                        deleted: false,
+                      }));
+                    }
+
+                    return;
+                  }
+
+                  if (e === false) {
+                    orderProducts$[data.id]!.set((p) => {
+                      return {
+                        ...p,
+                        type: "inventory",
+                        qty: 0,
+                      };
+                    });
+
+                    expenses$[data.id]!.set((p) => ({
+                      ...p,
+                      deleted: true,
+                      expense: 0,
+                      notes: "",
+                      type: "",
+                    }));
+
+                    return;
+                  }
+                }}
+              />
+            </div>
+            <VariantSelector data={data} />
+            {data.variantId !== "" && (
+              <>
                 {data.type === "vendor" ? (
-                  <InputWithLabel
-                    label="Bayar"
-                    inputProps={{ defaultValue: data.qty }}
-                  />
+                  <>
+                    <InputWithLabel
+                      label="Bayar"
+                      inputProps={{
+                        defaultValue: data.pay,
+                        onBlur: (e) => {
+                          orderProducts$[data.id]!.pay.set(+e.target.value);
+                          expenses$[data.id]!.set((p) => ({
+                            id: data.id,
+                            deleted: false,
+                            createdAt: p?.createdAt ?? new Date().toISOString(),
+                            expense: +e.target.value,
+                            notes: `Bayar ${products$[data.productId]!.name.get()} ${productVariants$[data.variantId]!.name.get()} Ke ${suppliers$[data.supplierId]!.name.get()}`,
+                            type: "product",
+                            updatedAt: new Date().toISOString(),
+                          }));
+                        },
+                      }}
+                    />
+                    <SupplierSelector data={data} />
+                  </>
                 ) : (
                   <InputWithLabel
                     label="Qty"
-                    inputProps={{ defaultValue: data.qty }}
+                    inputProps={{
+                      defaultValue: data.qty,
+                      onBlur: (e) => {
+                        productVariants$[data.variantId]?.qty.set(
+                          (p) => p - (+e.target.value - data.qty),
+                        );
+                        orderProducts$[data.id]!.qty.set(+e.target.value);
+                      },
+                    }}
                   />
                 )}
-              </div>
+              </>
             )}
-          />
-          <PopoverButton
-            title="Order Produk"
-            onSelected={(e) => {
-              const id = generateId();
-              orderProducts$[id]!.set({
-                deleted: false,
-                id: id,
-                orderId: order.id,
-                productId: e.id,
-                qty: 0,
-                type: "inventory",
-                supplierId: "",
-              });
-            }}
-            data={products ?? []}
-            renderItem={(data) => data.name}
-            renderTrigger={() => (
-              <Button>
-                <LucidePlus /> Tambah Order Produk
-              </Button>
-            )}
-          />
-        </div>
+          </div>
+        )}
+      />
+      <PopoverButton
+        title="Order Produk"
+        onSelected={(e) => {
+          const id = generateId();
+          orderProducts$[id]!.set({
+            deleted: false,
+            id: id,
+            orderId: order.id,
+            productId: e.id,
+            qty: 0,
+            type: "inventory",
+            supplierId: "",
+            variantId: "",
+            pay: 0,
+          });
+        }}
+        data={products ?? []}
+        renderItem={(data) => data.name}
+        renderTrigger={() => (
+          <Button>
+            <LucidePlus /> Tambah Order Produk
+          </Button>
+        )}
+      />
+    </>
+  );
+};
+
+const SupplierSelectorMaterial: React.FC<{ data: OrderMaterial }> = ({
+  data,
+}) => {
+  const suppliers = useLiveQuery(() =>
+    dexie.suppliers.filter((x) => !x.deleted).toArray(),
+  );
+
+  return (
+    <Combobox
+      renderSelected={() => (
+        <Memo>
+          {() => {
+            const id = orderMaterials$[data.id]!.supplierId.get();
+            return suppliers$[id]?.name.get() ?? "Pilih Suplier";
+          }}
+        </Memo>
       )}
+      title="Varian"
+      onSelected={(e) => {
+        orderMaterials$[data.id]!.supplierId.set(e.id);
+        expenses$[data.id]?.notes.set(
+          `Bayar ${materials$[data.materialId]!.name.get()} Ke ${e.name}`,
+        );
+      }}
+      data={suppliers ?? []}
+      renderItem={(data) => data.name}
+    />
+  );
+};
+
+const SupplierSelector: React.FC<{ data: OrderProduct }> = ({ data }) => {
+  const suppliers = useLiveQuery(() =>
+    dexie.suppliers.filter((x) => !x.deleted).toArray(),
+  );
+
+  return (
+    <Combobox
+      renderSelected={() => (
+        <Memo>
+          {() => {
+            const id = orderProducts$[data.id]!.supplierId.get();
+            return suppliers$[id]?.name.get() ?? "Pilih Suplier";
+          }}
+        </Memo>
+      )}
+      title="Varian"
+      onSelected={(e) => {
+        orderProducts$[data.id]!.supplierId.set(e.id);
+        expenses$[data.id]?.notes.set(
+          `Bayar ${products$[data.productId]!.name.get()} ${productVariants$[data.variantId]!.name.get()} Ke ${suppliers$[data.supplierId]!.name.get()}`,
+        );
+      }}
+      data={suppliers ?? []}
+      renderItem={(data) => data.name}
+    />
+  );
+};
+
+const VariantSelector: React.FC<{ data: OrderProduct }> = ({ data }) => {
+  const variants = useLiveQuery(() =>
+    dexie.productVariants
+      .where("product_id")
+      .equals(data.productId)
+      .filter((x) => !x.deleted)
+      .toArray(),
+  );
+
+  return (
+    <Combobox
+      renderSelected={() => (
+        <Memo>
+          {() => {
+            const id = orderProducts$[data.id]!.variantId.get();
+            return productVariants$[id]?.name.get() ?? "Pilih Varian";
+          }}
+        </Memo>
+      )}
+      title="Varian"
+      onSelected={(e) => {
+        if (data.type !== "vendor") {
+          productVariants$[data.variantId]!.qty.set((p) => p + data.qty);
+          productVariants$[e.id]!.qty.set((p) => p - data.qty);
+        }
+
+        orderProducts$[data.id]!.variantId.set(e.id);
+      }}
+      data={variants ?? []}
+      renderItem={(data) => data.name}
     />
   );
 };
@@ -311,8 +719,15 @@ const Orderan: React.FC<{ status: string }> = ({ status }) => {
     data: orders ?? [],
     columns: columns,
   });
+
+  const title = status
+    .split("")
+    .map((x, i) => (i === 0 ? x.toUpperCase() : x))
+    .join("");
+
   return (
     <ScrollArea className="h-screen p-8">
+      <Title>{title}</Title>
       <div className="space-y-2">
         <div className="flex h-9 justify-between gap-2">
           <DataTableFilterName table={table} />

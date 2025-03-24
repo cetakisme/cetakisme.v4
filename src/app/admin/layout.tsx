@@ -42,11 +42,13 @@ export const menus: Menu[] = [
       {
         title: "Pengeluaran",
         permission: "pengeluaran",
+        url: "/admin/sales-dan-purchasing/pengeluaran",
         children: [],
       },
       {
         title: "Pemasukan",
         permission: "pemasukan",
+        url: "/admin/sales-dan-purchasing/pemasukan",
         children: [],
       },
     ],
@@ -102,12 +104,12 @@ export const menus: Menu[] = [
         permission: "pending",
         children: [],
       },
-      {
-        title: "DP",
-        children: [],
-        permission: "dp",
-        url: "/admin/orderan/dp",
-      },
+      // {
+      //   title: "DP",
+      //   children: [],
+      //   permission: "dp",
+      //   url: "/admin/orderan/dp",
+      // },
       {
         title: "Desain",
         children: [],

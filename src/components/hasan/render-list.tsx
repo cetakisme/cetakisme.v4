@@ -7,11 +7,13 @@ export default function RenderList<TData>({
   data,
   render,
   renderEmpty,
+  getKey,
   ...props
 }: React.ComponentProps<"div"> & {
   data: TData[] | undefined;
   renderEmpty?: () => React.ReactNode;
   render: (data: TData, index: number) => React.ReactNode;
+  getKey?: (data: TData, index: number) => string | number;
 }) {
   if (!data) {
     return (
@@ -24,7 +26,9 @@ export default function RenderList<TData>({
     <div {...props}>
       {data.length > 0 ? (
         data.map((x, i) => (
-          <React.Fragment key={i}>{render(x, i)}</React.Fragment>
+          <React.Fragment key={getKey?.(x, i) ?? i}>
+            {render(x, i)}
+          </React.Fragment>
         ))
       ) : (
         <>{renderEmpty?.()}</>

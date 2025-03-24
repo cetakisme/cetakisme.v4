@@ -179,13 +179,13 @@ export const materials$ = createSupabaseObservable({
   },
 });
 
-// export const orderMaterials$ = createSupabaseObservable({
-//   collection: "OrderMaterial",
-//   transform: async (value) => {
-//     await dexie.orderMaterials.put(value);
-//     return value;
-//   },
-// });
+export const orderMaterials$ = createSupabaseObservable({
+  collection: "OrderMaterial",
+  transform: async (value) => {
+    await dexie.orderMaterials.put(value);
+    return value;
+  },
+});
 
 export const orderProducts$ = createSupabaseObservable({
   collection: "OrderProduct",
@@ -211,4 +211,28 @@ export const supplierContactPersons$ = createSupabaseObservable({
   },
 });
 
-export const orderStatuses = ["pending", "dp", "desain", "ready", "selesai"];
+export const incomes$ = createSupabaseObservable({
+  collection: "Income",
+  transform: async (value) => {
+    await dexie.income.put({
+      ...value,
+      createdAt: value.createdAt ? new Date(value.createdAt) : new Date(),
+      updatedAt: new Date(value.updatedAt),
+    });
+    return value;
+  },
+});
+
+export const expenses$ = createSupabaseObservable({
+  collection: "Expense",
+  transform: async (value) => {
+    await dexie.expense.put({
+      ...value,
+      createdAt: value.createdAt ? new Date(value.createdAt) : new Date(),
+      updatedAt: new Date(value.updatedAt),
+    });
+    return value;
+  },
+});
+
+export const orderStatuses = ["pending", "desain", "ready", "selesai"];
