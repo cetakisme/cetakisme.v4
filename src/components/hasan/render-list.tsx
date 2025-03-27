@@ -40,16 +40,14 @@ export default function RenderList<TData>({
 export function List<TData extends { id: string }>({
   data,
   render,
+  renderEmpty,
 }: {
   data: TData[] | undefined;
   render: (data: TData, index: number) => React.ReactNode;
+  renderEmpty?: () => React.ReactNode;
 }) {
   if (!data) {
-    return (
-      <Button className="w-full" disabled={true}>
-        Loading...
-      </Button>
-    );
+    return renderEmpty?.();
   }
   return (
     <>

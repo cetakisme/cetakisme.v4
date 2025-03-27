@@ -16,12 +16,13 @@ const Sheet: React.FC<
     title: string;
     description?: string;
     content: () => React.ReactNode;
+    style?: React.CSSProperties;
   } & DialogProps
-> = ({ trigger, title, description, content, ...props }) => {
+> = ({ trigger, title, description, content, style, ...props }) => {
   return (
     <S {...props}>
       {trigger && <SheetTrigger asChild>{trigger()}</SheetTrigger>}
-      <SheetContent>
+      <SheetContent style={style}>
         <SheetHeader>
           <SheetTitle>{title}</SheetTitle>
           <SheetDescription>{description}</SheetDescription>

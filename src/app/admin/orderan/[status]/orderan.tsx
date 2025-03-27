@@ -1,3 +1,5 @@
+/// <reference types="web-bluetooth" />
+
 "use client";
 
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -6,10 +8,23 @@ import { DataTableContent } from "@/hooks/Table/DataTableContent";
 import { DataTablePagination } from "@/hooks/Table/DataTablePagination";
 import { useTable } from "@/hooks/Table/useTable";
 import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  addons$,
+  addonValues$,
   customer$,
   expenses$,
   generateId,
   materials$,
+  orderHistories$,
   orderMaterials$,
   orderProducts$,
   orders$,
@@ -19,10 +34,18 @@ import {
   suppliers$,
 } from "@/server/local/db";
 import { dexie } from "@/server/local/dexie";
-import type { Order, OrderMaterial, OrderProduct } from "@prisma/client";
+import {
+  Cost,
+  type Discount,
+  type Order,
+  type OrderHistory,
+  type OrderMaterial,
+  type OrderProduct,
+  type OrderVariant,
+} from "@prisma/client";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useLiveQuery } from "dexie-react-hooks";
-import React from "react";
+import React, { createContext, useContext } from "react";
 import moment from "moment";
 import {
   Popover,
@@ -32,14 +55,18 @@ import {
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { id } from "date-fns/locale";
-import { Memo } from "@legendapp/state/react";
+import { Memo, useObservable, useObserveEffect } from "@legendapp/state/react";
 import { Badge } from "@/components/ui/badge";
 import { PopoverButton } from "@/components/hasan/popover-button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuPortal,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -56,11 +83,14 @@ import InputWithLabel from "@/components/hasan/input-with-label";
 import Link from "next/link";
 import { Label } from "@/components/ui/label";
 import type { DialogProps } from "@radix-ui/react-dialog";
-import RenderList from "@/components/hasan/render-list";
+import RenderList, { List } from "@/components/hasan/render-list";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Combobox } from "@/components/hasan/combobox";
-import { toast } from "sonner";
 import Title from "@/components/hasan/title";
+import { Observable } from "@legendapp/state";
+import { toRupiah } from "@/lib/utils";
+import { getHistoryReceipt } from "../../resi/[id]/resi";
+import { toast } from "sonner";
 
 const columns: ColumnDef<Order>[] = [
   {
@@ -78,7 +108,29 @@ const columns: ColumnDef<Order>[] = [
             </div>
           )}
         </Memo>
-        <Badge>{row.original.payment_status}</Badge>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Badge className="cursor-pointer">
+              {row.original.payment_status}
+            </Badge>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuItem className="font-medium">Status</DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <List
+              data={["DP", "Cicil", "Lunas"].map((x) => ({ id: x }))}
+              render={(data) => (
+                <DropdownMenuItem
+                  onClick={() =>
+                    orders$[row.original.id]!.payment_status.set(data.id)
+                  }
+                >
+                  {data.id}
+                </DropdownMenuItem>
+              )}
+            />
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     ),
   },
@@ -124,11 +176,23 @@ const columns: ColumnDef<Order>[] = [
 
 type C_Order = React.FC<{ order: Order }>;
 
+interface IOrderHistoryContext {
+  id: string;
+}
+
+const OrderHistoryContext = createContext<Observable<IOrderHistoryContext>>(
+  undefined as any,
+);
+
 const Actions: C_Order = ({ order }) => {
-  const detailDialog = useDialog();
+  const linkDialog = useDialog();
   const AturBarangDialog = useDialog();
+  const detailDialog = useDialog();
+
+  const orderHistory = useObservable<IOrderHistoryContext>({ id: "" });
+
   return (
-    <>
+    <OrderHistoryContext.Provider value={orderHistory}>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="outline" size="icon">
@@ -138,11 +202,20 @@ const Actions: C_Order = ({ order }) => {
         <DropdownMenuContent>
           <DropdownMenuItem className="font-semibold">Opsi</DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem>Detail</DropdownMenuItem>
+          <OrderHistories
+            order={order}
+            onSelect={(e) => {
+              orderHistory.id.set(e.id);
+              detailDialog.trigger();
+            }}
+          />
+          <DropdownMenuItem asChild>
+            <Link href={`/admin/pos/kasir/edit?id=${order.id}`}>Ubah</Link>
+          </DropdownMenuItem>
           <DropdownMenuItem onClick={AturBarangDialog.trigger}>
             Atur Barang
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={detailDialog.trigger}>
+          <DropdownMenuItem onClick={linkDialog.trigger}>
             Tambah Link
           </DropdownMenuItem>
           {/* <DropdownMenuItem asChild>
@@ -163,10 +236,385 @@ const Actions: C_Order = ({ order }) => {
             }}
           />
         )}
-        {...detailDialog.props}
+        {...linkDialog.props}
       />
       <AturBarangSheet order={order} {...AturBarangDialog.props} />
+      <OrderHistoryDetail {...detailDialog.props} />
+    </OrderHistoryContext.Provider>
+  );
+};
+
+const OrderHistoryDetail: React.FC<DialogProps> = ({ ...props }) => {
+  const ctx$ = useContext(OrderHistoryContext);
+
+  const variants = useObservable<OrderVariant[]>([]);
+  const discounts = useObservable<Discount[]>([]);
+  const costs = useObservable<Cost[]>([]);
+
+  useObserveEffect(async () => {
+    const [v, d, c] = await Promise.all([
+      dexie.orderVariants
+        .where("orderHistoryId")
+        .equals(ctx$.id.get() ?? "")
+        .and((o) => !o.deleted)
+        .toArray(),
+      dexie.discounts
+        .where("orderHistoryId")
+        .equals(ctx$.id.get() ?? "")
+        .and((o) => !o.deleted)
+        .toArray(),
+      dexie.costs
+        .where("orderHistoryId")
+        .equals(ctx$.id.get() ?? "")
+        .and((o) => !o.deleted)
+        .toArray(),
+    ]);
+
+    variants.set(v);
+    discounts.set(d);
+    costs.set(c);
+  });
+
+  return (
+    <Sheet
+      {...props}
+      title="Order History"
+      style={{ maxWidth: "500px" }}
+      content={() => (
+        <ScrollArea className="h-screen">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Nama Barang</TableHead>
+                <TableHead>Qty</TableHead>
+                <TableHead>Harga</TableHead>
+                <TableHead className="text-right">Total</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <Memo>
+                {() => (
+                  <List
+                    data={variants.get()}
+                    render={(data) => <OrderVariantItem orderVariant={data} />}
+                  />
+                )}
+              </Memo>
+              <Memo>
+                {() => {
+                  const orderHistory = orderHistories$[ctx$.id.get()]!.get();
+                  if (!orderHistory) return;
+                  return (
+                    <List
+                      data={discounts.get()}
+                      render={(data) => (
+                        <TableRow>
+                          <TableCell className="font-medium" colSpan={2}>
+                            Diskon {data.name}{" "}
+                            {data.type === "percent" && data.value + "%"}
+                          </TableCell>
+                          <TableCell colSpan={2} className="text-right">
+                            -{" "}
+                            {data.type === "percent"
+                              ? toRupiah(
+                                  orderHistory.totalBeforeDiscount *
+                                    data.value *
+                                    0.01,
+                                )
+                              : toRupiah(data.value)}
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    />
+                  );
+                }}
+              </Memo>
+              <Memo>
+                {() => {
+                  const orderHistory = orderHistories$[ctx$.id.get()]!.get();
+                  if (!orderHistory) return;
+                  return (
+                    <List
+                      data={costs.get()}
+                      render={(data) => (
+                        <TableRow>
+                          <TableCell className="font-medium" colSpan={2}>
+                            Biaya {data.name}{" "}
+                            {data.type === "percent" && data.value + "%"}
+                          </TableCell>
+                          <TableCell colSpan={2} className="text-right">
+                            {data.type === "percent"
+                              ? toRupiah(
+                                  orderHistory.totalAfterDiscount *
+                                    data.value *
+                                    0.01,
+                                )
+                              : toRupiah(data.value)}
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    />
+                  );
+                }}
+              </Memo>
+              <TableRow>
+                <TableCell colSpan={2} className="font-medium">
+                  Total
+                </TableCell>
+                <TableCell colSpan={2} className="text-right">
+                  <Memo>
+                    {toRupiah(orderHistories$[ctx$.id.get()]!.total.get())}
+                  </Memo>
+                </TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell colSpan={2} className="font-medium">
+                  Bayar {"("}
+                  <Memo>
+                    {orderHistories$[ctx$.id.get()]!.payment_provider.get()}
+                  </Memo>
+                  {")"}
+                </TableCell>
+                <TableCell colSpan={2} className="text-right">
+                  <Memo>
+                    {toRupiah(orderHistories$[ctx$.id.get()]!.paid.get())}
+                  </Memo>
+                </TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell colSpan={2} className="font-medium">
+                  Kembalian
+                </TableCell>
+                <TableCell colSpan={2} className="text-right">
+                  <Memo>
+                    {orderHistories$[ctx$.id.get()]!.paid.get() >
+                    orderHistories$[ctx$.id.get()]!.total.get()
+                      ? toRupiah(
+                          orderHistories$[ctx$.id.get()]!.paid.get() -
+                            orderHistories$[ctx$.id.get()]!.total.get(),
+                        )
+                      : 0}
+                  </Memo>
+                </TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+          <div className="mt-8 space-y-2">
+            <Button asChild className="w-full">
+              <Link href={`/admin/resi/${ctx$.id.get()}`}>Lihat Resi</Link>
+            </Button>
+            <Button
+              className="w-full"
+              onClick={async () => {
+                const svg = await getHistoryReceipt(ctx$.id.get(), {
+                  cpl: 42,
+                  encoding: "multilingual",
+                });
+
+                downloadPNGFromSVG(svg, (pngUrl) => {
+                  sendToPrinter(pngUrl);
+                });
+              }}
+            >
+              Print Resi
+            </Button>
+            <Button
+              className="w-full"
+              onClick={async () => {
+                const svg = await getHistoryReceipt(ctx$.id.get(), {
+                  cpl: 42,
+                  encoding: "multilingual",
+                });
+
+                downloadPNGFromSVG(svg, (pngUrl) => {
+                  const printWindow = window.open("");
+                  if (printWindow) {
+                    printWindow.document.write(
+                      `<img src="${pngUrl}" onload="window.print(); window.close();" />`,
+                    );
+                    printWindow.document.close();
+                  }
+                });
+              }}
+            >
+              Print Resi 2
+            </Button>
+            <Button
+              className="w-full"
+              onClick={async () => {
+                const svg = await getHistoryReceipt(ctx$.id.get(), {
+                  cpl: 42,
+                  encoding: "multilingual",
+                });
+
+                const history = orderHistories$[ctx$.id.get()]!.get();
+                const order = orders$[history.orderId]!.get();
+                const customer = customer$[order.customer_id]!.get();
+
+                downloadPNGFromSVG(svg, (pngUrl) => {
+                  const link = document.createElement("a");
+                  link.href = pngUrl;
+                  link.download = `Resi ${customer.name} - ${moment(history.created_at).format("DD MMM YYYY")}.png`;
+                  document.body.appendChild(link);
+                  link.click();
+                  document.body.removeChild(link);
+                });
+              }}
+            >
+              Download Resi
+            </Button>
+          </div>
+        </ScrollArea>
+      )}
+    />
+  );
+};
+
+const sendToPrinter = async (imageUrl: string) => {
+  try {
+    // Request the Bluetooth device
+    const device = await navigator.bluetooth.requestDevice({
+      acceptAllDevices: true,
+      optionalServices: ["battery_service"], // Some printers expose battery service
+    });
+
+    const server = await device.gatt?.connect();
+    console.log("Connected to printer", server);
+
+    // Convert image to raw bytes (needed for printing)
+    const response = await fetch(imageUrl);
+    const blob = await response.blob();
+
+    // Send raw image data to the printer
+    const reader = new FileReader();
+    reader.readAsArrayBuffer(blob);
+    reader.onloadend = async () => {
+      const data = new Uint8Array(reader.result as ArrayBuffer);
+
+      // Assuming printer has a writable characteristic
+      const service = await server?.getPrimaryService("battery_service");
+      const characteristic = await service?.getCharacteristic("battery_level"); // Change this
+      await characteristic?.writeValue(data);
+
+      // console.log("Image sent to printer!");
+      toast.success("Print Berhasil!");
+    };
+  } catch (error) {
+    // console.error("Printing error:", error);
+    toast.error("Tidak dapat terhubung ke printer!");
+  }
+};
+
+const downloadPNGFromSVG = (
+  svgString: string,
+  cb: (pngUrl: string) => void,
+) => {
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+
+  const img = new Image();
+  const svgBlob = new Blob([svgString], {
+    type: "image/svg+xml;charset=utf-8",
+  });
+  const url = URL.createObjectURL(svgBlob);
+
+  img.onload = () => {
+    // Set canvas size to match SVG
+    canvas.width = img.width || 500;
+    canvas.height = img.height || 500;
+
+    ctx?.drawImage(img, 0, 0);
+    URL.revokeObjectURL(url);
+
+    // Convert canvas to PNG and trigger download
+    const pngUrl = canvas.toDataURL("image/png");
+    cb(pngUrl);
+  };
+
+  img.src = url;
+};
+
+const OrderVariantItem: React.FC<{ orderVariant: OrderVariant }> = ({
+  orderVariant,
+}) => {
+  const productId = productVariants$[orderVariant.variant_id]!.product_id.get();
+  const price = orderVariant.price;
+
+  const addons = useLiveQuery(() =>
+    dexie.orderVariantAddons
+      .where("orderVariantId")
+      .equals(orderVariant.id)
+      .toArray(),
+  );
+
+  return (
+    <>
+      <TableRow>
+        <TableCell className="font-medium">
+          {products$[productId]!.name.get()}{" "}
+          {productVariants$[orderVariant.variant_id]!.name.get()}
+        </TableCell>
+        <TableCell>{orderVariant.qty}</TableCell>
+        <TableCell>{toRupiah(price)}</TableCell>
+        <TableCell className="text-right">
+          {toRupiah(orderVariant.qty * price)}
+        </TableCell>
+      </TableRow>
+      <List
+        data={addons}
+        render={(data) => (
+          <TableRow>
+            <TableCell>
+              <Memo>{addonValues$[data.addonValueId]!.name.get()}</Memo>
+            </TableCell>
+            <TableCell>{data.qty + " x " + orderVariant.qty}</TableCell>
+            <TableCell>
+              <Memo>
+                {toRupiah(addonValues$[data.addonValueId]!.price.get())}
+              </Memo>
+            </TableCell>
+
+            <TableCell className="text-right">
+              <Memo>
+                {toRupiah(
+                  addonValues$[data.addonValueId]!.price.get() *
+                    data.qty *
+                    orderVariant.qty,
+                )}
+              </Memo>
+            </TableCell>
+          </TableRow>
+        )}
+      />
     </>
+  );
+};
+
+const OrderHistories: React.FC<{
+  order: Order;
+  onSelect: (e: OrderHistory) => void;
+}> = ({ order, onSelect }) => {
+  const histories = useLiveQuery(() =>
+    dexie.orderHistory
+      .where("orderId")
+      .equals(order.id)
+      .reverse()
+      .sortBy("created_at"),
+  );
+
+  return (
+    <DropdownMenuSub>
+      <DropdownMenuSubTrigger>History</DropdownMenuSubTrigger>
+      <DropdownMenuPortal>
+        <DropdownMenuSubContent>
+          {histories?.map((x) => (
+            <DropdownMenuItem key={x.id} onClick={() => onSelect(x)}>
+              {moment(x.created_at).format("DD MMM YYYY")}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuSubContent>
+      </DropdownMenuPortal>
+    </DropdownMenuSub>
   );
 };
 
@@ -236,14 +684,13 @@ const OrderMaterials: React.FC<{ order: Order }> = ({ order }) => {
 
                     orderMaterials$[data.id]!.set((p) => ({
                       ...p,
+                      materialId: "",
+                      deleted: true,
                       orderId: "",
                       pay: 0,
-                      deleted: true,
-                      productId: "",
-                      supplierId: "",
                       qty: 0,
+                      supplierId: "",
                       type: "",
-                      variantId: "",
                     }));
                   }}
                 >

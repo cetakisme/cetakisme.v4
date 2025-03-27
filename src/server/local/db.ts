@@ -235,4 +235,15 @@ export const expenses$ = createSupabaseObservable({
   },
 });
 
-export const orderStatuses = ["pending", "desain", "ready", "selesai"];
+export const orderHistories$ = createSupabaseObservable({
+  collection: "OrderHistory",
+  transform: async (value) => {
+    await dexie.orderHistory.put({
+      ...value,
+      created_at: new Date(value.created_at),
+    });
+    return value;
+  },
+});
+
+export const orderStatuses = ["pending", "desain", "ready", "selesai", "void"];

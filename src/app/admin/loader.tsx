@@ -9,6 +9,7 @@ import {
   expenses$,
   incomes$,
   materials$,
+  orderHistories$,
   orderMaterials$,
   orderProducts$,
   orders$,
@@ -66,6 +67,7 @@ const Loader = () => {
     void whenReady(suppliers$.get());
     void whenReady(expenses$.get());
     void whenReady(incomes$.get());
+    void whenReady(orderHistories$.get());
   });
   return <></>;
 };

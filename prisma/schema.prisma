@@ -52,7 +52,7 @@ model Discount {
   type    String  @default("")
   deleted Boolean @default(false)
 
-  order_id String @default("")
+  orderHistoryId String @default("")
 }
 
 model Cost {
@@ -62,7 +62,7 @@ model Cost {
   type    String  @default("")
   deleted Boolean @default(false)
 
-  order_id String @default("")
+  orderHistoryId String @default("")
 }
 
 model Material {
@@ -83,7 +83,7 @@ model OrderMaterial {
 
   materialId  String   @default("")
   orderId     String   @default("")
-  supplierId String    @default("")
+  supplierId  String    @default("")
 }
 
 model OrderProduct {
@@ -93,25 +93,37 @@ model OrderProduct {
   type    String  @default("")
   deleted Boolean @default(false)
 
-  productId   String  @default("")
-  orderId     String  @default("")
-  supplierId  String  @default("")
-  variantId   String  @default("")
+  productId           String  @default("")
+  orderId             String  @default("")
+  supplierId          String  @default("")
+  variantId           String  @default("")
 }
 
 model Order {
   id               String    @id @default(uuid())
-  payment_type     String    @default("")
   order_status     String    @default("")
   payment_status   String    @default("")
-  payment_provider String    @default("")
-  paid             Int       @default(0)
   deleted          Boolean   @default(false)
-  created_at       DateTime  @default(now())
   notes            String    @default("")
   driveUrl         String    @default("")
   deadline         DateTime?
   customer_id      String    @default("")
+
+  created_at       DateTime  @default(now())
+}
+
+model OrderHistory {
+  id               String    @id @default(uuid())
+  payment_type     String    @default("")
+  payment_provider String    @default("")
+  total            Int       @default(0)
+  paid             Int       @default(0)
+  deleted          Boolean   @default(false)
+  created_at       DateTime  @default(now())
+  totalBeforeDiscount   Int   @default(0)
+  totalAfterDiscount    Int   @default(0)
+
+  orderId          String    @default("")
 }
 
 model OrderVariantAddon {
@@ -128,10 +140,11 @@ model OrderVariant {
   id      String  @id @default(uuid())
   qty     Int     @default(0)
   deleted Boolean @default(false)
+  price   Int     @default(0)
 
-  order_id String @default("")
+  orderHistoryId  String @default("")
 
-  variant_id String @default("")
+  variant_id      String @default("")
 }
 
 model Customer {

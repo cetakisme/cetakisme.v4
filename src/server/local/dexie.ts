@@ -10,6 +10,7 @@ import type {
   Income,
   Material,
   Order,
+  OrderHistory,
   OrderMaterial,
   OrderProduct,
   OrderVariant,
@@ -51,6 +52,7 @@ const dexie = new Dexie("FriendsDatabase", {
   materials: EntityTable<Material, "id">;
   orderMaterials: EntityTable<OrderMaterial, "id">;
   orderProducts: EntityTable<OrderProduct, "id">;
+  orderHistory: EntityTable<OrderHistory, "id">;
   suppliers: EntityTable<Supplier, "id">;
   supplierContactPersons: EntityTable<SupplierContactPerson, "id">;
   income: EntityTable<Income, "id">;
@@ -67,10 +69,10 @@ dexie.version(1).stores({
   productAttributeValues: "id, name, attribute_id, deleted",
   productToAddons: "id, product_id, attribute_id, deleted",
   productVariants: "id, product_id, deleted",
-  discounts: "id, order_id, deleted",
-  costs: "id, order_id, deleted",
+  discounts: "id, orderHistoryId, deleted",
+  costs: "id, orderHistoryId, deleted",
   orders: "id, deleted, order_status, payment_status",
-  orderVariants: "id, deleted, order_id, variant_id",
+  orderVariants: "id, deleted, orderHistoryId, variant_id",
   orderVariantAddons: "id, deleted, orderVariantId, addonValueId",
   customers: "id, deleted",
   users: "id, userId, roleId",
@@ -78,6 +80,7 @@ dexie.version(1).stores({
   materials: "id",
   orderMaterials: "id, orderId",
   orderProducts: "id, orderId",
+  orderHistory: "id, orderId",
   suppliers: "id",
   supplierContactPersons: "id, supplierId",
   income: "id",

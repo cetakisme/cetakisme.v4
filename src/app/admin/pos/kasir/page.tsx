@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useContext } from "react";
+import React, { Suspense, useContext, useEffect } from "react";
 import { ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import RenderList from "@/components/hasan/render-list";
@@ -11,6 +11,7 @@ import type {
   Customer,
   Discount,
   Order,
+  OrderVariant,
   Product,
   ProductVariant,
 } from "@prisma/client";
@@ -26,6 +27,8 @@ import {
   orderVariants$,
   orderVariantAddons$,
   addonValues$,
+  incomes$,
+  orderHistories$,
 } from "@/server/local/db";
 import Img from "@/components/hasan/Image";
 import {
@@ -86,14 +89,18 @@ import { SheetClose } from "@/components/ui/sheet";
 import { TiDeleteOutline } from "react-icons/ti";
 import Alert from "@/components/hasan/alert";
 import { useDialog } from "@/hooks/useDialog";
-import { LucideDot, LucidePlus } from "lucide-react";
+import { LucideDot, LucideEdit, LucidePlus } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import Authenticated from "@/components/hasan/auth/authenticated";
 import AuthFallback from "@/components/hasan/auth/auth-fallback";
+import { useSearchParams } from "next/navigation";
+import Conditional from "@/components/hasan/conditional";
 
 interface IKasirContext {
   isLoadFromSave: boolean;
+  isEditMode: boolean;
   orderId: string;
+  orderHistoryId: string;
   variants: Variant[];
   customer: Customer | null;
   discounts: Discount[];
@@ -102,6 +109,8 @@ interface IKasirContext {
   discountsToDelete: Discount[];
   costsToDelete: Cost[];
   totalAll: number;
+  totalBeforeDiscount: number;
+  totalAfterDiscont: number;
 }
 
 type Variant = {
@@ -109,6 +118,7 @@ type Variant = {
   variant: ProductVariant;
   qty: number;
   total: number;
+  price: number;
   addons: { id: string; addon: AddonValue; qty: number }[];
 };
 
@@ -130,27 +140,38 @@ const useResetOrder = () => {
       discountsToDelete: [],
       costsToDelete: [],
       isLoadFromSave: false,
+      isEditMode: false,
       totalAll: 0,
+      orderHistoryId: generateId(),
+      totalAfterDiscont: 0,
+      totalBeforeDiscount: 0,
     });
   }, [ctx$]);
 
   return reset;
 };
 
+const GetOrderComponent = () => {
+  const ctx$ = useContext(KasirContext);
+  const searchParams = useSearchParams();
+  useEffect(() => {
+    const orderId = searchParams.get("id");
+    if (!orderId) return;
+    const f = async () => {
+      const order = await dexie.orders.get(orderId);
+      if (!order) return;
+      const data = await constructOrder(order, true);
+      ctx$.set(data);
+    };
+    f();
+  }, [searchParams]);
+  return <></>;
+};
+
 const Page = () => {
-  const ctx$ = useObservable<{
-    orderId: string;
-    variants: Variant[];
-    customer: Customer | null;
-    discounts: Discount[];
-    costs: Cost[];
-    variantsToDelete: Variant[];
-    discountsToDelete: Discount[];
-    costsToDelete: Cost[];
-    isLoadFromSave: boolean;
-    totalAll: number;
-  }>({
+  const ctx$ = useObservable<IKasirContext>({
     orderId: generateId(),
+    orderHistoryId: generateId(),
     variants: [],
     customer: null,
     discounts: [],
@@ -159,7 +180,10 @@ const Page = () => {
     discountsToDelete: [],
     costsToDelete: [],
     isLoadFromSave: false,
+    isEditMode: false,
     totalAll: 0,
+    totalAfterDiscont: 0,
+    totalBeforeDiscount: 0,
   });
 
   const total = useObservable(0);
@@ -170,18 +194,19 @@ const Page = () => {
   useObserveEffect(() => {
     totalAll.set(total.get() - totalDiscount.get() + totalCosts.get());
     ctx$.totalAll.set(totalAll.get());
+    ctx$.totalBeforeDiscount.set(total.get());
+    ctx$.totalAfterDiscont.set(total.get() - totalDiscount.get());
   });
 
   useObserveEffect(() => {
-    totalCosts.set(
-      ctx$.costs.get().reduce((next, a) => {
-        if (a.type === "flat") {
-          return next + a.value;
-        } else {
-          return next + a.value * 0.01 * (total.get() - totalDiscount.get());
-        }
-      }, 0),
-    );
+    const value = ctx$.costs.get().reduce((next, a) => {
+      if (a.type === "flat") {
+        return next + a.value;
+      } else {
+        return next + a.value * 0.01 * (total.get() - totalDiscount.get());
+      }
+    }, 0);
+    totalCosts.set(value);
   });
 
   useObserveEffect(() => {
@@ -220,13 +245,23 @@ const Page = () => {
       customer_id: customer.id,
       deadline: null,
       deleted: false,
-      paid: 0,
       order_status: "pending",
       payment_status: "pending",
-      payment_type: "",
       notes: "",
-      payment_provider: "",
       driveUrl: "",
+    });
+
+    orderHistories$[ctx$.orderHistoryId.get()]!.set({
+      deleted: false,
+      created_at: new Date().toISOString(),
+      id: ctx$.orderHistoryId.get(),
+      orderId: ctx$.orderId.get(),
+      paid: 0,
+      payment_provider: "",
+      payment_type: "",
+      total: 0,
+      totalAfterDiscount: total.get() - totalDiscount.get(),
+      totalBeforeDiscount: total.get(),
     });
 
     discounts$.set((prev) => {
@@ -238,7 +273,7 @@ const Page = () => {
           name: "",
           deleted: true,
           id: element.id,
-          order_id: "",
+          orderHistoryId: "",
           type: "",
           value: 0,
         };
@@ -249,7 +284,7 @@ const Page = () => {
           name: element.name,
           deleted: false,
           id: element.id,
-          order_id: element.order_id,
+          orderHistoryId: element.orderHistoryId,
           type: element.type,
           value: element.value,
         };
@@ -266,7 +301,7 @@ const Page = () => {
           name: "",
           deleted: true,
           id: element.id,
-          order_id: "",
+          orderHistoryId: "",
           type: "",
           value: 0,
         };
@@ -277,7 +312,7 @@ const Page = () => {
           name: element.name,
           deleted: false,
           id: element.id,
-          order_id: element.order_id,
+          orderHistoryId: element.orderHistoryId,
           type: element.type,
           value: element.value,
         };
@@ -293,9 +328,10 @@ const Page = () => {
         updated[element.id] = {
           deleted: true,
           id: element.id,
-          order_id: "",
+          orderHistoryId: "",
           qty: 0,
           variant_id: "",
+          price: 0,
         };
       }
 
@@ -303,9 +339,10 @@ const Page = () => {
         updated[element.id] = {
           deleted: false,
           id: element.id,
-          order_id: ctx$.orderId.get(),
+          orderHistoryId: ctx$.orderHistoryId.get(),
           qty: element.qty,
           variant_id: element.variant.id,
+          price: element.price,
         };
       }
 
@@ -350,6 +387,7 @@ const Page = () => {
   const reset = () => {
     ctx$.set({
       orderId: generateId(),
+      orderHistoryId: generateId(),
       variants: [],
       customer: null,
       discounts: [],
@@ -358,15 +396,21 @@ const Page = () => {
       discountsToDelete: [],
       costsToDelete: [],
       isLoadFromSave: false,
+      isEditMode: false,
       totalAll: 0,
+      totalAfterDiscont: 0,
+      totalBeforeDiscount: 0,
     });
   };
 
   return (
     <Authenticated permission="kasir" fallback={AuthFallback}>
       <KasirContext.Provider value={ctx$}>
+        <Suspense>
+          <GetOrderComponent />
+        </Suspense>
         <ResizablePanelGroup direction="horizontal" className="gap-2 p-8">
-          <ResizablePanel defaultSize={50}>
+          <ResizablePanel defaultSize={60}>
             <div className="flex h-full flex-col gap-2">
               <div className="flex items-center gap-4">
                 <Label>Pelanggan : </Label>
@@ -471,12 +515,22 @@ const Page = () => {
               </div>
               <div className="flex justify-between">
                 <div className="flex gap-1">
-                  <SavedOrdersSheet />
-                  <Button variant="outline" size="icon" onClick={() => save()}>
-                    <MdDownload />
-                  </Button>
-                  <NewOrder />
-                  <DeleteOrder />
+                  <Memo>
+                    {() => (
+                      <Conditional condition={!ctx$.isEditMode.get()}>
+                        <SavedOrdersSheet />
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => save()}
+                        >
+                          <MdDownload />
+                        </Button>
+                        <NewOrder />
+                        <DeleteOrder />
+                      </Conditional>
+                    )}
+                  </Memo>
                 </div>
                 <div className="flex gap-1">
                   <DiscountPopover
@@ -496,7 +550,7 @@ const Page = () => {
               </div>
             </div>
           </ResizablePanel>
-          <ResizablePanel defaultSize={50}>
+          <ResizablePanel defaultSize={40}>
             <ScrollArea className="h-full">
               <ProductKatalog />
             </ScrollArea>
@@ -525,6 +579,31 @@ const PaySheet = () => {
   });
 
   const dialog = useDialog();
+
+  useObserveEffect(() => {
+    if (!ctx$.isEditMode) return;
+
+    const f = async () => {
+      const orderHistory = await dexie.orderHistory
+        .where("orderId")
+        .equals(ctx$.orderId.get())
+        .reverse()
+        .sortBy("createdAt");
+
+      const lastOrderHistory = orderHistory.at(-1);
+
+      if (!lastOrderHistory) return;
+
+      pay$.set({
+        amount: lastOrderHistory.paid,
+        note: "",
+        paymentGateway: lastOrderHistory.payment_provider,
+        paymentType: lastOrderHistory.payment_type,
+      });
+    };
+
+    f();
+  });
 
   const pay = () => {
     const customer = ctx$.customer.get();
@@ -560,14 +639,33 @@ const PaySheet = () => {
       customer_id: customer.id,
       deadline: null,
       deleted: false,
-      paid: pay$.amount.get(),
+      // paid: pay$.amount.get(),
       order_status: "pending",
       payment_status:
         pay$.amount.get() === ctx$.totalAll.get() ? "Lunas" : "DP",
-      payment_type: pay$.paymentType.get(),
+      // payment_type: pay$.paymentType.get(),
       notes: pay$.note.get(),
+      // payment_provider:
+      //   pay$.paymentType.get() === "Cash" ? "Cash" : pay$.paymentGateway.get(),
+      // total: ctx$.totalAll.get(),
+    });
+
+    const orderHistoryId = ctx$.isEditMode
+      ? generateId()
+      : ctx$.orderHistoryId.get();
+
+    orderHistories$[orderHistoryId]!.set({
+      id: orderHistoryId,
+      created_at: new Date().toISOString(),
+      deleted: false,
+      orderId: ctx$.orderId.get(),
+      paid: pay$.amount.get(),
       payment_provider:
         pay$.paymentType.get() === "Cash" ? "Cash" : pay$.paymentGateway.get(),
+      payment_type: pay$.paymentType.get(),
+      total: ctx$.totalAll.get(),
+      totalAfterDiscount: ctx$.totalAfterDiscont.get(),
+      totalBeforeDiscount: ctx$.totalBeforeDiscount.get(),
     });
 
     discounts$.set((prev) => {
@@ -579,7 +677,7 @@ const PaySheet = () => {
           name: "",
           deleted: true,
           id: element.id,
-          order_id: "",
+          orderHistoryId: "",
           type: "",
           value: 0,
         };
@@ -590,7 +688,7 @@ const PaySheet = () => {
           name: element.name,
           deleted: false,
           id: element.id,
-          order_id: element.order_id,
+          orderHistoryId: orderHistoryId,
           type: element.type,
           value: element.value,
         };
@@ -607,7 +705,7 @@ const PaySheet = () => {
           name: "",
           deleted: true,
           id: element.id,
-          order_id: "",
+          orderHistoryId: "",
           type: "",
           value: 0,
         };
@@ -618,7 +716,7 @@ const PaySheet = () => {
           name: element.name,
           deleted: false,
           id: element.id,
-          order_id: element.order_id,
+          orderHistoryId: orderHistoryId,
           type: element.type,
           value: element.value,
         };
@@ -634,9 +732,10 @@ const PaySheet = () => {
         updated[element.id] = {
           deleted: true,
           id: element.id,
-          order_id: "",
+          orderHistoryId: "",
           qty: 0,
           variant_id: "",
+          price: 0,
         };
       }
 
@@ -644,9 +743,10 @@ const PaySheet = () => {
         updated[element.id] = {
           deleted: false,
           id: element.id,
-          order_id: ctx$.orderId.get(),
+          orderHistoryId: orderHistoryId,
           qty: element.qty,
           variant_id: element.variant.id,
+          price: element.price,
         };
       }
 
@@ -685,6 +785,25 @@ const PaySheet = () => {
       return updated;
     });
 
+    if (ctx$.isEditMode.get()) {
+      incomes$[ctx$.orderId.get()]!.set((p) => ({
+        ...p,
+        income: pay$.amount.get(),
+        notes: `Pemasukan Dari Order ${ctx$.customer.name.get()}`,
+        updatedAt: new Date().toISOString(),
+      }));
+    } else {
+      incomes$[ctx$.orderId.get()]!.set({
+        createdAt: new Date().toISOString(),
+        deleted: false,
+        id: ctx$.orderId.get(),
+        income: pay$.amount.get(),
+        notes: `Pemasukan Dari Order ${ctx$.customer.name.get()}`,
+        type: "order",
+        updatedAt: new Date().toISOString(),
+      });
+    }
+
     reset();
     toast.success("Order Berhasil Dibuat");
   };
@@ -718,7 +837,10 @@ const PaySheet = () => {
                 const type = pay$.paymentType.get();
                 if (type === "cash") return null;
                 return (
-                  <Select onValueChange={(e) => pay$.paymentGateway.set(e)}>
+                  <Select
+                    onValueChange={(e) => pay$.paymentGateway.set(e)}
+                    defaultValue={pay$.paymentGateway.get()}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Penyedia" />
                     </SelectTrigger>
@@ -854,6 +976,7 @@ const DeleteOrder = () => {
       notes: "",
       payment_provider: "",
       driveUrl: "",
+      total: 0,
     }));
 
     discounts$.set((prev) => {
@@ -865,7 +988,7 @@ const DeleteOrder = () => {
           name: "",
           deleted: true,
           id: element.id,
-          order_id: "",
+          orderHistoryId: "",
           type: "",
           value: 0,
         };
@@ -877,7 +1000,7 @@ const DeleteOrder = () => {
           name: "",
           deleted: true,
           id: element.id,
-          order_id: "",
+          orderHistoryId: "",
           type: "",
           value: 0,
         };
@@ -894,7 +1017,7 @@ const DeleteOrder = () => {
           name: "",
           deleted: true,
           id: element.id,
-          order_id: "",
+          orderHistoryId: "",
           type: "",
           value: 0,
         };
@@ -906,7 +1029,7 @@ const DeleteOrder = () => {
           name: "",
           deleted: true,
           id: element.id,
-          order_id: "",
+          orderHistoryId: "",
           type: "",
           value: 0,
         };
@@ -922,9 +1045,10 @@ const DeleteOrder = () => {
         updated[element.id] = {
           deleted: true,
           id: element.id,
-          order_id: "",
+          orderHistoryId: "",
           qty: 0,
           variant_id: "",
+          price: 0,
         };
       }
 
@@ -933,9 +1057,10 @@ const DeleteOrder = () => {
         updated[element.id] = {
           deleted: true,
           id: element.id,
-          order_id: "",
+          orderHistoryId: "",
           qty: 0,
           variant_id: "",
+          price: 0,
         };
       }
 
@@ -1062,21 +1187,119 @@ const SavedOrdersSheet = () => {
   );
 };
 
+const constructOrder = async (order: Order, isEditMode: boolean) => {
+  const orderHistory = await dexie.orderHistory
+    .where("orderId")
+    .equals(order.id)
+    .reverse()
+    .sortBy("createdAt");
+
+  const orderHistoryId = orderHistory.at(-1)?.id ?? "";
+
+  const [variants, customer, discounts, costs] = await Promise.all([
+    dexie.orderVariants
+      .where("orderHistoryId")
+      .equals(orderHistoryId)
+      .and((o) => !o.deleted)
+      .toArray(),
+    dexie.customers.where("id").equals(order.customer_id).first(),
+    dexie.discounts
+      .where("orderHistoryId")
+      .equals(orderHistoryId)
+      .and((o) => !o.deleted)
+      .toArray(),
+    dexie.costs
+      .where("orderHistoryId")
+      .equals(orderHistoryId)
+      .and((o) => !o.deleted)
+      .toArray(),
+  ]);
+
+  const orderVariantAddons = await dexie.orderVariantAddons
+    .where("orderVariantId")
+    .anyOf(variants.map((v) => v.id))
+    .and((o) => !o.deleted)
+    .toArray();
+
+  const variantIds = new Set(variants.map((v) => v.variant_id));
+  const variantValues = new Map<string, ProductVariant>(
+    [...variantIds].map((id) => [id, productVariants$[id]!.get()]),
+  );
+
+  const addonValueIds = new Set(orderVariantAddons.map((a) => a.addonValueId));
+  const addonValues = new Map<string, AddonValue>(
+    [...addonValueIds].map((id) => [id, addonValues$[id]!.get()]),
+  );
+
+  const addonsByVariant = new Map<
+    string,
+    { id: string; addon: AddonValue; qty: number }[]
+  >();
+  for (const addon of orderVariantAddons) {
+    if (!addonsByVariant.has(addon.orderVariantId)) {
+      addonsByVariant.set(addon.orderVariantId, []);
+    }
+    addonsByVariant.get(addon.orderVariantId)!.push({
+      id: isEditMode ? generateId() : addon.id,
+      qty: addon.qty,
+      addon: addonValues.get(addon.addonValueId)!, // Preloaded value
+    });
+  }
+
+  const v: Variant[] = variants.map((x) => ({
+    id: isEditMode ? generateId() : x.id,
+    qty: x.qty,
+    total: 0,
+    price: x.price,
+    variant: variantValues.get(x.variant_id)!, // Preloaded value
+    addons: addonsByVariant.get(x.id) ?? [],
+    deleted: x.deleted,
+  }));
+
+  const vWithTotal: Variant[] = v.map((x) => ({
+    ...x,
+    total: getTotal(x),
+  }));
+
+  const _order = {
+    orderId: order.id,
+    customer: customer ?? null,
+    costs: isEditMode ? costs.map((x) => ({ ...x, id: generateId() })) : costs,
+    discounts: isEditMode
+      ? discounts.map((x) => ({ ...x, id: generateId() }))
+      : discounts,
+    variants: vWithTotal,
+  };
+
+  return {
+    ..._order,
+    variantsToDelete: [],
+    discountsToDelete: [],
+    costsToDelete: [],
+    isLoadFromSave: isEditMode ? false : true,
+    isEditMode: isEditMode,
+    totalAll: 0,
+    totalAfterDiscont: 0,
+    totalBeforeDiscount: 0,
+    orderHistoryId: orderHistoryId,
+  };
+
+  // order$.set({
+  //   ..._order,
+  //   variantsToDelete: [],
+  //   discountsToDelete: [],
+  //   costsToDelete: [],
+  //   isLoadFromSave: true,
+  //   totalAll: 0,
+  //   orderHistoryId: orderHistoryId,
+  // });
+};
+
 const OrderItem: React.FC<{ order: Order }> = ({ order }) => {
   const ctx$ = useContext(KasirContext);
-  const order$ = useObservable<{
-    orderId: string;
-    variants: Variant[];
-    customer: Customer | null;
-    discounts: Discount[];
-    costs: Cost[];
-    variantsToDelete: Variant[];
-    discountsToDelete: Discount[];
-    costsToDelete: Cost[];
-    isLoadFromSave: boolean;
-    totalAll: number;
-  }>({
+  const order$ = useObservable<IKasirContext>({
     orderId: order.id,
+    orderHistoryId: "",
     variants: [],
     customer: null,
     discounts: [],
@@ -1085,92 +1308,15 @@ const OrderItem: React.FC<{ order: Order }> = ({ order }) => {
     discountsToDelete: [],
     costsToDelete: [],
     isLoadFromSave: true,
+    isEditMode: false,
     totalAll: 0,
+    totalAfterDiscont: 0,
+    totalBeforeDiscount: 0,
   });
 
   useMount(async () => {
-    const [variants, customer, discounts, costs] = await Promise.all([
-      dexie.orderVariants
-        .where("order_id")
-        .equals(order.id)
-        .and((o) => !o.deleted)
-        .toArray(),
-      dexie.customers.where("id").equals(order.customer_id).first(),
-      dexie.discounts
-        .where("order_id")
-        .equals(order.id)
-        .and((o) => !o.deleted)
-        .toArray(),
-      dexie.costs
-        .where("order_id")
-        .equals(order.id)
-        .and((o) => !o.deleted)
-        .toArray(),
-    ]);
-
-    const orderVariantAddons = await dexie.orderVariantAddons
-      .where("orderVariantId")
-      .anyOf(variants.map((v) => v.id))
-      .and((o) => !o.deleted)
-      .toArray();
-
-    const variantIds = new Set(variants.map((v) => v.variant_id));
-    const variantValues = new Map<string, ProductVariant>(
-      [...variantIds].map((id) => [id, productVariants$[id]!.get()]),
-    );
-
-    const addonValueIds = new Set(
-      orderVariantAddons.map((a) => a.addonValueId),
-    );
-    const addonValues = new Map<string, AddonValue>(
-      [...addonValueIds].map((id) => [id, addonValues$[id]!.get()]),
-    );
-
-    const addonsByVariant = new Map<
-      string,
-      { id: string; addon: AddonValue; qty: number }[]
-    >();
-    for (const addon of orderVariantAddons) {
-      if (!addonsByVariant.has(addon.orderVariantId)) {
-        addonsByVariant.set(addon.orderVariantId, []);
-      }
-      addonsByVariant.get(addon.orderVariantId)!.push({
-        id: addon.id,
-        qty: addon.qty,
-        addon: addonValues.get(addon.addonValueId)!, // Preloaded value
-      });
-    }
-
-    const v: Variant[] = variants.map((x) => ({
-      id: x.id,
-      qty: x.qty,
-      total: 0,
-      variant: variantValues.get(x.variant_id)!, // Preloaded value
-      addons: addonsByVariant.get(x.id) ?? [],
-      deleted: x.deleted,
-    }));
-
-    const vWithTotal: Variant[] = v.map((x) => ({
-      ...x,
-      total: getTotal(x),
-    }));
-
-    const _order = {
-      orderId: order.id,
-      customer: customer ?? null,
-      costs,
-      discounts,
-      variants: vWithTotal,
-    };
-
-    order$.set({
-      ..._order,
-      variantsToDelete: [],
-      discountsToDelete: [],
-      costsToDelete: [],
-      isLoadFromSave: true,
-      totalAll: 0,
-    });
+    const data = await constructOrder(order, false);
+    order$.set(data);
   });
 
   return (
@@ -1258,7 +1404,7 @@ const PopoverContent: React.FC<{
       id: generateId(),
       deleted: false,
       name: data.name.get(),
-      order_id: ctx$.orderId.get(),
+      orderHistoryId: ctx$.orderHistoryId.get(),
       type: data.type.get(),
       value: data.value.get(),
     });
@@ -1333,6 +1479,38 @@ const PopoverContent: React.FC<{
 
 export default Page;
 
+const PriceEditSheet: React.FC<{
+  orderVariant: Variant;
+  index: number;
+}> = ({ index, orderVariant }) => {
+  const ctx$ = useContext(KasirContext);
+
+  return (
+    <Sheet
+      title="Edit Harga"
+      trigger={() => (
+        <Button variant="ghost" size="icon" className="ml-2">
+          <LucideEdit />
+        </Button>
+      )}
+      content={() => (
+        <div>
+          <InputWithLabel
+            label="Harga"
+            inputProps={{
+              defaultValue: orderVariant.price,
+              onBlur: (e) => {
+                ctx$.variants[index]!.price.set(+e.target.value);
+                ctx$.variants[index]!.total.set(getTotal(orderVariant));
+              },
+            }}
+          />
+        </div>
+      )}
+    />
+  );
+};
+
 const columns: ColumnDef<Variant>[] = [
   DataTableSelectorHeader(),
   {
@@ -1345,6 +1523,7 @@ const columns: ColumnDef<Variant>[] = [
       <div className="font-medium">
         {products$[row.original.variant.product_id]!.name.get()}{" "}
         {renderValue<string>()}
+        <PriceEditSheet index={row.index} orderVariant={row.original} />
       </div>
     ),
     size: 1000,
@@ -1363,7 +1542,7 @@ const columns: ColumnDef<Variant>[] = [
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Addon" />
     ),
-    cell: ({ row }) => <Memo>{() => <AddonButton variant={row} />}</Memo>,
+    cell: ({ row }) => <AddonButton variant={row} />,
   },
   {
     id: "qty",
@@ -1379,7 +1558,7 @@ const getTotal = (variant: Variant) => {
   const reduce = variant.addons.reduce((next, a) => {
     return next + a.addon.price * a.qty;
   }, 0);
-  return reduce + variant.variant.price;
+  return reduce + variant.price;
 };
 
 const AddonButton: React.FC<{ variant: Row<Variant> }> = ({ variant }) => {
@@ -1594,6 +1773,7 @@ const ProductCard: React.FC<{ product: Product }> = ({ product }) => {
             qty: 0,
             addons: [],
             total: e.price,
+            price: e.price,
           },
         ]);
       }}

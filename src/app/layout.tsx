@@ -16,7 +16,13 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${GeistSans.variable}`}>
       {/* <head>
-        <script src="https://unpkg.com/react-scan/dist/auto.global.js" />
+        <script type="text/javascript" src="receipt.js"></script>
+        <script type="text/javascript" src="receipt-printer.js"></script>
+        <script type="text/javascript" src="receipt-serial.js"></script>
+        <script
+          type="text/javascript"
+          src="qrcode-generator/qrcode.js"
+        ></script>
       </head> */}
       <body>
         {children}
