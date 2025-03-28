@@ -15,6 +15,7 @@ interface Menu {
   url?: string;
   children: Menu[];
   permission: string;
+  exclude?: string;
 }
 
 export const menus: Menu[] = [
@@ -148,6 +149,25 @@ export const menus: Menu[] = [
       },
     ],
   },
+  {
+    title: "Absensi",
+    permission: "absensi",
+    children: [
+      {
+        title: "Pegawai",
+        children: [],
+        url: "/admin/absensi/pegawai",
+        permission: "pegawai",
+      },
+      {
+        title: "Absen",
+        children: [],
+        url: "/admin/absensi/absen",
+        permission: "absen",
+        exclude: "admin",
+      },
+    ],
+  },
 ] as const;
 
 type Navigation = {
@@ -201,7 +221,11 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             className="rounded-md bg-white px-5 text-black"
           >
             {menus.map((x, i) => (
-              <Authenticated permission={x.permission ?? ""} key={i}>
+              <Authenticated
+                permission={x.permission ?? ""}
+                key={i}
+                exclude={x.exclude}
+              >
                 <AccordionItem value={`item-${i}`} className="border-0">
                   <AccordionTrigger>
                     <div className="flex gap-2">
@@ -221,7 +245,11 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                   </AccordionTrigger>
                   <AccordionContent className="flex flex-col gap-1">
                     {x.children.map((c, j) => (
-                      <Authenticated permission={c.permission ?? ""} key={j}>
+                      <Authenticated
+                        permission={c.permission ?? ""}
+                        key={j}
+                        exclude={x.exclude}
+                      >
                         {c.url ? (
                           <Link
                             href={c.url}

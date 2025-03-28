@@ -246,4 +246,16 @@ export const orderHistories$ = createSupabaseObservable({
   },
 });
 
+export const absensi$ = createSupabaseObservable({
+  collection: "Absensi",
+  transform: async (value) => {
+    await dexie.absensi.put({
+      ...value,
+      enter: new Date(value.enter),
+      exit: value.exit ? new Date(value.exit) : null,
+    });
+    return value;
+  },
+});
+
 export const orderStatuses = ["pending", "desain", "ready", "selesai", "void"];

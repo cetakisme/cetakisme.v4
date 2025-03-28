@@ -291,6 +291,7 @@ const AddDialog: React.FC<{ role: Role }> = ({ role }) => {
           />
           <RolePermissionTabsContent permission={navigations.orderan!} />
           <RolePermissionTabsContent permission={navigations.akun!} />
+          <RolePermissionTabsContent permission={navigations.absensi!} />
         </Tabs>
       </Dialog>
     </RoleContext.Provider>

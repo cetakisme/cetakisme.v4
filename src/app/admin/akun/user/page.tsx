@@ -107,7 +107,9 @@ const Role: React.FC<{ user: CustomUser }> = ({ user }) => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline">{role?.id ?? "No Role"}</Button>
+        <Button variant="outline">
+          <Memo>{roles$[user.roleId]!.id.get() ?? "No Role"}</Memo>
+        </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent>
         <DropdownMenuItem className="font-bold">Roles</DropdownMenuItem>

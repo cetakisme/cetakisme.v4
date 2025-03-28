@@ -1,4 +1,5 @@
 import type {
+  Absensi,
   Addon,
   AddonValue,
   Attribute,
@@ -57,6 +58,7 @@ const dexie = new Dexie("FriendsDatabase", {
   supplierContactPersons: EntityTable<SupplierContactPerson, "id">;
   income: EntityTable<Income, "id">;
   expense: EntityTable<Expense, "id">;
+  absensi: EntityTable<Absensi, "id">;
 };
 
 // Schema declaration:
@@ -85,6 +87,7 @@ dexie.version(1).stores({
   supplierContactPersons: "id, supplierId",
   income: "id",
   expense: "id",
+  absensi: "id, userId, enter",
 });
 
 export { dexie };

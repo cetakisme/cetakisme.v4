@@ -10,6 +10,13 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Absensi {
+  id          String      @id @default(uuid())
+  userId      String      @default("")
+  enter       DateTime    @default(now())
+  exit        DateTime?    @default(now())
+}
+
 model Income {
   id          String      @id @default(uuid())
   type        String      @default("")

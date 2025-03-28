@@ -9,8 +9,9 @@ const Authenticated: React.FC<
   React.PropsWithChildren & {
     permission: string;
     fallback?: () => React.ReactNode;
+    exclude?: string;
   }
-> = ({ children, permission, fallback }) => {
+> = ({ children, permission, exclude, fallback }) => {
   return (
     <>
       <Memo>
@@ -21,6 +22,8 @@ const Authenticated: React.FC<
           const role = user.role;
 
           if (!role) return fallback?.();
+          if (exclude && role === exclude) return null;
+
           if (role === "admin") return <>{children}</>;
 
           const roleId = users$[user.id]!.roleId.get();
