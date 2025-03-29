@@ -6,6 +6,7 @@ import Authenticated from "@/components/hasan/auth/authenticated";
 import ControlledSheet from "@/components/hasan/controlled-sheet";
 import InputWithLabel from "@/components/hasan/input-with-label";
 import RenderList from "@/components/hasan/render-list";
+import Title from "@/components/hasan/title";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -236,6 +237,7 @@ const Users = () => {
   });
   return (
     <ScrollArea className="h-screen p-8">
+      <Title>User</Title>
       <div className="space-y-2">
         <div className="flex h-9 justify-between">
           <DataTableFilterName table={table} />

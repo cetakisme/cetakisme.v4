@@ -108,22 +108,26 @@ const Action: React.FC<{ income: Income }> = ({ income: expense }) => {
         <DropdownMenuContent>
           <DropdownMenuItem className="font-medium">Opsi</DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem
-            onClick={() => {
-              ctx$.id.set(expense.id);
-              editDialog.trigger();
-            }}
-          >
-            Ubah
-          </DropdownMenuItem>
-          <Conditional condition={expense.type === "keluar"}>
-            <DropdownMenuSeparator />
+          <Authenticated permission="pemasukan-update">
             <DropdownMenuItem
-              className="bg-destructive text-destructive-foreground"
-              onClick={() => deleteDialog.trigger()}
+              onClick={() => {
+                ctx$.id.set(expense.id);
+                editDialog.trigger();
+              }}
             >
-              Hapus
+              Ubah
             </DropdownMenuItem>
+          </Authenticated>
+          <Conditional condition={expense.type === "keluar"}>
+            <Authenticated permission="pemasukan-delete">
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                className="bg-destructive text-destructive-foreground"
+                onClick={() => deleteDialog.trigger()}
+              >
+                Hapus
+              </DropdownMenuItem>
+            </Authenticated>
           </Conditional>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -175,7 +179,9 @@ const Expenses = () => {
           <div className="flex h-9 justify-between">
             <DataTableFilterName table={table} />
             <div className="flex gap-2">
-              <AddSheet />
+              <Authenticated permission="pemasukan-create">
+                <AddSheet />
+              </Authenticated>
               <DataTableViewOptions table={table} />
             </div>
           </div>

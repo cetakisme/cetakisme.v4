@@ -101,27 +101,31 @@ const Actions: C_Bahan = ({ bahan }) => {
         <DropdownMenuContent>
           <DropdownMenuItem className="font-semibold">Opsi</DropdownMenuItem>
           <DropdownMenuSeparator />
-          <Memo>
-            {() => (
-              <DropdownMenuItem
-                onClick={() => {
-                  ctx$.id.set(bahan.id);
-                  editDialog.trigger();
-                }}
-              >
-                Ubah
+          <Authenticated permission="bahan-dan-aset-update">
+            <Memo>
+              {() => (
+                <DropdownMenuItem
+                  onClick={() => {
+                    ctx$.id.set(bahan.id);
+                    editDialog.trigger();
+                  }}
+                >
+                  Ubah
+                </DropdownMenuItem>
+              )}
+            </Memo>
+          </Authenticated>
+          <Authenticated permission="bahan-dan-aset-delete">
+            <Button
+              variant="destructive"
+              className="w-full justify-start"
+              asChild
+            >
+              <DropdownMenuItem onClick={deleteDialog.trigger}>
+                Hapus
               </DropdownMenuItem>
-            )}
-          </Memo>
-          <Button
-            variant="destructive"
-            className="w-full justify-start"
-            asChild
-          >
-            <DropdownMenuItem onClick={deleteDialog.trigger}>
-              Hapus
-            </DropdownMenuItem>
-          </Button>
+            </Button>
+          </Authenticated>
         </DropdownMenuContent>
       </DropdownMenu>
       <Sheet title="Bahan" content={() => <Form />} {...editDialog.props} />
@@ -158,7 +162,9 @@ const Table = () => {
           <div className="flex h-9 justify-between">
             <DataTableFilterName table={table} />
             <div className="flex gap-2">
-              <AddSheet />
+              <Authenticated permission="bahan-dan-aset-create">
+                <AddSheet />
+              </Authenticated>
               <DataTableViewOptions table={table} />
             </div>
           </div>

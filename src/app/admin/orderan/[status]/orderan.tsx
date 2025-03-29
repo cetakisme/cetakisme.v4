@@ -91,8 +91,9 @@ import { Observable } from "@legendapp/state";
 import { toRupiah } from "@/lib/utils";
 import { getHistoryReceipt } from "../../resi/[id]/resi";
 import { toast } from "sonner";
+import Authenticated from "@/components/hasan/auth/authenticated";
 
-const columns: ColumnDef<Order>[] = [
+const columns: ColumnDef<Order & { status: string }>[] = [
   {
     id: "name",
     accessorFn: (original) => customer$[original.customer_id]?.name.get(),
@@ -108,29 +109,40 @@ const columns: ColumnDef<Order>[] = [
             </div>
           )}
         </Memo>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
+        <Authenticated
+          permission={row.original.status + "-update"}
+          fallback={() => (
             <Badge className="cursor-pointer">
               {row.original.payment_status}
             </Badge>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent>
-            <DropdownMenuItem className="font-medium">Status</DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <List
-              data={["DP", "Cicil", "Lunas"].map((x) => ({ id: x }))}
-              render={(data) => (
-                <DropdownMenuItem
-                  onClick={() =>
-                    orders$[row.original.id]!.payment_status.set(data.id)
-                  }
-                >
-                  {data.id}
-                </DropdownMenuItem>
-              )}
-            />
-          </DropdownMenuContent>
-        </DropdownMenu>
+          )}
+        >
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Badge className="cursor-pointer">
+                {row.original.payment_status}
+              </Badge>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem className="font-medium">
+                Status
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <List
+                data={["DP", "Cicil", "Lunas"].map((x) => ({ id: x }))}
+                render={(data) => (
+                  <DropdownMenuItem
+                    onClick={() =>
+                      orders$[row.original.id]!.payment_status.set(data.id)
+                    }
+                  >
+                    {data.id}
+                  </DropdownMenuItem>
+                )}
+              />
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </Authenticated>
       </div>
     ),
   },
@@ -174,7 +186,7 @@ const columns: ColumnDef<Order>[] = [
   },
 ];
 
-type C_Order = React.FC<{ order: Order }>;
+type C_Order = React.FC<{ order: Order & { status: string } }>;
 
 interface IOrderHistoryContext {
   id: string;
@@ -209,15 +221,17 @@ const Actions: C_Order = ({ order }) => {
               detailDialog.trigger();
             }}
           />
-          <DropdownMenuItem asChild>
-            <Link href={`/admin/pos/kasir/edit?id=${order.id}`}>Ubah</Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={AturBarangDialog.trigger}>
-            Atur Barang
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={linkDialog.trigger}>
-            Tambah Link
-          </DropdownMenuItem>
+          <Authenticated permission={order.status + "-update"}>
+            <DropdownMenuItem asChild>
+              <Link href={`/admin/pos/kasir/edit?id=${order.id}`}>Ubah</Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={AturBarangDialog.trigger}>
+              Atur Barang
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={linkDialog.trigger}>
+              Tambah Link
+            </DropdownMenuItem>
+          </Authenticated>
           {/* <DropdownMenuItem asChild>
           <Button variant="destructive" className="w-full justify-start">
             Hapus
@@ -1117,44 +1131,58 @@ const VariantSelector: React.FC<{ data: OrderProduct }> = ({ data }) => {
 
 const Status: C_Order = ({ order }) => {
   return (
-    <PopoverButton
-      data={orderStatuses.map((x) => ({
-        name: x,
-      }))}
-      onSelected={(e) => {
-        orders$[order.id]!.order_status.set(e.name);
-      }}
-      renderItem={(data) => <div className="font-medium">{data.name}</div>}
-      title="Order Status"
-      renderTrigger={() => (
-        <Button variant="outline">{order.order_status}</Button>
-      )}
-    />
+    <Authenticated
+      permission={order.status + "-update"}
+      fallback={() => <Button variant="outline">{order.order_status}</Button>}
+    >
+      <PopoverButton
+        data={orderStatuses.map((x) => ({
+          name: x,
+        }))}
+        onSelected={(e) => {
+          orders$[order.id]!.order_status.set(e.name);
+        }}
+        renderItem={(data) => <div className="font-medium">{data.name}</div>}
+        title="Order Status"
+        renderTrigger={() => (
+          <Button variant="outline">{order.order_status}</Button>
+        )}
+      />
+    </Authenticated>
   );
 };
 
 const Deadline: C_Order = ({ order }) => {
   return (
-    <Popover>
-      <PopoverTrigger asChild>
+    <Authenticated
+      permission={order.status + "-update"}
+      fallback={() => (
         <Button variant="outline">
           {moment(order.deadline).locale("id").fromNow()}
         </Button>
-      </PopoverTrigger>
-      <PopoverContent>
-        <Calendar
-          mode="single"
-          locale={id}
-          selected={order.deadline ? new Date(order.deadline) : new Date()}
-          onSelect={(date: Date | undefined) => {
-            if (!date) return;
-            date.setHours(31, 59, 59, 59);
-            orders$[order.id]!.deadline.set(date.toISOString());
-          }}
-          className="rounded-md border"
-        />
-      </PopoverContent>
-    </Popover>
+      )}
+    >
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button variant="outline">
+            {moment(order.deadline).locale("id").fromNow()}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent>
+          <Calendar
+            mode="single"
+            locale={id}
+            selected={order.deadline ? new Date(order.deadline) : new Date()}
+            onSelect={(date: Date | undefined) => {
+              if (!date) return;
+              date.setHours(31, 59, 59, 59);
+              orders$[order.id]!.deadline.set(date.toISOString());
+            }}
+            className="rounded-md border"
+          />
+        </PopoverContent>
+      </Popover>
+    </Authenticated>
   );
 };
 
@@ -1163,7 +1191,7 @@ const Orderan: React.FC<{ status: string }> = ({ status }) => {
     dexie.orders.where("order_status").equals(status).toArray(),
   );
   const table = useTable({
-    data: orders ?? [],
+    data: orders?.map((x) => ({ ...x, status: status })) ?? [],
     columns: columns,
   });
 

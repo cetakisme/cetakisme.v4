@@ -22,10 +22,21 @@ import {
 } from "@/components/ui/table";
 import { useLiveQuery } from "dexie-react-hooks";
 import { dexie } from "@/server/local/dexie";
-import { toast } from "sonner";
 import { DateTime } from "luxon";
+import Title from "@/components/hasan/title";
+import Authenticated from "@/components/hasan/auth/authenticated";
 
 const Page = () => {
+  return (
+    <Authenticated permission="pegawai">
+      <Absensi />
+    </Authenticated>
+  );
+};
+
+export default Page;
+
+const Absensi = () => {
   const range = useObservable<{
     start: Date | null;
     end: Date | null;
@@ -60,6 +71,7 @@ const Page = () => {
 
   return (
     <ScrollArea className="h-screen p-8">
+      <Title>Absensi Pegawai</Title>
       <div className="flex items-center gap-2">
         <DateButton
           onSelected={(e) => range.start.set(e)}
@@ -133,8 +145,6 @@ const Page = () => {
     </ScrollArea>
   );
 };
-
-export default Page;
 
 const isTheSameDay = (target: Date, date: Date) => {
   const today = DateTime.fromJSDate(target)

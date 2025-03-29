@@ -151,35 +151,41 @@ const ContactPersons: React.FC<{ supplier: Supplier }> = ({ supplier }) => {
                     >
                       Detail
                     </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => {
-                        contact$.id.set(x.id);
-                        editDialog.trigger();
-                      }}
-                    >
-                      Ubah
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <Button asChild variant="destructive">
+                    <Authenticated permission="suplier-update">
                       <DropdownMenuItem
-                        className="w-full justify-start"
                         onClick={() => {
                           contact$.id.set(x.id);
-                          deletedDialog.trigger();
+                          editDialog.trigger();
                         }}
                       >
-                        Hapus
+                        Ubah
                       </DropdownMenuItem>
-                    </Button>
+                    </Authenticated>
+                    <Authenticated permission="suplier-delete">
+                      <DropdownMenuSeparator />
+                      <Button asChild variant="destructive">
+                        <DropdownMenuItem
+                          className="w-full justify-start"
+                          onClick={() => {
+                            contact$.id.set(x.id);
+                            deletedDialog.trigger();
+                          }}
+                        >
+                          Hapus
+                        </DropdownMenuItem>
+                      </Button>
+                    </Authenticated>
                   </DropdownMenuSubContent>
                 </DropdownMenuPortal>
               </DropdownMenuSub>
             ))}
-          <DropdownMenuSeparator />
-          <CreateContact
-            supplier={supplier}
-            onCreate={() => editDialog.trigger()}
-          />
+          <Authenticated permission="suplier-create">
+            <DropdownMenuSeparator />
+            <CreateContact
+              supplier={supplier}
+              onCreate={() => editDialog.trigger()}
+            />
+          </Authenticated>
         </DropdownMenuContent>
       </DropdownMenu>
       <Sheet
@@ -338,24 +344,28 @@ const Actions: React.FC<{ supplier: Supplier }> = ({ supplier }) => {
         <DropdownMenuContent>
           <DropdownMenuItem className="font-semibold">Opsi</DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem
-            onClick={() => {
-              ctx$.id.set(supplier.id);
-              editDialog.trigger();
-            }}
-          >
-            Ubah
-          </DropdownMenuItem>
-          <Button asChild variant="destructive">
+          <Authenticated permission="suplier-update">
             <DropdownMenuItem
-              className="w-full justify-start"
               onClick={() => {
-                deleteDialog.trigger();
+                ctx$.id.set(supplier.id);
+                editDialog.trigger();
               }}
             >
-              Hapus
+              Ubah
             </DropdownMenuItem>
-          </Button>
+          </Authenticated>
+          <Authenticated permission="suplier-delete">
+            <Button asChild variant="destructive">
+              <DropdownMenuItem
+                className="w-full justify-start"
+                onClick={() => {
+                  deleteDialog.trigger();
+                }}
+              >
+                Hapus
+              </DropdownMenuItem>
+            </Button>
+          </Authenticated>
         </DropdownMenuContent>
       </DropdownMenu>
       <Sheet title="Supplier" content={() => <Form />} {...editDialog.props} />

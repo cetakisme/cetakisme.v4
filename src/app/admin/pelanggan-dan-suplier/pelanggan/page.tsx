@@ -19,6 +19,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useDialog } from "@/hooks/useDialog";
@@ -29,6 +30,7 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { dexie } from "@/server/local/dexie";
 import Authenticated from "@/components/hasan/auth/authenticated";
 import AuthFallback from "@/components/hasan/auth/auth-fallback";
+import Title from "@/components/hasan/title";
 
 const CustomerContext = createContext<Observable<ICustomerContext>>(
   undefined as any,
@@ -99,25 +101,31 @@ const Actions: React.FC<{ customer: Customer }> = ({ customer }) => {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent>
-          <DropdownMenuItem
-            onClick={() => {
-              _customer$.customerId.set(customer.id);
-              updateDialog.trigger();
-            }}
-          >
-            Ubah
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Button
-              variant="destructive"
-              className="w-full justify-start"
+          <DropdownMenuItem className="font-medium">Opsi</DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <Authenticated permission="pelanggan-update">
+            <DropdownMenuItem
               onClick={() => {
-                deleteDialog.trigger();
+                _customer$.customerId.set(customer.id);
+                updateDialog.trigger();
               }}
             >
-              Hapus
-            </Button>
-          </DropdownMenuItem>
+              Ubah
+            </DropdownMenuItem>
+          </Authenticated>
+          <Authenticated permission="pelanggan-delete">
+            <DropdownMenuItem asChild>
+              <Button
+                variant="destructive"
+                className="w-full justify-start"
+                onClick={() => {
+                  deleteDialog.trigger();
+                }}
+              >
+                Hapus
+              </Button>
+            </DropdownMenuItem>
+          </Authenticated>
         </DropdownMenuContent>
       </DropdownMenu>
       <Sheet
@@ -163,6 +171,7 @@ const Customers = () => {
 
   return (
     <ScrollArea className="h-screen p-8">
+      <Title>Pelanggan</Title>
       <CustomerContext.Provider value={customerId}>
         <Table data={customers ?? []} />
       </CustomerContext.Provider>
@@ -185,7 +194,9 @@ const Table: React.FC<{ data: Customer[] }> = ({ data }) => {
       <div className="flex h-9 justify-between">
         <DataTableFilterName table={table} />
         <div className="flex gap-2">
-          <CustomerSheet />
+          <Authenticated permission="pelanggan-create">
+            <CustomerSheet />
+          </Authenticated>
           <DataTableViewOptions table={table} />
         </div>
       </div>

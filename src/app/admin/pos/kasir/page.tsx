@@ -95,6 +95,8 @@ import Authenticated from "@/components/hasan/auth/authenticated";
 import AuthFallback from "@/components/hasan/auth/auth-fallback";
 import { useSearchParams } from "next/navigation";
 import Conditional from "@/components/hasan/conditional";
+import { DialogProps } from "@radix-ui/react-dialog";
+import { CommandItem } from "@/components/ui/command";
 
 interface IKasirContext {
   isLoadFromSave: boolean;
@@ -519,15 +521,20 @@ const Page = () => {
                     {() => (
                       <Conditional condition={!ctx$.isEditMode.get()}>
                         <SavedOrdersSheet />
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={() => save()}
-                        >
-                          <MdDownload />
-                        </Button>
+
+                        <Authenticated permission="kasir-update">
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => save()}
+                          >
+                            <MdDownload />
+                          </Button>
+                        </Authenticated>
                         <NewOrder />
-                        <DeleteOrder />
+                        <Authenticated permission="kasir-delete">
+                          <DeleteOrder />
+                        </Authenticated>
                       </Conditional>
                     )}
                   </Memo>
@@ -788,7 +795,10 @@ const PaySheet = () => {
     if (ctx$.isEditMode.get()) {
       incomes$[ctx$.orderId.get()]!.set((p) => ({
         ...p,
-        income: pay$.amount.get(),
+        income:
+          pay$.amount.get() > ctx$.totalAll.get()
+            ? ctx$.totalAll.get()
+            : pay$.amount.get(),
         notes: `Pemasukan Dari Order ${ctx$.customer.name.get()}`,
         updatedAt: new Date().toISOString(),
       }));
@@ -797,7 +807,10 @@ const PaySheet = () => {
         createdAt: new Date().toISOString(),
         deleted: false,
         id: ctx$.orderId.get(),
-        income: pay$.amount.get(),
+        income:
+          pay$.amount.get() > ctx$.totalAll.get()
+            ? ctx$.totalAll.get()
+            : pay$.amount.get(),
         notes: `Pemasukan Dari Order ${ctx$.customer.name.get()}`,
         type: "order",
         updatedAt: new Date().toISOString(),
@@ -810,7 +823,9 @@ const PaySheet = () => {
 
   return (
     <>
-      <Button onClick={() => pay()}>Bayar</Button>
+      <Authenticated permission="kasir-create">
+        <Button onClick={() => pay()}>Bayar</Button>
+      </Authenticated>
       <Sheet
         {...dialog.props}
         title="Bayar"
@@ -925,15 +940,85 @@ const CustomerSelector: React.FC<{ customer: Customer | null }> = ({
     dexie.customers.filter((x) => x.deleted === false).toArray(),
   );
 
+  const addDialog = useDialog();
+
   return (
-    <Combobox
-      data={customers ?? []}
-      onSelected={(e) => {
-        ctx$.customer.set(e);
-      }}
-      renderItem={(data) => <Label>{data.name}</Label>}
-      title="Pelanggan"
-      renderSelected={() => customer?.name ?? "Pilih Pelanggan"}
+    <>
+      <Combobox
+        data={customers ?? []}
+        onSelected={(e) => {
+          ctx$.customer.set(e);
+        }}
+        renderItem={(data) => <Label>{data.name}</Label>}
+        title="Pelanggan"
+        renderSelected={() => customer?.name ?? "Pilih Pelanggan"}
+        renderAddButton={() => (
+          <div className="p-1">
+            <Button onClick={() => addDialog.trigger()} className="w-full">
+              <LucidePlus /> Buat Customer Baru
+            </Button>
+          </div>
+        )}
+      />
+      <CustomerForm
+        onSave={(c) => {
+          ctx$.customer.set(c);
+          addDialog.dismiss();
+        }}
+        {...addDialog.props}
+      />
+    </>
+  );
+};
+
+const CustomerForm: React.FC<
+  { onSave: (c: Customer) => void } & DialogProps
+> = ({ onSave, ...props }) => {
+  const _customer$ = useObservable<Customer>({
+    address: "",
+    age: 0,
+    deleted: false,
+    id: "",
+    job: "",
+    name: "",
+    notes: "",
+    phone: "",
+  });
+
+  const save = () => {
+    if (_customer$.name.get() === "") {
+      toast.error("Nama Harus Diisi");
+      return;
+    }
+
+    const id = generateId();
+    _customer$.id.set(id);
+    const c = { ..._customer$.get() };
+    customer$[id]!.set(c);
+    onSave(c);
+    _customer$.name.set("");
+  };
+
+  return (
+    <Sheet
+      {...props}
+      title="Customer Baru"
+      content={() => (
+        <div className="space-y-2">
+          <Memo>
+            {() => (
+              <InputWithLabel
+                label="Nama"
+                inputProps={{
+                  value: _customer$.name.get(),
+                  onChange: (e) => _customer$.name.set(e.target.value),
+                }}
+              />
+            )}
+          </Memo>
+          <Button onClick={() => save()}>Buat</Button>
+        </div>
+      )}
     />
   );
 };
@@ -1523,7 +1608,9 @@ const columns: ColumnDef<Variant>[] = [
       <div className="font-medium">
         {products$[row.original.variant.product_id]!.name.get()}{" "}
         {renderValue<string>()}
-        <PriceEditSheet index={row.index} orderVariant={row.original} />
+        <Authenticated permission="kasir-update">
+          <PriceEditSheet index={row.index} orderVariant={row.original} />
+        </Authenticated>
       </div>
     ),
     size: 1000,
@@ -1542,7 +1629,18 @@ const columns: ColumnDef<Variant>[] = [
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Addon" />
     ),
-    cell: ({ row }) => <AddonButton variant={row} />,
+    cell: ({ row }) => (
+      <Authenticated
+        permission="kasir-update"
+        fallback={() => (
+          <Button variant="outline">
+            <Memo>{() => row.original.addons.length}</Memo> Addons
+          </Button>
+        )}
+      >
+        <AddonButton variant={row} />
+      </Authenticated>
+    ),
   },
   {
     id: "qty",
