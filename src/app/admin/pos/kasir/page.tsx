@@ -89,7 +89,7 @@ import { SheetClose } from "@/components/ui/sheet";
 import { TiDeleteOutline } from "react-icons/ti";
 import Alert from "@/components/hasan/alert";
 import { useDialog } from "@/hooks/useDialog";
-import { LucideDot, LucideEdit, LucidePlus } from "lucide-react";
+import { LucideDot, LucideEdit, LucideImage, LucidePlus } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import Authenticated from "@/components/hasan/auth/authenticated";
 import AuthFallback from "@/components/hasan/auth/auth-fallback";
@@ -1023,16 +1023,43 @@ const CustomerForm: React.FC<
   );
 };
 
+const productColumns: ColumnDef<Product>[] = [
+  {
+    id: "name",
+    accessorKey: "name",
+  },
+];
+
 const ProductKatalog = () => {
   const products = useLiveQuery(() =>
-    dexie.products.filter((x) => x.deleted === false).toArray(),
+    dexie.products.filter((x) => x.deleted === false).sortBy("name"),
   );
+
+  const table = useTable({
+    data: products ?? [],
+    columns: productColumns,
+    state: {
+      pagination: {
+        pageIndex: 0,
+        pageSize: 1000,
+      },
+    },
+  });
+
   return (
-    <RenderList
-      className="grid grid-cols-4 gap-2"
-      data={products}
-      render={(data) => <ProductCard product={data} />}
-    />
+    <ScrollArea className="flex-1">
+      <div className="space-y-2 p-2">
+        <div className="h-9">
+          <DataTableFilterName table={table} />
+        </div>
+        <RenderList
+          className="grid grid-cols-4 gap-2"
+          data={table.getRowModel().rows ?? []}
+          getKey={(data) => data.id}
+          render={(data) => <ProductCard product={data.original} />}
+        />
+      </div>
+    </ScrollArea>
   );
 };
 
@@ -1608,9 +1635,9 @@ const columns: ColumnDef<Variant>[] = [
       <div className="font-medium">
         {products$[row.original.variant.product_id]!.name.get()}{" "}
         {renderValue<string>()}
-        <Authenticated permission="kasir-update">
-          <PriceEditSheet index={row.index} orderVariant={row.original} />
-        </Authenticated>
+        {/* <Authenticated permission="kasir-update"> */}
+        <PriceEditSheet index={row.index} orderVariant={row.original} />
+        {/* </Authenticated> */}
       </div>
     ),
     size: 1000,
@@ -1884,11 +1911,14 @@ const ProductCard: React.FC<{ product: Product }> = ({ product }) => {
       title="Varian"
       renderTrigger={() => (
         <div className="flex aspect-square h-full w-full flex-col overflow-hidden rounded-md shadow-lg">
-          <div className="relative flex-1">
+          <div className="relative flex flex-1 items-center justify-center">
             {product.images[0] && product.images[0] !== "" ? (
               <Img src={product.images[0]} alt="" />
             ) : (
-              <>No Image</>
+              <div className="flex flex-col items-center justify-center">
+                <LucideImage className="text-gray-400" />
+                <span className="text-sm text-gray-400">No Image</span>
+              </div>
             )}
           </div>
           <Label className="line-clamp-1 p-2">{product.name}</Label>

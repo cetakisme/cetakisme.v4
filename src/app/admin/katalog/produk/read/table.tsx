@@ -177,7 +177,10 @@ const ProdukTable: React.FC<{ products?: Product[] }> = ({ products }) => {
 
 const Table = () => {
   const products = useLiveQuery(() =>
-    dexie.products.filter((x) => x.deleted === false).toArray(),
+    dexie.products
+      .filter((x) => x.deleted === false)
+      .reverse()
+      .sortBy("created_at"),
   );
   return <ProdukTable products={products} />;
 };
