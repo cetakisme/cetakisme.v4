@@ -1,7 +1,7 @@
 "use client";
 
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { toRupiah } from "@/lib/utils";
+import { now, toRupiah } from "@/lib/utils";
 import {
   addons$,
   addonValues$,
@@ -126,7 +126,7 @@ export const getHistoryReceipt = async (
 
 Cetakisme
 Lingkungan IV, Tumumpa Dua, Kec. Tuminting, Kota Manado, Sulawesi Utara 95239
-${moment(new Date()).format("DD/MM/YYYY, hh:mm A")}
+${moment(now()).format("DD/MM/YYYY, hh:mm A")}
 -
 
 ${s}

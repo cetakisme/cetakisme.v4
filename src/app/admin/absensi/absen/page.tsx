@@ -30,15 +30,6 @@ import {
 } from "@/server/functions/absen";
 import { date, isoDate, now } from "@/lib/utils";
 
-const isToday = (date: Date) => {
-  const today = DateTime.now().setZone("Asia/Singapore").toJSDate();
-  return (
-    date.getFullYear() === today.getFullYear() &&
-    date.getMonth() === today.getMonth() &&
-    date.getDate() === today.getDate()
-  );
-};
-
 const Page = () => {
   return (
     <Authenticated permission="absen">
@@ -81,10 +72,7 @@ const Absen = () => {
       <Card className="mx-auto max-w-xl">
         <CardHeader>
           <CardTitle className="text-2xl">
-            Absen Tanggal{" "}
-            {moment(DateTime.now().setZone("Asia/Singapore").toJSDate()).format(
-              "DD MMMM YYYY",
-            )}
+            Absen Tanggal {moment(now().toJSDate()).format("DD MMMM YYYY")}
           </CardTitle>
         </CardHeader>
         <CardContent>

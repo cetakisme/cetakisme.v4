@@ -96,7 +96,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Combobox } from "@/components/hasan/combobox";
 import Title from "@/components/hasan/title";
 import { Observable } from "@legendapp/state";
-import { toRupiah } from "@/lib/utils";
+import { isoNow, toRupiah } from "@/lib/utils";
 import { getHistoryReceipt } from "../../resi/[id]/resi";
 import { toast } from "sonner";
 import Authenticated from "@/components/hasan/auth/authenticated";
@@ -934,11 +934,11 @@ const OrderMaterials: React.FC<{ order: Order }> = ({ order }) => {
                         expenses$[data.id]!.set({
                           id: data.id,
                           deleted: false,
-                          createdAt: new Date().toISOString(),
+                          createdAt: isoNow(),
                           expense: 0,
                           notes: "",
                           type: "",
-                          updatedAt: new Date().toISOString(),
+                          updatedAt: isoNow(),
                           targetId: "",
                         });
                       } else {
@@ -989,11 +989,11 @@ const OrderMaterials: React.FC<{ order: Order }> = ({ order }) => {
                           expenses$[data.id]!.set((p) => ({
                             id: data.id,
                             deleted: false,
-                            createdAt: p?.createdAt ?? new Date().toISOString(),
+                            createdAt: p?.createdAt ?? isoNow(),
                             expense: +e.target.value,
                             notes: `Bayar ${materials$[data.materialId]!.name.get()} Ke ${suppliers$[data.supplierId]!.name.get()}`,
                             type: "bahan",
-                            updatedAt: new Date().toISOString(),
+                            updatedAt: isoNow(),
                             targetId: data.id,
                           }));
                         },
@@ -1034,7 +1034,7 @@ const OrderMaterials: React.FC<{ order: Order }> = ({ order }) => {
             type: "inventory",
             supplierId: "",
             pay: 0,
-            createdAt: DateTime.now().setZone("Asia/Singapore").toISO()!,
+            createdAt: isoNow(),
             inOut: "out",
           });
         }}
@@ -1132,15 +1132,11 @@ const OrderProucts: React.FC<{ order: Order }> = ({ order }) => {
                         id: data.id,
                         deleted: false,
                         targetId: data.id,
-                        createdAt: DateTime.now()
-                          .setZone("Asia/Singapore")
-                          .toISO()!,
+                        createdAt: isoNow(),
                         expense: 0,
                         notes: "",
                         type: "",
-                        updatedAt: DateTime.now()
-                          .setZone("Asia/Singapore")
-                          .toISO()!,
+                        updatedAt: isoNow(),
                       });
                     } else {
                       expenses$[data.id]!.set((p) => ({
@@ -1189,15 +1185,11 @@ const OrderProucts: React.FC<{ order: Order }> = ({ order }) => {
                             id: data.id,
                             targetId: data.id,
                             deleted: false,
-                            createdAt:
-                              p?.createdAt ??
-                              DateTime.now().setZone("Asia/Singapore").toISO()!,
+                            createdAt: p?.createdAt ?? isoNow(),
                             expense: +e.target.value,
                             notes: `Bayar ${products$[data.productId]!.name.get()} ${productVariants$[data.variantId]!.name.get()} Ke ${suppliers$[data.supplierId]!.name.get()}`,
                             type: "product",
-                            updatedAt: DateTime.now()
-                              .setZone("Asia/Singapore")
-                              .toISO()!,
+                            updatedAt: isoNow(),
                           }));
                         },
                       }}
@@ -1238,7 +1230,7 @@ const OrderProucts: React.FC<{ order: Order }> = ({ order }) => {
             supplierId: "",
             variantId: "",
             pay: 0,
-            createdAt: DateTime.now().setZone("Asia/Singapore").toISO()!,
+            createdAt: isoNow(),
             inOut: "out",
           });
         }}
@@ -1373,8 +1365,7 @@ const Deadline: C_Order = ({ order }) => {
   return (
     <Memo>
       {() => {
-        const deadline =
-          orders$[order.id]!.deadline.get() ?? DateTime.now().toISO()!;
+        const deadline = orders$[order.id]!.deadline.get() ?? isoNow();
         return (
           <Popover>
             <PopoverTrigger asChild>

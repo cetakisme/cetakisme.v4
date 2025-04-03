@@ -59,7 +59,7 @@ import { type Observable } from "@legendapp/state";
 import { Input } from "@/components/ui/input";
 import Sheet from "@/components/hasan/sheet";
 import { Button } from "@/components/ui/button";
-import { toRupiah } from "@/lib/utils";
+import { isoNow, toRupiah } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Combobox } from "@/components/hasan/combobox";
 import { DataTableFilterName } from "@/hooks/Table/DataTableFilterName";
@@ -97,10 +97,8 @@ import AuthFallback from "@/components/hasan/auth/auth-fallback";
 import { useSearchParams } from "next/navigation";
 import Conditional from "@/components/hasan/conditional";
 import { DialogProps } from "@radix-ui/react-dialog";
-import { CommandItem } from "@/components/ui/command";
 import ResiDialog from "@/components/hasan/resi-dialog";
 import { DB } from "@/lib/supabase/supabase";
-import { DateTime } from "luxon";
 
 interface IKasirContext {
   isLoadFromSave: boolean;
@@ -247,7 +245,7 @@ const Page = () => {
 
     orders$[ctx$.orderId.get()]!.set({
       id: ctx$.orderId.get(),
-      created_at: new Date().toISOString(),
+      created_at: isoNow(),
       customer_id: customer.id,
       deadline: null,
       deleted: false,
@@ -259,7 +257,7 @@ const Page = () => {
 
     orderHistories$[ctx$.orderHistoryId.get()]!.set({
       deleted: false,
-      created_at: new Date().toISOString(),
+      created_at: isoNow(),
       id: ctx$.orderHistoryId.get(),
       orderId: ctx$.orderId.get(),
       paid: 0,
@@ -645,7 +643,7 @@ const PaySheet = () => {
 
     orders$[ctx$.orderId.get()]!.set({
       id: ctx$.orderId.get(),
-      created_at: new Date().toISOString(),
+      created_at: isoNow(),
       driveUrl: "",
       customer_id: customer.id,
       deadline: null,
@@ -667,7 +665,7 @@ const PaySheet = () => {
 
     const addedHistory: DB<"OrderHistory"> = {
       id: orderHistoryId,
-      created_at: DateTime.now().setZone("Asia/Singapore").toISO()!,
+      created_at: isoNow(),
       deleted: false,
       orderId: ctx$.orderId.get(),
       paid: pay$.amount.get(),
@@ -807,11 +805,11 @@ const PaySheet = () => {
             ? ctx$.totalAll.get()
             : pay$.amount.get(),
         notes: `Pemasukan Dari Order ${ctx$.customer.name.get()}`,
-        updatedAt: new Date().toISOString(),
+        updatedAt: isoNow(),
       }));
     } else {
       incomes$[ctx$.orderId.get()]!.set({
-        createdAt: new Date().toISOString(),
+        createdAt: isoNow(),
         deleted: false,
         id: ctx$.orderId.get(),
         income:
@@ -820,7 +818,7 @@ const PaySheet = () => {
             : pay$.amount.get(),
         notes: `Pemasukan Dari Order ${ctx$.customer.name.get()}`,
         type: "order",
-        updatedAt: new Date().toISOString(),
+        updatedAt: isoNow(),
         targetId: "",
       });
     }

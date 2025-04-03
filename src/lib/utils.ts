@@ -18,6 +18,10 @@ export function now() {
   return DateTime.now().setZone("Asia/Singapore");
 }
 
+export function isoNow() {
+  return DateTime.now().setZone("Asia/Singapore").toISO()!;
+}
+
 export function date(date: Date) {
   return DateTime.fromJSDate(date).setZone("Asia/Singapore").toJSDate();
 }

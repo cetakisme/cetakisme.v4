@@ -371,7 +371,7 @@ const StokMasukEditContent: React.FC<{
             ...p,
             expense: stok.pay.get(),
             notes: `Beli ${stok.qty.get()} ${products$[stok.productId.get()]!.name.get()} ${productVariants$[stok.variantId.get()]!.name.get()} Di ${suppliers$[stok.supplierId.get()]!.name.get()}`,
-            updatedAt: DateTime.now().setZone("Asia/Singapore").toISO()!,
+            updatedAt: now().toISO()!,
             targetId: stok.id.get(),
           }));
 
@@ -566,7 +566,7 @@ const AddMaterialForm: React.FC<{ onSubmit: () => void }> = ({ onSubmit }) => {
           stok.id.set(id);
           orderMaterials$[id]!.set({
             ...stok.get(),
-            createdAt: DateTime.now().setZone("Asia/Singapore").toISO()!,
+            createdAt: now().toISO()!,
           });
 
           materials$[stok.materialId.get()]!.qty.set((p) => p + stok.qty.get());
@@ -593,12 +593,12 @@ const AddMaterialForm: React.FC<{ onSubmit: () => void }> = ({ onSubmit }) => {
 
           expenses$[id]!.set({
             id: id,
-            createdAt: DateTime.now().setZone("Asia/Singapore").toISO()!,
+            createdAt: now().toISO()!,
             deleted: false,
             expense: stok.pay.get(),
             notes: `Beli ${stok.qty.get()} ${materials$[stok.materialId.get()]!.name.get()} Di ${suppliers$[stok.supplierId.get()]!.name.get()}`,
             type: "bahan",
-            updatedAt: DateTime.now().setZone("Asia/Singapore").toISO()!,
+            updatedAt: now().toISO()!,
             targetId: stok.id.get(),
           });
 
@@ -720,12 +720,12 @@ const AddProductForm: React.FC<{ onSubmit: () => void }> = ({ onSubmit }) => {
 
           expenses$[id]!.set({
             id: id,
-            createdAt: DateTime.now().setZone("Asia/Singapore").toISO()!,
+            createdAt: now().toISO()!,
             deleted: false,
             expense: stok.pay.get(),
             notes: `Beli ${stok.qty.get()} ${products$[stok.productId.get()]!.name.get()} ${productVariants$[stok.variantId.get()]!.name.get()} Di ${suppliers$[stok.supplierId.get()]!.name.get()}`,
             type: "produk",
-            updatedAt: DateTime.now().setZone("Asia/Singapore").toISO()!,
+            updatedAt: now().toISO()!,
             targetId: stok.id.get(),
           });
 

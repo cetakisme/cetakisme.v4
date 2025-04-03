@@ -29,7 +29,7 @@ import Title from "@/components/hasan/title";
 import { useLiveQuery } from "dexie-react-hooks";
 import { dexie } from "@/server/local/dexie";
 import Authenticated from "@/components/hasan/auth/authenticated";
-import { toRupiah } from "@/lib/utils";
+import { isoNow, toRupiah } from "@/lib/utils";
 import Alert from "@/components/hasan/alert";
 import { useDialog } from "@/hooks/useDialog";
 import Sheet from "@/components/hasan/sheet";
@@ -301,7 +301,7 @@ const ProdukTable: React.FC<{ products?: Product[] }> = ({ products }) => {
                     deleted: false,
                     base_price: 0,
                     images: ["", "", "", "", ""],
-                    created_at: new Date().toISOString(),
+                    created_at: isoNow(),
                     description: "",
                     costOfGoods: 0,
                   });
