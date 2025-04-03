@@ -24,6 +24,7 @@ function createSupabaseObservable<TCollection extends TableName>(opts: {
       supabase,
       collection: opts.collection,
       select: (from) => from.select("*"),
+      onError: (error) => console.log(error.message),
       transform: {
         load: opts.transform,
         save: opts.transform,
@@ -31,6 +32,7 @@ function createSupabaseObservable<TCollection extends TableName>(opts: {
       actions: ["read", "create", "update"],
       fieldDeleted: "deleted",
       realtime: true,
+      // as: "Map",
     }),
   );
 }
@@ -259,6 +261,7 @@ export const absensi$ = createSupabaseObservable({
       ...value,
       enter: new Date(value.enter),
       exit: value.exit ? new Date(value.exit) : null,
+      totalHour: new Date(value.totalHour),
     });
     return value;
   },
@@ -276,6 +279,30 @@ export const receiptModels$ = createSupabaseObservable({
   collection: "ReceiptModel",
   transform: async (value) => {
     await dexie.receiptModel.put(value);
+    return value;
+  },
+});
+
+export const incomeTypes$ = createSupabaseObservable({
+  collection: "IncomeType",
+  transform: async (value) => {
+    await dexie.incomeTypes.put(value);
+    return value;
+  },
+});
+
+export const expenseTypes$ = createSupabaseObservable({
+  collection: "ExpenseType",
+  transform: async (value) => {
+    await dexie.expenseTypes.put(value);
+    return value;
+  },
+});
+
+export const ingoingStockTypes$ = createSupabaseObservable({
+  collection: "IngoingStockType",
+  transform: async (value) => {
+    await dexie.ingoingStockTypes.put(value);
     return value;
   },
 });

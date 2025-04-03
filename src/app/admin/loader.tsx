@@ -8,7 +8,10 @@ import {
   customer$,
   discounts$,
   expenses$,
+  expenseTypes$,
   incomes$,
+  incomeTypes$,
+  ingoingStockTypes$,
   materials$,
   orderHistories$,
   orderMaterials$,
@@ -74,6 +77,9 @@ const Loader = () => {
     void whenReady(absensi$.get());
     void whenReady(receiptModels$.get());
     void whenReady(receiptSettings$.get());
+    void whenReady(expenseTypes$.get());
+    void whenReady(incomeTypes$.get());
+    void whenReady(ingoingStockTypes$.get());
   });
   return <></>;
 };

@@ -14,6 +14,7 @@ import { DataTablePagination } from "@/hooks/Table/DataTablePagination";
 import { z } from "zod";
 import {
   expenses$,
+  ingoingStockTypes$,
   materials$,
   orderMaterials$,
   orderProducts$,
@@ -22,6 +23,7 @@ import {
   suppliers$,
 } from "@/server/local/db";
 import {
+  IngoingStockType,
   Material,
   OrderMaterial,
   OrderProduct,
@@ -63,6 +65,9 @@ import { Observable } from "@legendapp/state";
 import Alert from "@/components/hasan/alert";
 import ControlledSheet from "@/components/hasan/controlled-sheet";
 import Dexie from "dexie";
+import { DB } from "@/lib/supabase/supabase";
+import { now } from "@/lib/utils";
+import Conditional from "@/components/hasan/conditional";
 
 const Page = () => {
   return (
@@ -178,7 +183,11 @@ const Actions: React.FC<{ data: StokMasukType }> = ({ data }) => {
           </Button>
         </DropdownMenuContent>
       </DropdownMenu>
-      <StokMasukEdit stokMasuk={data} {...editDialog.props} />
+      <StokMasukEdit
+        stokMasuk={data}
+        {...editDialog.props}
+        onSubmit={editDialog.dismiss}
+      />
       <Alert
         {...deleteDialog.props}
         title="Yakin Ingin Menghapus Stok Masuk?"
@@ -206,22 +215,24 @@ const Actions: React.FC<{ data: StokMasukType }> = ({ data }) => {
   );
 };
 
-const StokMasukEdit: React.FC<{ stokMasuk: StokMasukType } & DialogProps> = ({
-  stokMasuk,
-  ...props
-}) => {
+const StokMasukEdit: React.FC<
+  { stokMasuk: StokMasukType; onSubmit: () => void } & DialogProps
+> = ({ stokMasuk, onSubmit, ...props }) => {
   return (
     <Sheet
       {...props}
       title="Stok Masuk"
-      content={() => <StokMasukEditContent stokMasuk={stokMasuk} />}
+      content={() => (
+        <StokMasukEditContent stokMasuk={stokMasuk} onSubmit={onSubmit} />
+      )}
     />
   );
 };
 
-const StokMasukEditContent: React.FC<{ stokMasuk: StokMasukType }> = ({
-  stokMasuk,
-}) => {
+const StokMasukEditContent: React.FC<{
+  stokMasuk: StokMasukType;
+  onSubmit: () => void;
+}> = ({ stokMasuk, onSubmit }) => {
   const stok = useObservable<OrderProduct>({
     createdAt: new Date(),
     id: "",
@@ -339,15 +350,21 @@ const StokMasukEditContent: React.FC<{ stokMasuk: StokMasukType }> = ({
               [stok.variantId.get(), Dexie.maxKey],
             )
             .filter((s) => s.inOut === "in")
-            .limit(10)
+            .reverse()
+            .limit(20)
             .toArray();
 
           let pastHpp = 0;
 
           if (pastOrder.length !== 0) {
             pastHpp =
-              pastOrder.reduce((sum, x) => sum + x.pay / x.qty, 0) /
-              pastOrder.length;
+              pastOrder.reduce((sum, x) => {
+                if (x.id !== stok.id.get()) {
+                  return sum + x.pay / x.qty;
+                } else {
+                  return sum + stok.pay.get() / stok.qty.get();
+                }
+              }, 0) / pastOrder.length;
           }
 
           expenses$[id]!.set((p) => ({
@@ -360,7 +377,7 @@ const StokMasukEditContent: React.FC<{ stokMasuk: StokMasukType }> = ({
 
           productVariants$[stok.variantId.get()]!.costOfGoods.set(pastHpp);
 
-          toast.success("Tersimpan");
+          onSubmit();
         }}
       >
         Simpan
@@ -373,14 +390,14 @@ const StokMasuk = () => {
   const products = useLiveQuery(() =>
     dexie.orderProducts
       .where("type")
-      .equals("inventory")
+      .notEqual("vendor")
       .and((x) => !x.deleted && x.inOut === "in")
       .toArray(),
   );
   const bahan = useLiveQuery(() =>
     dexie.orderMaterials
       .where("type")
-      .equals("inventory")
+      .notEqual("vendor")
       .and((x) => !x.deleted && x.inOut === "in")
       .toArray(),
   );
@@ -580,7 +597,7 @@ const AddMaterialForm: React.FC<{ onSubmit: () => void }> = ({ onSubmit }) => {
             deleted: false,
             expense: stok.pay.get(),
             notes: `Beli ${stok.qty.get()} ${materials$[stok.materialId.get()]!.name.get()} Di ${suppliers$[stok.supplierId.get()]!.name.get()}`,
-            type: "keluar",
+            type: "bahan",
             updatedAt: DateTime.now().setZone("Asia/Singapore").toISO()!,
             targetId: stok.id.get(),
           });
@@ -707,7 +724,7 @@ const AddProductForm: React.FC<{ onSubmit: () => void }> = ({ onSubmit }) => {
             deleted: false,
             expense: stok.pay.get(),
             notes: `Beli ${stok.qty.get()} ${products$[stok.productId.get()]!.name.get()} ${productVariants$[stok.variantId.get()]!.name.get()} Di ${suppliers$[stok.supplierId.get()]!.name.get()}`,
-            type: "keluar",
+            type: "produk",
             updatedAt: DateTime.now().setZone("Asia/Singapore").toISO()!,
             targetId: stok.id.get(),
           });
@@ -938,7 +955,93 @@ const stockKeluarColumn: ColumnDef<StokKeluarType>[] = [
       <DataTableColumnHeader column={column} title="Qty" />
     ),
   },
+  {
+    id: "action",
+    cell: ({ row }) => <KeluarActions stok={row.original} />,
+  },
 ];
+
+const KeluarActions: React.FC<{ stok: StokKeluarType }> = ({ stok }) => {
+  const editDialog = useDialog();
+  const deleteDialog = useDialog();
+  return (
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline" size="icon">
+            <MoreHorizontal />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="space-y-1">
+          <DropdownMenuItem className="font-medium">Opsi</DropdownMenuItem>
+          <Conditional condition={!stok.type.includes("inventory")}>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={editDialog.trigger}>
+              Ubah
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Button
+                variant="destructive"
+                className="w-full justify-start"
+                onClick={deleteDialog.trigger}
+              >
+                Hapus
+              </Button>
+            </DropdownMenuItem>
+          </Conditional>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <Sheet
+        {...editDialog.props}
+        title="Edit Stok Masuk"
+        content={() => {
+          if (stok.type.includes("produk")) {
+            const orderProduct = orderProducts$[stok.id]!.get();
+            return (
+              <AddStockMasukProductForm
+                onSubmit={editDialog.dismiss}
+                stokKeluar={orderProduct}
+              />
+            );
+          }
+
+          if (stok.type.includes("bahan")) {
+            const orderMaterial = orderMaterials$[stok.id]!.get();
+            return (
+              <AddStockMaterialForm
+                onSubmit={editDialog.dismiss}
+                material={orderMaterial}
+              />
+            );
+          }
+        }}
+      />
+      <Alert
+        {...deleteDialog.props}
+        title="Yakin Ingin Menghapus Data?"
+        description="Data Yang Dihapus Tidak Dapat Dikembalikan"
+        renderCancel={() => <Button>Tidak</Button>}
+        renderAction={() => (
+          <Button
+            onClick={() => {
+              if (stok.type.includes("produk")) {
+                orderProducts$[stok.id]!.delete();
+                return;
+              }
+
+              if (stok.type.includes("bahan")) {
+                orderMaterials$[stok.id]!.delete();
+                return;
+              }
+            }}
+          >
+            Ya
+          </Button>
+        )}
+      />
+    </>
+  );
+};
 
 const getVariantName = (p: OrderProduct) => {
   const variant = productVariants$[p.variantId]?.get();
@@ -952,14 +1055,14 @@ const StokKeluar = () => {
   const products = useLiveQuery(() =>
     dexie.orderProducts
       .where("type")
-      .equals("inventory")
+      .notEqual("vendor")
       .and((x) => !x.deleted && x.inOut === "out")
       .toArray(),
   );
   const bahan = useLiveQuery(() =>
     dexie.orderMaterials
       .where("type")
-      .equals("inventory")
+      .notEqual("vendor")
       .and((x) => !x.deleted && x.inOut === "out")
       .toArray(),
   );
@@ -970,14 +1073,14 @@ const StokKeluar = () => {
       qty: x.qty,
       name: getVariantName(x),
       createdAt: x.createdAt,
-      type: "Produk",
+      type: x.type + " - produk",
     })) ?? []),
     ...(bahan?.map((x) => ({
       id: x.id,
       qty: x.qty,
       name: materials$[x.materialId]!.name.get(),
       createdAt: x.createdAt,
-      type: "Bahan",
+      type: x.type + " - bahan",
     })) ?? []),
   ];
 
@@ -995,11 +1098,333 @@ const StokKeluar = () => {
       <div className="space-y-2 p-1">
         <div className="flex h-9 justify-between">
           <DataTableFilterName table={table} />
-          <DataTableViewOptions table={table} />
+          <div className="flex gap-2">
+            <StokKeluarAdd />
+            <DataTableViewOptions table={table} />
+          </div>
         </div>
         <DataTableContent table={table} />
         <DataTablePagination table={table} />
       </div>
     </>
+  );
+};
+
+const StokKeluarAdd = () => {
+  return (
+    <ControlledSheet
+      title="Stok Keluar"
+      description="Barang Yang Keluar Lewat Form Ini Tidak Akan Mempengaruhi Pemasukan"
+      trigger={(trigger) => (
+        <Button variant="outline" size="icon" onClick={trigger}>
+          <LucidePlus />
+        </Button>
+      )}
+      content={(dismiss) => <StokKeluarAddForm onSubmit={dismiss} />}
+    />
+  );
+};
+
+const StokKeluarAddForm: React.FC<{
+  onSubmit: () => void;
+}> = ({ onSubmit }) => {
+  return (
+    <div className="space-y-2">
+      <Tabs defaultValue="produk">
+        <TabsList className="w-full">
+          <TabsTrigger value="produk" className="w-full">
+            Produk
+          </TabsTrigger>
+          <TabsTrigger value="bahan" className="w-full">
+            Bahan
+          </TabsTrigger>
+        </TabsList>
+        <TabsContent value="produk">
+          <AddStockMasukProductForm onSubmit={onSubmit} />
+        </TabsContent>
+        <TabsContent value="bahan">
+          <AddStockMaterialForm onSubmit={onSubmit} />
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+};
+
+const ingoingProductStockSchema = z.object({
+  productId: z.string().min(1, "Masukan Product Dahulu"),
+  type: z.string().min(1, "Masukan Tipe Dahulu"),
+  variantId: z.string().min(1, "Masukan Varian Dahulu"),
+  qty: z.number().min(1, "Masukan Qty Dahulu"),
+});
+
+const ingoingMaterialStockSchema = z.object({
+  materialId: z.string().min(1, "Masukan Product Dahulu"),
+  type: z.string().min(1, "Masukan Tipe Dahulu"),
+  qty: z.number().min(1, "Masukan Qty Dahulu"),
+});
+
+const AddStockMasukProductForm: React.FC<{
+  stokKeluar?: DB<"OrderProduct">;
+  onSubmit: () => void;
+}> = ({ stokKeluar, onSubmit }) => {
+  const stok = useObservable<DB<"OrderProduct">>({
+    createdAt: stokKeluar?.createdAt ?? now().toISO()!,
+    id: stokKeluar?.id ?? generateId(),
+    qty: stokKeluar?.qty ?? 0,
+    type: stokKeluar?.type ?? "",
+    deleted: false,
+    inOut: "out",
+    orderId: stokKeluar?.id ?? "",
+    pay: stokKeluar?.pay ?? 0,
+    productId: stokKeluar?.productId ?? "",
+    supplierId: stokKeluar?.supplierId ?? "",
+    variantId: stokKeluar?.variantId ?? "",
+  });
+
+  const types = useLiveQuery(() =>
+    dexie.ingoingStockTypes.filter((x) => !x.deleted).toArray(),
+  );
+
+  return (
+    <div className="space-y-2">
+      <div className="flex flex-col gap-2">
+        <Label>Tipe</Label>
+        <Combobox
+          data={types ?? []}
+          onSelected={(e) => stok.type.set(e.name)}
+          renderItem={(e) => e.name}
+          renderSelected={() => (
+            <Memo>
+              {() => (stok.type.get() === "" ? "Pilih Tipe" : stok.type.get())}
+            </Memo>
+          )}
+          title="Tipe"
+          renderAddButton={() => (
+            <AddTypeSheet onSubmit={(e) => stok.type.set(e.name)} />
+          )}
+        />
+      </div>
+      <div className="flex flex-col gap-2">
+        <Label>Produk</Label>
+        <Memo>
+          {() => (
+            <ProductSelector
+              selected={products$[stok.productId.get()]!.name.get()}
+              onSelected={(e) => {
+                stok.productId.set(e.id);
+              }}
+            />
+          )}
+        </Memo>
+      </div>
+      <Memo>
+        {() => {
+          const id = stok.productId.get();
+
+          if (id === "") return;
+
+          return (
+            <>
+              <div className="flex flex-col gap-2">
+                <Label>Varian</Label>
+                <VariantSelector
+                  key={id}
+                  selected={productVariants$[stok.variantId.get()]!.name.get()}
+                  onSelected={(e) => stok.variantId.set(e.id)}
+                  productId={id}
+                />
+              </div>
+              <InputWithLabel
+                label="Qty"
+                inputProps={{
+                  defaultValue: stok.qty.get(),
+                  onBlur: (e) => stok.qty.set(+e.target.value),
+                }}
+              />
+            </>
+          );
+        }}
+      </Memo>
+      <Button
+        className="w-full"
+        onClick={async () => {
+          const result = ingoingProductStockSchema.safeParse(stok.get());
+          if (!result.success) {
+            toast.error(result.error.errors[0]!.message);
+            return;
+          }
+
+          orderProducts$[stok.id.get()]!.set(stok.get());
+          onSubmit();
+        }}
+      >
+        Submit
+      </Button>
+    </div>
+  );
+};
+
+const AddTypeSheet: React.FC<{ onSubmit: (e: IngoingStockType) => void }> = ({
+  onSubmit,
+}) => {
+  return (
+    <ControlledSheet
+      title="Tipe"
+      trigger={(trigger) => (
+        <div className="p-1">
+          <Button onClick={trigger} className="w-full">
+            <LucidePlus /> Buat Tipe Baru
+          </Button>
+        </div>
+      )}
+      content={(dissmiss) => (
+        <TypeSheetContent
+          onSubmit={(e) => {
+            onSubmit(e);
+            dissmiss();
+          }}
+        />
+      )}
+    />
+  );
+};
+
+const TypeSheetContent: React.FC<{
+  onSubmit: (e: IngoingStockType) => void;
+}> = ({ onSubmit }) => {
+  const name = useObservable("");
+  return (
+    <div className="space-y-2">
+      <Memo>
+        {() => (
+          <InputWithLabel
+            label="Nama"
+            inputProps={{
+              defaultValue: "",
+              onBlur: (e) => name.set(e.target.value),
+            }}
+          />
+        )}
+      </Memo>
+      <Button
+        className="w-full"
+        onClick={() => {
+          if (name.get().toLocaleLowerCase() === "produk") {
+            toast.error('Tidak Bisa Menggunakan Nama "produk"');
+            return;
+          }
+
+          if (name.get().toLocaleLowerCase() === "bahan") {
+            toast.error('Tidak Bisa Menggunakan Nama "bahan"');
+            return;
+          }
+
+          const id = generateId();
+          const type = {
+            id: id,
+            deleted: false,
+            name: name.get().toLocaleLowerCase(),
+          };
+
+          ingoingStockTypes$[id]!.set(type);
+          onSubmit(type);
+        }}
+      >
+        Submit
+      </Button>
+    </div>
+  );
+};
+
+const AddStockMaterialForm: React.FC<{
+  material?: DB<"OrderMaterial">;
+  onSubmit: () => void;
+}> = ({ onSubmit, material }) => {
+  const stok = useObservable<DB<"OrderMaterial">>({
+    createdAt: material?.createdAt ?? now().toISO()!,
+    id: material?.id ?? generateId(),
+    qty: material?.qty ?? 0,
+    type: material?.type ?? "",
+    deleted: false,
+    inOut: "out",
+    orderId: material?.orderId ?? "",
+    pay: material?.pay ?? 0,
+    materialId: material?.materialId ?? "",
+    supplierId: material?.supplierId ?? "",
+  });
+
+  const types = useLiveQuery(() =>
+    dexie.ingoingStockTypes.filter((x) => !x.deleted).toArray(),
+  );
+
+  return (
+    <div className="space-y-2">
+      <div className="flex flex-col gap-2">
+        <Label>Tipe</Label>
+        <Combobox
+          data={types ?? []}
+          onSelected={(e) => stok.type.set(e.name)}
+          renderItem={(e) => e.name}
+          renderSelected={() => (
+            <Memo>
+              {() => (stok.type.get() === "" ? "Pilih Tipe" : stok.type.get())}
+            </Memo>
+          )}
+          title="Tipe"
+          renderAddButton={() => (
+            <AddTypeSheet onSubmit={(e) => stok.type.set(e.name)} />
+          )}
+        />
+      </div>
+      <div className="flex flex-col gap-2">
+        <Label>Material</Label>
+        <Memo>
+          {() => (
+            <MaterialSelector
+              selected={materials$[stok.materialId.get()]!.name.get()}
+              onSelected={(e) => {
+                stok.materialId.set(e.id);
+              }}
+            />
+          )}
+        </Memo>
+      </div>
+
+      <Memo>
+        {() => {
+          const id = stok.materialId.get();
+
+          if (id === "") return;
+
+          return (
+            <>
+              <InputWithLabel
+                label="Qty"
+                inputProps={{
+                  defaultValue: stok.qty.get(),
+                  onBlur: (e) => stok.qty.set(+e.target.value),
+                }}
+              />
+            </>
+          );
+        }}
+      </Memo>
+      <Button
+        className="w-full"
+        onClick={async () => {
+          const result = ingoingMaterialStockSchema.safeParse(stok.get());
+          if (!result.success) {
+            toast.error(result.error.errors[0]!.message);
+            return;
+          }
+
+          orderMaterials$[stok.id.get()]!.set(stok.get());
+
+          onSubmit();
+        }}
+      >
+        Submit
+      </Button>
+    </div>
   );
 };

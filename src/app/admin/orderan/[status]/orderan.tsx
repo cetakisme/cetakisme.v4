@@ -106,6 +106,17 @@ import ResiDialog from "@/components/hasan/resi-dialog";
 
 const columns: ColumnDef<Order & { status: string }>[] = [
   {
+    id: "tanggal",
+    accessorKey: "created_at",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Tanggal" />
+    ),
+    cell: ({ row }) =>
+      DateTime.fromJSDate(row.original.created_at).toLocaleString(
+        DateTime.DATE_MED,
+      ),
+  },
+  {
     id: "name",
     accessorFn: (original) => customer$[original.customer_id]?.name.get(),
     header: ({ column }) => (
@@ -1398,7 +1409,11 @@ const Deadline: C_Order = ({ order }) => {
 
 const Orderan: React.FC<{ status: string }> = ({ status }) => {
   const orders = useLiveQuery(() =>
-    dexie.orders.where("order_status").equals(status).toArray(),
+    dexie.orders
+      .where("order_status")
+      .equals(status)
+      .reverse()
+      .sortBy("created_at"),
   );
   const table = useTable({
     data: orders?.map((x) => ({ ...x, status: status })) ?? [],

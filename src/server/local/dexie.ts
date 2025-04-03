@@ -8,7 +8,9 @@ import type {
   CustomUser,
   Discount,
   Expense,
+  ExpenseType,
   Income,
+  IncomeType,
   Material,
   Order,
   OrderHistory,
@@ -63,6 +65,9 @@ const dexie = new Dexie("FriendsDatabase", {
   absensi: EntityTable<Absensi, "id">;
   receiptSettings: EntityTable<ReceiptSettings, "id">;
   receiptModel: EntityTable<ReceiptModel, "id">;
+  incomeTypes: EntityTable<IncomeType, "id">;
+  expenseTypes: EntityTable<ExpenseType, "id">;
+  ingoingStockTypes: EntityTable<ExpenseType, "id">;
 };
 
 // Schema declaration:
@@ -96,6 +101,9 @@ dexie.version(1).stores({
   absensi: "id, userId, enter",
   receiptSettings: "id",
   receiptModel: "id",
+  incomeTypes: "id",
+  expenseTypes: "id",
+  ingoingStockTypes: "id",
 });
 
 export { dexie };

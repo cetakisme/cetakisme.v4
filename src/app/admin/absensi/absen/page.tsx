@@ -22,6 +22,13 @@ import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
 import Authenticated from "@/components/hasan/auth/authenticated";
+import { DB } from "@/lib/supabase/supabase";
+import {
+  dateDiff,
+  dateToHMS,
+  absen as doAbsen,
+} from "@/server/functions/absen";
+import { date, isoDate, now } from "@/lib/utils";
 
 const isToday = (date: Date) => {
   const today = DateTime.now().setZone("Asia/Singapore").toJSDate();
@@ -60,11 +67,13 @@ const Absen = () => {
     const absensi = await dexie.absensi
       .where("userId")
       .equals(id)
-      .and((x) => isToday(x.enter))
-      .toArray();
+      .reverse()
+      .sortBy("enter");
 
     if (!absensi) return;
-    if (absensi[0]) absen.set(absensi[0]);
+    if (absensi[0]) {
+      absen.set(absensi[0]);
+    }
   };
 
   return (
@@ -95,14 +104,18 @@ const Absen = () => {
                       <TableCell>
                         <Label>Status</Label>
                       </TableCell>
-                      <TableCell>{abs ? "Masuk" : "Belum Absen"}</TableCell>
+                      <TableCell>
+                        {abs?.isActive ? "Masuk" : "Belum Absen"}
+                      </TableCell>
                     </TableRow>
                     <TableRow>
                       <TableCell>
                         <Label>Masuk</Label>
                       </TableCell>
                       <TableCell>
-                        {abs ? moment(abs.enter).format("hh:mm:ss A") : "-"}
+                        {abs
+                          ? moment(date(abs.enter)).format("hh:mm:ss A")
+                          : "-"}
                       </TableCell>
                     </TableRow>
                     <TableRow>
@@ -111,7 +124,7 @@ const Absen = () => {
                       </TableCell>
                       <TableCell>
                         {abs && abs.exit
-                          ? moment(abs.exit).format("hh:mm:ss A")
+                          ? moment(date(abs.exit)).format("hh:mm:ss A")
                           : "-"}
                       </TableCell>
                     </TableRow>
@@ -120,19 +133,7 @@ const Absen = () => {
                         <Label>Waktu Kerja</Label>
                       </TableCell>
                       <TableCell>
-                        {abs ? (
-                          <TotalJamKerja
-                            start={moment(abs.enter)}
-                            end={moment(
-                              abs.exit ??
-                                DateTime.now()
-                                  .setZone("Asia/Singapore")
-                                  .toJSDate(),
-                            )}
-                          />
-                        ) : (
-                          "-"
-                        )}
+                        {abs ? <JamKerja total={abs.totalHour} /> : "-"}
                       </TableCell>
                     </TableRow>
                   </TableBody>
@@ -152,43 +153,96 @@ const Absen = () => {
                         className="w-full"
                         onClick={() => {
                           const id = generateId();
-                          const absensi = {
+
+                          const absensi: Absensi = {
                             id: id,
-                            enter: DateTime.now()
-                              .setZone("Asia/Singapore")
-                              .toISO()!,
+                            enter: now().toJSDate(),
                             exit: null,
                             userId: user$.id.get() ?? "",
+                            isActive: true,
+                            totalHour: new Date(0),
                           };
 
-                          absensi$[id]!.set(absensi);
-                          absen.set({
-                            id: id,
-                            enter: DateTime.now()
-                              .setZone("Asia/Singapore")
-                              .toJSDate(),
+                          absen.set(absensi);
+
+                          absensi$[id]!.set({
+                            ...absensi,
+                            enter: isoDate(absensi.enter),
+                            totalHour: absensi.totalHour.toISOString(),
                             exit: null,
-                            userId: user$.id.get() ?? "",
                           });
                         }}
                       >
                         Absen Masuk
                       </Button>
                     ) : (
-                      <Button
-                        className="w-full"
-                        disabled={abs.exit !== null}
-                        onClick={() => {
-                          absensi$[abs.id]!.exit.set(
-                            DateTime.now().setZone("Asia/Singapore").toISO()!,
-                          );
-                          absen.exit.set(
-                            DateTime.now().setZone("Asia/Singapore").toJSDate(),
-                          );
-                        }}
-                      >
-                        Absen Pulang
-                      </Button>
+                      <>
+                        {abs.isActive ? (
+                          <Button
+                            className="w-full"
+                            onClick={() => {
+                              const data = doAbsen(abs, now().toJSDate());
+
+                              if (data.isChangingDay) {
+                                absensi$[data.old.id]!.set({
+                                  ...data.old,
+                                  enter: isoDate(data.old.enter),
+                                  totalHour: isoDate(data.old.totalHour),
+                                  exit: data.old.exit
+                                    ? isoDate(data.old.exit)
+                                    : null,
+                                });
+
+                                const id = generateId();
+                                absensi$[id]!.set({
+                                  ...data.new,
+                                  enter: isoDate(data.new.enter),
+                                  totalHour: isoDate(data.new.totalHour),
+                                  exit: data.new.exit
+                                    ? isoDate(data.new.exit)
+                                    : null,
+                                });
+                              } else {
+                                absensi$[abs.id]!.set({
+                                  ...data.new,
+                                  enter: isoDate(data.new.enter),
+                                  totalHour: isoDate(data.new.totalHour),
+                                  exit: data.new.exit
+                                    ? isoDate(data.new.exit)
+                                    : null,
+                                });
+                              }
+
+                              absen.set(data.new);
+                            }}
+                          >
+                            Absen Pulang
+                          </Button>
+                        ) : (
+                          <Button
+                            className="w-full"
+                            onClick={() => {
+                              const absensi: Absensi = {
+                                ...abs,
+                                enter: now().toJSDate(),
+                                exit: null,
+                                isActive: true,
+                              };
+
+                              absen.set(absensi);
+
+                              absensi$[absensi.id]!.set({
+                                ...absensi,
+                                enter: isoDate(absensi.enter),
+                                totalHour: absensi.totalHour.toISOString(),
+                                exit: null,
+                              });
+                            }}
+                          >
+                            Absen Masuk
+                          </Button>
+                        )}
+                      </>
                     )}
                   </>
                 );
@@ -201,13 +255,7 @@ const Absen = () => {
   );
 };
 
-const TotalJamKerja: React.FC<{ end: moment.Moment; start: moment.Moment }> = ({
-  end,
-  start,
-}) => {
-  const diffHours = end.diff(start, "hours");
-  const diffMinutes = end.diff(start, "minutes") % 60;
-  const diffSeconds = end.diff(start, "seconds") % 60;
-
-  return `${diffHours} Jam, ${diffMinutes} Menit, ${diffSeconds} Detik`;
+const JamKerja: React.FC<{ total: Date }> = ({ total }) => {
+  const jam = dateDiff(new Date("January 1, 1970 00:00:00"), total);
+  return `${jam.hours} Jam, ${jam.minutes} Menit, ${Math.trunc(jam.seconds)} Detik`;
 };

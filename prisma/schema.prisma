@@ -14,7 +14,9 @@ model Absensi {
   id          String      @id @default(uuid())
   userId      String      @default("")
   enter       DateTime    @default(now())
-  exit        DateTime?    @default(now())
+  exit        DateTime?   @default(now())
+  totalHour   DateTime    @default(now())
+  isActive    Boolean     @default(false)
 }
 
 model Income {
@@ -28,7 +30,18 @@ model Income {
   deleted     Boolean     @default(false)
   createdAt   DateTime?   @default(now())
   updatedAt   DateTime    @default(now())
+}
 
+model IncomeType {
+  id          String    @id @default(uuid())
+  name        String    @default("")
+  deleted     Boolean   @default(false)
+}
+
+model IngoingStockType {
+  id          String    @id @default(uuid())
+  name        String    @default("")
+  deleted     Boolean   @default(false)
 }
 
 model Expense {
@@ -42,6 +55,12 @@ model Expense {
   deleted     Boolean   @default(false)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime    @default(now())
+}
+
+model ExpenseType {
+  id          String    @id @default(uuid())
+  name        String    @default("")
+  deleted     Boolean   @default(false)
 }
 
 model Role {
