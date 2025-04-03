@@ -54,6 +54,7 @@ import { Popover, PopoverClose } from "@radix-ui/react-popover";
 import DataTableDeleteSelection from "@/hooks/Table/DataTableDeleteSelection";
 import { PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
+import { useLiveQuery } from "dexie-react-hooks";
 
 interface IProductContext extends Omit<DB<"Product">, "created_at"> {
   addons: (DB<"Addon"> & { values: DB<"AddonValue">[] })[];
@@ -90,6 +91,7 @@ const updateVariantsRPC = async (product: IProductContext) => {
     price: x.isUnique ? x.price : product.base_price,
     product_id: x.product_id,
     qty: x.qty,
+    costOfGoods: x.costOfGoods,
   }));
 
   const prevVariants = await dexie.productVariants
@@ -146,6 +148,7 @@ const Product: React.FC<{ id: string }> = ({ id }) => {
     attributes: [],
     variants: [],
     description: "",
+    costOfGoods: 0,
   });
 
   // const debouncedUpdate = React.useCallback(
@@ -188,6 +191,7 @@ const ProductInfo = () => {
     product$.name.set(product.name);
     product$.base_price.set(product.base_price);
     product$.images.set(product.images);
+    product$.costOfGoods.set(product.costOfGoods);
   });
 
   return (
@@ -214,13 +218,33 @@ const ProductInfo = () => {
           <Memo>
             {() => (
               <>
-                <Label>Harga</Label>
+                <Label>Harga Umum</Label>
                 <Input
                   key={product$.id.get()}
                   value={product$.base_price.get()}
                   onChange={(e) => product$.base_price.set(+e.target.value)}
                   onBlur={(e) =>
                     products$[product$.id.get()]?.base_price.set(
+                      +e.target.value,
+                    )
+                  }
+                  type="number"
+                />
+              </>
+            )}
+          </Memo>
+        </div>
+        <div className="">
+          <Memo>
+            {() => (
+              <>
+                <Label>Harga Pokok Produk Umum</Label>
+                <Input
+                  key={product$.id.get()}
+                  value={product$.costOfGoods.get()}
+                  onChange={(e) => product$.costOfGoods.set(+e.target.value)}
+                  onBlur={(e) =>
+                    products$[product$.id.get()]!.costOfGoods.set(
                       +e.target.value,
                     )
                   }
@@ -396,9 +420,8 @@ const Addons = () => {
                               .get()
                               .filter((x) => x.id !== data.id),
                           );
-                          productToAddons$[
-                            id(product$.id.get(), data.name)
-                          ]?.deleted.set(true);
+
+                          productToAddons$[data.id]!.delete();
                         }}
                       >
                         <LucideDot />
@@ -420,90 +443,86 @@ const Addons = () => {
 
 const AddAddonButton = () => {
   const input$ = useObservable("");
-  const availableAddons$ = useObservable<DB<"Addon">[]>([]);
+  const availableAddons = useLiveQuery(() =>
+    dexie.addons.filter((x) => !x.deleted).toArray(),
+  );
+
   const product$ = useContext(ProductContext);
-  useMount(async () => {
-    const { data: addons } = await supabase
-      .from("Addon")
-      .select("*")
-      .eq("deleted", false);
 
-    if (addons) {
-      availableAddons$.set(addons);
-    }
-  });
   return (
-    <Memo>
-      {() => (
-        <PopoverButton
-          data={availableAddons$
-            .get()
-            .filter((x) => !product$.addons.get().some((a) => a.id === x.id))}
-          controlled
-          onInputChange={(e) => input$.set(e)}
-          onSelected={(e) => {
-            product$.addons.set([
-              ...product$.addons.get(),
-              { ...e, values: [] },
-            ]);
-            const _id = id(product$.id.get(), e.name);
-            productToAddons$[_id]!.set({
-              addon_id: e.id,
-              product_id: product$.id.get(),
-              id: _id,
-              deleted: false,
-            });
-          }}
-          renderItem={(e) => e.name}
-          renderAddButton={() => (
-            <div className="p-1">
-              <Button
-                className="w-full"
-                onClick={() => {
-                  console.log(input$.get());
-                  if (input$.get() === "") {
-                    toast.error("Masukkan Input terlebih dahulu");
-                    return;
-                  }
+    <PopoverButton
+      data={availableAddons ?? []}
+      controlled
+      onInputChange={(e) => input$.set(e)}
+      onSelected={(e) => {
+        if (product$.addons.get().some((x) => x.id === e.id)) {
+          toast.error("Duplikat Addon!");
+          return;
+        }
+        product$.addons.set([...product$.addons.get(), { ...e, values: [] }]);
 
-                  const _id = id(product$.id.get(), input$.get());
+        const _id = id(product$.id.get(), e.name);
 
-                  const addon = {
-                    id: _id,
-                    name: input$.get(),
-                    deleted: false,
-                  };
+        productToAddons$[_id]!.set({
+          addon_id: e.id,
+          product_id: product$.id.get(),
+          id: _id,
+          deleted: false,
+        });
+      }}
+      renderItem={(e) => e.name}
+      renderAddButton={() => (
+        <div className="p-1">
+          <Button
+            className="w-full"
+            onClick={() => {
+              console.log(input$.get());
+              if (input$.get() === "") {
+                toast.error("Masukkan Input terlebih dahulu");
+                return;
+              }
 
-                  addons$[_id]!.set(addon);
-                  availableAddons$.set([...availableAddons$.get(), addon]);
-                  product$.addons.set([
-                    ...product$.addons.get(),
-                    { ...addon, values: [] },
-                  ]);
-                  productToAddons$[_id]!.set({
-                    addon_id: _id,
-                    product_id: product$.id.get(),
-                    id: _id,
-                    deleted: false,
-                  });
+              const addonId = generateId();
 
-                  input$.set("");
-                }}
-              >
-                <LucidePlus />
-                Buat Addon Baru
-              </Button>
-            </div>
-          )}
-          renderTrigger={() => (
-            <Button>
-              <LucidePlus /> Tambah Addon
-            </Button>
-          )}
-          title="Addon"
-        />
+              const _id = id(product$.id.get(), input$.get());
+
+              const addon = {
+                id: addonId,
+                name: input$.get(),
+                deleted: false,
+              };
+
+              addons$[addon.id]!.set(addon);
+
+              // availableAddons$.set([...availableAddons$.get(), addon]);
+
+              product$.addons.set([
+                ...product$.addons.get(),
+                { ...addon, values: [] },
+              ]);
+
+              productToAddons$[_id]!.set({
+                addon_id: addon.id,
+                product_id: product$.id.get(),
+                id: _id,
+                deleted: false,
+              });
+
+              input$.set("");
+            }}
+          >
+            <LucidePlus />
+            Buat Addon Baru
+          </Button>
+        </div>
       )}
-    </Memo>
+      renderTrigger={() => (
+        <Button>
+          <LucidePlus /> Tambah Addon
+        </Button>
+      )}
+      title="Addon"
+    />
   );
 };
 
@@ -669,7 +688,7 @@ const Attributes = () => {
       .where("product_id")
       .equals(product$.id.get())
       .and((a) => a.deleted === false)
-      .toArray();
+      .sortBy("name");
 
     const attributeIds = data.map((x) => x.id);
 
@@ -745,7 +764,11 @@ const Attributes = () => {
                     </Button>
                     <span>{data.name}</span>
                   </div>
-                  <EditAttributeButton attribute={data} index={i} />
+                  <EditAttributeButton
+                    attribute={data}
+                    index={i}
+                    key={data.id}
+                  />
                 </div>
               </Button>
             )}
@@ -796,13 +819,15 @@ const AddAttributeButton = () => {
       deleted: newProductAttribute.deleted,
     });
 
-    product$.attributes.set([
-      ...product$.attributes.get(),
-      {
-        ...newProductAttribute,
-        values: [],
-      },
-    ]);
+    product$.attributes.set(
+      [
+        ...product$.attributes.get(),
+        {
+          ...newProductAttribute,
+          values: [],
+        },
+      ].sort((a, b) => a.name.localeCompare(b.name)),
+    );
   };
 
   return (
@@ -1180,6 +1205,8 @@ const VariantUpdater = () => {
       isUnique: x.price !== product?.base_price,
     }));
 
+    console.log(variants);
+
     product$.variants.set(variants);
   });
 
@@ -1201,6 +1228,7 @@ const VariantUpdater = () => {
         product_id: product$.id.get(),
         qty: 0,
         isUnique: false,
+        costOfGoods: 0,
       }));
 
     const mergedVariants = mergeArrays(product$.variants.get(), newVariants);

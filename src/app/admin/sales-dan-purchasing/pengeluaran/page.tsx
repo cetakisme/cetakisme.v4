@@ -158,7 +158,10 @@ const Action: React.FC<{ expense: Expense }> = ({ expense }) => {
 
 const Expenses = () => {
   const expenses = useLiveQuery(() =>
-    dexie.expense.filter((x) => !x.deleted).toArray(),
+    dexie.expense
+      .filter((x) => !x.deleted)
+      .reverse()
+      .sortBy("createdAt"),
   );
 
   const table = useTable({
@@ -213,6 +216,7 @@ const AddSheet = () => {
               expense: 0,
               notes: "Pengeluaran Baru",
               type: "keluar",
+              targetId: "",
             });
             ctx$.id.set(id);
             trigger();

@@ -16,7 +16,7 @@ import { type DialogProps } from "@radix-ui/react-dialog";
 import { ChevronsUpDown } from "lucide-react";
 import React from "react";
 
-export function Combobox<TData>({
+export function Combobox<TData extends { name: string }>({
   open,
   renderSelected,
   title,
@@ -56,7 +56,7 @@ export function Combobox<TData>({
               {data?.map((framework, i) => (
                 <CommandItem
                   key={i}
-                  value={i.toString()}
+                  value={framework.name}
                   onSelect={() => {
                     // setSelectedData(framework);
                     onSelected(framework);

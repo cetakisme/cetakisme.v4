@@ -26,6 +26,11 @@ export const getHistoryReceipt = async (
   const orderHistory = await dexie.orderHistory.get(historyId);
   if (!orderHistory) return "";
 
+  const histories = await dexie.orderHistory
+    .where("orderId")
+    .equals(orderHistory.orderId)
+    .sortBy("created_at");
+
   const orderVariants = await dexie.orderVariants
     .where("orderHistoryId")
     .equals(historyId)
@@ -43,6 +48,49 @@ export const getHistoryReceipt = async (
     .equals(historyId)
     .and((a) => !a.deleted)
     .toArray();
+
+  let lastPrice = 0;
+  const prices = histories
+    .map((x) => {
+      const p = x.paid - lastPrice;
+      lastPrice = p;
+      return { price: p, type: x.payment_provider };
+    })
+    .filter((x) => x.price !== 0);
+
+  let h = "";
+
+  for (let i = 0; i < prices.length; i++) {
+    const element = prices[i]!;
+    if (i === 0 && i === prices.length - 1) {
+      if (orderHistory.total - element.price <= 0) {
+        h += `Lunas (${element.type}) | ${toRupiah(element.price)}\n`;
+        continue;
+      } else {
+        h += `DP (${element.type}) | ${toRupiah(element.price)}\n`;
+        h += `Utang (${element.type}) | ${toRupiah(orderHistory.total - element.price)}\n`;
+      }
+      continue;
+    }
+
+    if (i === 0) {
+      h += `DP (${element.type}) | ${toRupiah(element.price)}\n`;
+      continue;
+    }
+
+    if (i === prices.length - 1) {
+      if (orderHistory.paid < orderHistory.total) {
+        h += `Utang (${element.type}) | ${toRupiah(orderHistory.total - element.price)}\n`;
+        continue;
+      } else if (orderHistory.paid >= orderHistory.total) {
+        h += `Lunas (${element.type}) | ${toRupiah(element.price)}\n`;
+        h += `Kembalian | ${toRupiah(orderHistory.paid - orderHistory.total)}\n`;
+        continue;
+      }
+    }
+
+    h += `Cicilan ${i + 1} | ${toRupiah(element.price)}\n`;
+  }
 
   let s = "";
   for (const element of orderVariants) {
@@ -62,8 +110,6 @@ export const getHistoryReceipt = async (
 
       s += `${a.name + " " + av.name} | ${addon.qty + " x " + element.qty} | ${toRupiah(av.price * addon.qty * element.qty)}\n`;
     }
-
-    s += "\n";
   }
 
   let d = "";
@@ -83,13 +129,11 @@ Lingkungan IV, Tumumpa Dua, Kec. Tuminting, Kota Manado, Sulawesi Utara 95239
 ${moment(new Date()).format("DD/MM/YYYY, hh:mm A")}
 -
 
-  ${s}
-  ${d}
+${s}
+${d}
 ---
 Total | ${toRupiah(orderHistory.total)}
-Bayar | ${toRupiah(orderHistory.paid)}
-Kembalian | ${orderHistory.paid > orderHistory.total ? toRupiah(orderHistory.paid - orderHistory.total) : toRupiah(0)}
-
+${h}
 Terima Kasih
 
 Kunjungi Website Kami di www.cetakisme.com

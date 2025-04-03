@@ -51,16 +51,17 @@ const Page = () => {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSigning(true);
-    try {
-      await authClient.signIn.username({
-        username: values.username,
-        password: values.password,
-      });
-      router.push("/admin");
-    } catch {
-      toast.error("Username atau password salah");
-      setIsSigning(false);
-    }
+    await authClient.signIn.username({
+      username: values.username,
+      password: values.password,
+      fetchOptions: {
+        onSuccess: () => router.push("/admin"),
+        onError: () => {
+          toast.error("Username atau password salah");
+          setIsSigning(false);
+        },
+      },
+    });
   }
 
   return (

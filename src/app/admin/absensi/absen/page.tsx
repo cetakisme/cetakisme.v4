@@ -148,53 +148,47 @@ const Absen = () => {
                 return (
                   <>
                     {abs === null ? (
-                      <Authenticated permission="absen-create">
-                        <Button
-                          className="w-full"
-                          onClick={() => {
-                            const id = generateId();
-                            const absensi = {
-                              id: id,
-                              enter: DateTime.now()
-                                .setZone("Asia/Singapore")
-                                .toISO()!,
-                              exit: null,
-                              userId: user$.id.get() ?? "",
-                            };
+                      <Button
+                        className="w-full"
+                        onClick={() => {
+                          const id = generateId();
+                          const absensi = {
+                            id: id,
+                            enter: DateTime.now()
+                              .setZone("Asia/Singapore")
+                              .toISO()!,
+                            exit: null,
+                            userId: user$.id.get() ?? "",
+                          };
 
-                            absensi$[id]!.set(absensi);
-                            absen.set({
-                              id: id,
-                              enter: DateTime.now()
-                                .setZone("Asia/Singapore")
-                                .toJSDate(),
-                              exit: null,
-                              userId: user$.id.get() ?? "",
-                            });
-                          }}
-                        >
-                          Absen Masuk
-                        </Button>
-                      </Authenticated>
+                          absensi$[id]!.set(absensi);
+                          absen.set({
+                            id: id,
+                            enter: DateTime.now()
+                              .setZone("Asia/Singapore")
+                              .toJSDate(),
+                            exit: null,
+                            userId: user$.id.get() ?? "",
+                          });
+                        }}
+                      >
+                        Absen Masuk
+                      </Button>
                     ) : (
-                      <Authenticated permission="absen-update">
-                        <Button
-                          className="w-full"
-                          disabled={abs.exit !== null}
-                          onClick={() => {
-                            absensi$[abs.id]!.exit.set(
-                              DateTime.now().setZone("Asia/Singapore").toISO()!,
-                            );
-                            absen.exit.set(
-                              DateTime.now()
-                                .setZone("Asia/Singapore")
-                                .toJSDate(),
-                            );
-                          }}
-                        >
-                          Absen Pulang
-                        </Button>
-                      </Authenticated>
+                      <Button
+                        className="w-full"
+                        disabled={abs.exit !== null}
+                        onClick={() => {
+                          absensi$[abs.id]!.exit.set(
+                            DateTime.now().setZone("Asia/Singapore").toISO()!,
+                          );
+                          absen.exit.set(
+                            DateTime.now().setZone("Asia/Singapore").toJSDate(),
+                          );
+                        }}
+                      >
+                        Absen Pulang
+                      </Button>
                     )}
                   </>
                 );

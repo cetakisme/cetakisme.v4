@@ -24,6 +24,7 @@ import { DataTablePagination } from "@/hooks/Table/DataTablePagination";
 import { DataTableViewOptions } from "@/hooks/Table/DataTableViewOptions";
 import { useTable } from "@/hooks/Table/useTable";
 import { useDialog } from "@/hooks/useDialog";
+import { toRupiah } from "@/lib/utils";
 import { generateId, materials$ } from "@/server/local/db";
 import { dexie } from "@/server/local/dexie";
 import type { Observable } from "@legendapp/state";
@@ -68,6 +69,14 @@ const columns: ColumnDef<Material>[] = [
       <DataTableColumnHeader column={column} title="Tipe" />
     ),
     cell: ({ row }) => <Badge>{row.original.aset ? "Aset" : "Bahan"}</Badge>,
+  },
+  {
+    id: "hpp",
+    accessorKey: "costOfGoods",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="HPP" />
+    ),
+    cell: ({ row }) => toRupiah(row.original.costOfGoods),
   },
   {
     id: "qty",
@@ -187,13 +196,14 @@ const AddSheet = () => {
           size="icon"
           onClick={() => {
             const id = generateId();
-            const newBahan = {
+            const newBahan: Material = {
               id: id,
               deleted: false,
               name: "Bahan Baru",
               qty: 0,
               unit: "Buah",
               aset: false,
+              costOfGoods: 0,
             };
             materials$[id]!.set(newBahan);
             ctx$.id.set(id);
@@ -265,6 +275,21 @@ const Form = () => {
                 type: "number",
                 onBlur: (e) =>
                   materials$[ctx$.id.get()]!.qty.set(+e.target.value),
+              }}
+            />
+          );
+        }}
+      </Memo>
+      <Memo>
+        {() => {
+          return (
+            <InputWithLabel
+              label="HPP"
+              inputProps={{
+                defaultValue: materials$[ctx$.id.get()]!.costOfGoods.get(),
+                onBlur: (e) =>
+                  materials$[ctx$.id.get()]!.costOfGoods.set(+e.target.value),
+                type: "number",
               }}
             />
           );

@@ -21,6 +21,8 @@ import type {
   ProductAttribute,
   ProductToAddon,
   ProductVariant,
+  ReceiptModel,
+  ReceiptSettings,
   Role,
   Supplier,
   SupplierContactPerson,
@@ -59,6 +61,8 @@ const dexie = new Dexie("FriendsDatabase", {
   income: EntityTable<Income, "id">;
   expense: EntityTable<Expense, "id">;
   absensi: EntityTable<Absensi, "id">;
+  receiptSettings: EntityTable<ReceiptSettings, "id">;
+  receiptModel: EntityTable<ReceiptModel, "id">;
 };
 
 // Schema declaration:
@@ -80,14 +84,18 @@ dexie.version(1).stores({
   users: "id, userId, roleId",
   roles: "id, userId",
   materials: "id",
-  orderMaterials: "id, orderId",
-  orderProducts: "id, orderId",
+  orderMaterials:
+    "id, orderId, type, materialId, createdAt, [materialId+createdAt]",
+  orderProducts:
+    "id, orderId, type, variantId, createdAt, [variantId+createdAt]",
   orderHistory: "id, orderId",
   suppliers: "id",
   supplierContactPersons: "id, supplierId",
   income: "id",
   expense: "id",
   absensi: "id, userId, enter",
+  receiptSettings: "id",
+  receiptModel: "id",
 });
 
 export { dexie };

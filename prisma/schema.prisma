@@ -20,18 +20,25 @@ model Absensi {
 model Income {
   id          String      @id @default(uuid())
   type        String      @default("")
+  targetId    String    @default("")
+  
   notes       String      @default("")
   income      Int         @default(0)
+
   deleted     Boolean     @default(false)
   createdAt   DateTime?   @default(now())
   updatedAt   DateTime    @default(now())
+
 }
 
 model Expense {
   id          String    @id @default(uuid())
   type        String    @default("")
+  targetId    String    @default("")
+
   notes       String    @default("")
   expense      Int       @default(0)
+
   deleted     Boolean   @default(false)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime    @default(now())
@@ -77,6 +84,7 @@ model Material {
   name    String  @default("")
   qty     Int     @default(0)
   unit    String  @default("")
+  costOfGoods Int     @default(0)
   aset    Boolean @default(false)
   deleted Boolean @default(false)
 }
@@ -87,6 +95,9 @@ model OrderMaterial {
   pay     Int     @default(0)
   type    String  @default("")
   deleted Boolean @default(false)
+  createdAt DateTime @default(now())
+  
+  inOut String    @default("")
 
   materialId  String   @default("")
   orderId     String   @default("")
@@ -99,6 +110,9 @@ model OrderProduct {
   pay     Int     @default(0)
   type    String  @default("")
   deleted Boolean @default(false)
+  createdAt DateTime @default(now())
+
+  inOut String    @default("")
 
   productId           String  @default("")
   orderId             String  @default("")
@@ -195,6 +209,7 @@ model Product {
   active      Boolean  @default(true)
   deleted     Boolean  @default(false)
   description String   @default("")
+  costOfGoods Int     @default(0)
   created_at  DateTime @default(now())
 
   addons     ProductToAddon[]
@@ -266,10 +281,23 @@ model ProductVariant {
   name    String  @default("")
   price   Int     @default(0)
   qty     Int     @default(0)
+  costOfGoods Int @default(0)
   deleted Boolean @default(false)
 
   product_id String
   product    Product @relation(fields: [product_id], references: [id], onDelete: Cascade)
+}
+
+model ReceiptSettings {
+  id      String  @id @default(uuid())
+  model   String  @default("")
+}
+
+model ReceiptModel {
+  id      String  @id @default(uuid())
+  name    String  @default("")
+  content String  @default("")
+  deleted Boolean @default(false)
 }
 
 // model Product {

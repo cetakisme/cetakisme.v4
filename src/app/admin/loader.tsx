@@ -21,6 +21,8 @@ import {
   products$,
   productToAddons$,
   productVariants$,
+  receiptModels$,
+  receiptSettings$,
   roles$,
   supplierContactPersons$,
   suppliers$,
@@ -70,6 +72,8 @@ const Loader = () => {
     void whenReady(incomes$.get());
     void whenReady(orderHistories$.get());
     void whenReady(absensi$.get());
+    void whenReady(receiptModels$.get());
+    void whenReady(receiptSettings$.get());
   });
   return <></>;
 };

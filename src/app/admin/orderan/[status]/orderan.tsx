@@ -36,6 +36,8 @@ import {
 import { dexie } from "@/server/local/dexie";
 import {
   Cost,
+  Product,
+  ProductVariant,
   type Discount,
   type Order,
   type OrderHistory,
@@ -55,7 +57,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { id } from "date-fns/locale";
-import { Memo, useObservable, useObserveEffect } from "@legendapp/state/react";
+import {
+  Memo,
+  useMount,
+  useObservable,
+  useObserveEffect,
+} from "@legendapp/state/react";
 import { Badge } from "@/components/ui/badge";
 import { PopoverButton } from "@/components/hasan/popover-button";
 import {
@@ -74,6 +81,7 @@ import {
   LucideLink,
   LucidePlus,
   MoreHorizontal,
+  Scroll,
 } from "lucide-react";
 import { DataTableFilterName } from "@/hooks/Table/DataTableFilterName";
 import { DataTableViewOptions } from "@/hooks/Table/DataTableViewOptions";
@@ -92,6 +100,9 @@ import { toRupiah } from "@/lib/utils";
 import { getHistoryReceipt } from "../../resi/[id]/resi";
 import { toast } from "sonner";
 import Authenticated from "@/components/hasan/auth/authenticated";
+import { DateTime } from "luxon";
+import { DB } from "@/lib/supabase/supabase";
+import ResiDialog from "@/components/hasan/resi-dialog";
 
 const columns: ColumnDef<Order & { status: string }>[] = [
   {
@@ -160,7 +171,18 @@ const columns: ColumnDef<Order & { status: string }>[] = [
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Deadline" />
     ),
-    cell: ({ row }) => <Deadline order={row.original} />,
+    cell: ({ row }) => (
+      <Authenticated
+        permission={row.original.status + "-update"}
+        fallback={() => (
+          <Button variant="outline">
+            {moment(row.original.deadline).locale("id").fromNow()}
+          </Button>
+        )}
+      >
+        <Deadline order={row.original} />
+      </Authenticated>
+    ),
   },
   {
     id: "drive",
@@ -200,6 +222,7 @@ const Actions: C_Order = ({ order }) => {
   const linkDialog = useDialog();
   const AturBarangDialog = useDialog();
   const detailDialog = useDialog();
+  const untungDialog = useDialog();
 
   const orderHistory = useObservable<IOrderHistoryContext>({ id: "" });
 
@@ -221,6 +244,9 @@ const Actions: C_Order = ({ order }) => {
               detailDialog.trigger();
             }}
           />
+          <DropdownMenuItem onClick={() => untungDialog.trigger()}>
+            Total Keuntungan
+          </DropdownMenuItem>
           <Authenticated permission={order.status + "-update"}>
             <DropdownMenuItem asChild>
               <Link href={`/admin/pos/kasir/edit?id=${order.id}`}>Ubah</Link>
@@ -240,6 +266,11 @@ const Actions: C_Order = ({ order }) => {
         </DropdownMenuContent>
       </DropdownMenu>
       <Sheet
+        {...untungDialog.props}
+        title="Keuntungan"
+        content={() => <Keuntungan order={order} />}
+      />
+      <Sheet
         title="Detail Order"
         content={() => (
           <InputWithLabel
@@ -258,7 +289,157 @@ const Actions: C_Order = ({ order }) => {
   );
 };
 
+const GetProductHpp = async (
+  orderProduct: OrderProduct,
+  variant: ProductVariant,
+  product: DB<"Product">,
+) => {
+  if (orderProduct.type === "vendor") return orderProduct.pay;
+  if (variant.costOfGoods !== 0) return variant.costOfGoods * orderProduct.qty;
+  return product.costOfGoods * orderProduct.qty;
+};
+
+const Keuntungan: React.FC<{ order: Order }> = ({ order }) => {
+  const lastHistory = useObservable<OrderHistory | null>(null);
+  const products = useObservable<{ id: string; name: string; price: number }[]>(
+    [],
+  );
+  const pengeluaran = useObservable(0);
+
+  const materials = useObservable<
+    { id: string; name: string; price: number }[]
+  >([]);
+
+  useMount(async () => {
+    const histories = await dexie.orderHistory
+      .where("orderId")
+      .equals(order.id)
+      .sortBy("createdAt");
+    const last = histories.at(-1);
+    if (last) {
+      lastHistory.set(last);
+      console.log(last);
+    }
+
+    const _products = await dexie.orderProducts
+      .where("orderId")
+      .equals(order.id)
+      .toArray();
+
+    const p = await Promise.all(
+      _products.map(async (x) => {
+        const variant = productVariants$[x.variantId]!.get();
+        const product = products$[x.productId]!.get();
+
+        const price = await GetProductHpp(x, variant, product);
+        return {
+          id: x.id,
+          name: product.name + " " + variant.name,
+          price: price,
+        };
+      }),
+    );
+
+    products.set(p);
+
+    const _materials = await dexie.orderMaterials
+      .where("orderId")
+      .equals(order.id)
+      .toArray();
+
+    const m = _materials.map((x) => ({
+      id: x.id,
+      name: materials$[x.materialId]!.name.get(),
+      price:
+        x.type === "vendor"
+          ? x.pay
+          : materials$[x.materialId]!.costOfGoods.get(),
+    }));
+
+    materials.set(m);
+
+    pengeluaran.set(
+      p.reduce((sum, a) => sum + a.price, 0) +
+        m.reduce((sum, a) => sum + a.price, 0),
+    );
+  });
+
+  return (
+    <Table>
+      <TableBody>
+        <Memo>
+          {() => (
+            <List
+              data={products.get()}
+              render={(data) => (
+                <TableRow>
+                  <TableCell className="font-medium">{data.name}</TableCell>
+                  <TableCell>{toRupiah(data.price)}</TableCell>
+                </TableRow>
+              )}
+            />
+          )}
+        </Memo>
+        <Memo>
+          {() => (
+            <List
+              data={materials.get()}
+              render={(data) => (
+                <TableRow>
+                  <TableCell className="font-medium">{data.name}</TableCell>
+                  <TableCell>{toRupiah(data.price)}</TableCell>
+                </TableRow>
+              )}
+            />
+          )}
+        </Memo>
+        <TableRow>
+          <TableCell>Omset</TableCell>
+          <TableCell>
+            <Memo>
+              {() => {
+                const history = lastHistory.get();
+                if (!history) return;
+                return toRupiah(history.total);
+              }}
+            </Memo>
+          </TableCell>
+        </TableRow>
+        <TableRow>
+          <TableCell>Pengeluaran</TableCell>
+          <TableCell>
+            <Memo>{() => <>{toRupiah(pengeluaran.get())}</>}</Memo>
+          </TableCell>
+        </TableRow>
+        <TableRow>
+          <TableCell>Bersih</TableCell>
+          <TableCell>
+            <Memo>
+              {() => {
+                const history = lastHistory.get();
+                if (!history) return;
+                return toRupiah(history.total - pengeluaran.get());
+              }}
+            </Memo>
+          </TableCell>
+        </TableRow>
+      </TableBody>
+    </Table>
+  );
+};
+
 const OrderHistoryDetail: React.FC<DialogProps> = ({ ...props }) => {
+  return (
+    <Sheet
+      {...props}
+      title="Order History"
+      style={{ maxWidth: "500px" }}
+      content={() => <OrderHistoryDetailContent />}
+    />
+  );
+};
+
+const OrderHistoryDetailContent = () => {
   const ctx$ = useContext(OrderHistoryContext);
 
   const variants = useObservable<OrderVariant[]>([]);
@@ -289,198 +470,197 @@ const OrderHistoryDetail: React.FC<DialogProps> = ({ ...props }) => {
     costs.set(c);
   });
 
+  const resiDialog = useDialog();
+
   return (
-    <Sheet
-      {...props}
-      title="Order History"
-      style={{ maxWidth: "500px" }}
-      content={() => (
-        <ScrollArea className="h-screen">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nama Barang</TableHead>
-                <TableHead>Qty</TableHead>
-                <TableHead>Harga</TableHead>
-                <TableHead className="text-right">Total</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
+    <ScrollArea className="h-screen">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Nama Barang</TableHead>
+            <TableHead>Qty</TableHead>
+            <TableHead>Harga</TableHead>
+            <TableHead className="text-right">Total</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          <Memo>
+            {() => (
+              <List
+                data={variants.get()}
+                render={(data) => <OrderVariantItem orderVariant={data} />}
+              />
+            )}
+          </Memo>
+          <Memo>
+            {() => {
+              const orderHistory = orderHistories$[ctx$.id.get()]!.get();
+              if (!orderHistory) return;
+              return (
+                <List
+                  data={discounts.get()}
+                  render={(data) => (
+                    <TableRow>
+                      <TableCell className="font-medium" colSpan={2}>
+                        Diskon {data.name}{" "}
+                        {data.type === "percent" && data.value + "%"}
+                      </TableCell>
+                      <TableCell colSpan={2} className="text-right">
+                        -{" "}
+                        {data.type === "percent"
+                          ? toRupiah(
+                              orderHistory.totalBeforeDiscount *
+                                data.value *
+                                0.01,
+                            )
+                          : toRupiah(data.value)}
+                      </TableCell>
+                    </TableRow>
+                  )}
+                />
+              );
+            }}
+          </Memo>
+          <Memo>
+            {() => {
+              const orderHistory = orderHistories$[ctx$.id.get()]!.get();
+              if (!orderHistory) return;
+              return (
+                <List
+                  data={costs.get()}
+                  render={(data) => (
+                    <TableRow>
+                      <TableCell className="font-medium" colSpan={2}>
+                        Biaya {data.name}{" "}
+                        {data.type === "percent" && data.value + "%"}
+                      </TableCell>
+                      <TableCell colSpan={2} className="text-right">
+                        {data.type === "percent"
+                          ? toRupiah(
+                              orderHistory.totalAfterDiscount *
+                                data.value *
+                                0.01,
+                            )
+                          : toRupiah(data.value)}
+                      </TableCell>
+                    </TableRow>
+                  )}
+                />
+              );
+            }}
+          </Memo>
+          <TableRow>
+            <TableCell colSpan={2} className="font-medium">
+              Total
+            </TableCell>
+            <TableCell colSpan={2} className="text-right">
               <Memo>
-                {() => (
-                  <List
-                    data={variants.get()}
-                    render={(data) => <OrderVariantItem orderVariant={data} />}
-                  />
-                )}
+                {toRupiah(orderHistories$[ctx$.id.get()]!.total.get())}
               </Memo>
+            </TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell colSpan={2} className="font-medium">
+              Bayar {"("}
               <Memo>
-                {() => {
-                  const orderHistory = orderHistories$[ctx$.id.get()]!.get();
-                  if (!orderHistory) return;
-                  return (
-                    <List
-                      data={discounts.get()}
-                      render={(data) => (
-                        <TableRow>
-                          <TableCell className="font-medium" colSpan={2}>
-                            Diskon {data.name}{" "}
-                            {data.type === "percent" && data.value + "%"}
-                          </TableCell>
-                          <TableCell colSpan={2} className="text-right">
-                            -{" "}
-                            {data.type === "percent"
-                              ? toRupiah(
-                                  orderHistory.totalBeforeDiscount *
-                                    data.value *
-                                    0.01,
-                                )
-                              : toRupiah(data.value)}
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    />
-                  );
-                }}
+                {orderHistories$[ctx$.id.get()]!.payment_provider.get()}
               </Memo>
+              {")"}
+            </TableCell>
+            <TableCell colSpan={2} className="text-right">
               <Memo>
-                {() => {
-                  const orderHistory = orderHistories$[ctx$.id.get()]!.get();
-                  if (!orderHistory) return;
-                  return (
-                    <List
-                      data={costs.get()}
-                      render={(data) => (
-                        <TableRow>
-                          <TableCell className="font-medium" colSpan={2}>
-                            Biaya {data.name}{" "}
-                            {data.type === "percent" && data.value + "%"}
-                          </TableCell>
-                          <TableCell colSpan={2} className="text-right">
-                            {data.type === "percent"
-                              ? toRupiah(
-                                  orderHistory.totalAfterDiscount *
-                                    data.value *
-                                    0.01,
-                                )
-                              : toRupiah(data.value)}
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    />
-                  );
-                }}
+                {toRupiah(orderHistories$[ctx$.id.get()]!.paid.get())}
               </Memo>
-              <TableRow>
-                <TableCell colSpan={2} className="font-medium">
-                  Total
-                </TableCell>
-                <TableCell colSpan={2} className="text-right">
-                  <Memo>
-                    {toRupiah(orderHistories$[ctx$.id.get()]!.total.get())}
-                  </Memo>
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell colSpan={2} className="font-medium">
-                  Bayar {"("}
-                  <Memo>
-                    {orderHistories$[ctx$.id.get()]!.payment_provider.get()}
-                  </Memo>
-                  {")"}
-                </TableCell>
-                <TableCell colSpan={2} className="text-right">
-                  <Memo>
-                    {toRupiah(orderHistories$[ctx$.id.get()]!.paid.get())}
-                  </Memo>
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell colSpan={2} className="font-medium">
-                  Kembalian
-                </TableCell>
-                <TableCell colSpan={2} className="text-right">
-                  <Memo>
-                    {orderHistories$[ctx$.id.get()]!.paid.get() >
-                    orderHistories$[ctx$.id.get()]!.total.get()
-                      ? toRupiah(
-                          orderHistories$[ctx$.id.get()]!.paid.get() -
-                            orderHistories$[ctx$.id.get()]!.total.get(),
-                        )
-                      : 0}
-                  </Memo>
-                </TableCell>
-              </TableRow>
-            </TableBody>
-          </Table>
-          <div className="mt-8 space-y-2">
-            <Button asChild className="w-full">
-              <Link href={`/admin/resi/${ctx$.id.get()}`}>Lihat Resi</Link>
-            </Button>
-            <Button
-              className="w-full"
-              onClick={async () => {
-                const svg = await getHistoryReceipt(ctx$.id.get(), {
-                  cpl: 42,
-                  encoding: "multilingual",
-                });
+            </TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell colSpan={2} className="font-medium">
+              Kembalian
+            </TableCell>
+            <TableCell colSpan={2} className="text-right">
+              <Memo>
+                {orderHistories$[ctx$.id.get()]!.paid.get() >
+                orderHistories$[ctx$.id.get()]!.total.get()
+                  ? toRupiah(
+                      orderHistories$[ctx$.id.get()]!.paid.get() -
+                        orderHistories$[ctx$.id.get()]!.total.get(),
+                    )
+                  : 0}
+              </Memo>
+            </TableCell>
+          </TableRow>
+        </TableBody>
+      </Table>
+      <div className="mt-8 space-y-2">
+        <Button className="w-full" onClick={() => resiDialog.trigger()}>
+          Lihat Resi
+        </Button>
+        <ResiDialog
+          history={orderHistories$[ctx$.id.get()]!.get()}
+          {...resiDialog.props}
+        />
+        <Button
+          className="w-full"
+          onClick={async () => {
+            const svg = await getHistoryReceipt(ctx$.id.get(), {
+              cpl: 42,
+              encoding: "multilingual",
+            });
 
-                downloadPNGFromSVG(svg, (pngUrl) => {
-                  sendToPrinter(pngUrl);
-                });
-              }}
-            >
-              Print Resi
-            </Button>
-            <Button
-              className="w-full"
-              onClick={async () => {
-                const svg = await getHistoryReceipt(ctx$.id.get(), {
-                  cpl: 42,
-                  encoding: "multilingual",
-                });
+            downloadPNGFromSVG(svg, (pngUrl) => {
+              sendToPrinter(pngUrl);
+            });
+          }}
+        >
+          Print Resi
+        </Button>
+        <Button
+          className="w-full"
+          onClick={async () => {
+            const svg = await getHistoryReceipt(ctx$.id.get(), {
+              cpl: 42,
+              encoding: "multilingual",
+            });
 
-                downloadPNGFromSVG(svg, (pngUrl) => {
-                  const printWindow = window.open("");
-                  if (printWindow) {
-                    printWindow.document.write(
-                      `<img src="${pngUrl}" onload="window.print(); window.close();" />`,
-                    );
-                    printWindow.document.close();
-                  }
-                });
-              }}
-            >
-              Print Resi 2
-            </Button>
-            <Button
-              className="w-full"
-              onClick={async () => {
-                const svg = await getHistoryReceipt(ctx$.id.get(), {
-                  cpl: 42,
-                  encoding: "multilingual",
-                });
+            downloadPNGFromSVG(svg, (pngUrl) => {
+              const printWindow = window.open("");
+              if (printWindow) {
+                printWindow.document.write(
+                  `<img src="${pngUrl}" onload="window.print(); window.close();" />`,
+                );
+                printWindow.document.close();
+              }
+            });
+          }}
+        >
+          Print Resi 2
+        </Button>
+        <Button
+          className="w-full"
+          onClick={async () => {
+            const svg = await getHistoryReceipt(ctx$.id.get(), {
+              cpl: 42,
+              encoding: "multilingual",
+            });
 
-                const history = orderHistories$[ctx$.id.get()]!.get();
-                const order = orders$[history.orderId]!.get();
-                const customer = customer$[order.customer_id]!.get();
+            const history = orderHistories$[ctx$.id.get()]!.get();
+            const order = orders$[history.orderId]!.get();
+            const customer = customer$[order.customer_id]!.get();
 
-                downloadPNGFromSVG(svg, (pngUrl) => {
-                  const link = document.createElement("a");
-                  link.href = pngUrl;
-                  link.download = `Resi ${customer.name} - ${moment(history.created_at).format("DD MMM YYYY")}.png`;
-                  document.body.appendChild(link);
-                  link.click();
-                  document.body.removeChild(link);
-                });
-              }}
-            >
-              Download Resi
-            </Button>
-          </div>
-        </ScrollArea>
-      )}
-    />
+            downloadPNGFromSVG(svg, (pngUrl) => {
+              const link = document.createElement("a");
+              link.href = pngUrl;
+              link.download = `Resi ${customer.name} - ${moment(history.created_at).format("DD MMM YYYY")}.png`;
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+            });
+          }}
+        >
+          Download Resi
+        </Button>
+      </div>
+    </ScrollArea>
   );
 };
 
@@ -565,8 +745,14 @@ const OrderVariantItem: React.FC<{ orderVariant: OrderVariant }> = ({
     <>
       <TableRow>
         <TableCell className="font-medium">
-          {products$[productId]!.name.get()}{" "}
-          {productVariants$[orderVariant.variant_id]!.name.get()}
+          <Memo>
+            {() => (
+              <>
+                {products$[productId]!.name.get()}{" "}
+                {productVariants$[orderVariant.variant_id]!.name.get()}
+              </>
+            )}
+          </Memo>
         </TableCell>
         <TableCell>{orderVariant.qty}</TableCell>
         <TableCell>{toRupiah(price)}</TableCell>
@@ -641,16 +827,18 @@ const AturBarangSheet: React.FC<DialogProps & { order: Order }> = ({
       {...props}
       title="Atur Barang"
       content={() => (
-        <div className="space-y-12">
-          <div className="space-y-2">
-            <Label className="font-bold">Produk</Label>
-            <OrderProucts order={order} />
+        <ScrollArea className="h-full pb-12 pr-8">
+          <div className="space-y-12">
+            <div className="space-y-2">
+              <Label className="font-bold">Produk</Label>
+              <OrderProucts order={order} />
+            </div>
+            <div className="space-y-2">
+              <Label className="font-bold">Bahan</Label>
+              <OrderMaterials order={order} />
+            </div>
           </div>
-          <div className="space-y-2">
-            <Label className="font-bold">Bahan</Label>
-            <OrderMaterials order={order} />
-          </div>
-        </div>
+        </ScrollArea>
       )}
     />
   );
@@ -740,6 +928,7 @@ const OrderMaterials: React.FC<{ order: Order }> = ({ order }) => {
                           notes: "",
                           type: "",
                           updatedAt: new Date().toISOString(),
+                          targetId: "",
                         });
                       } else {
                         expenses$[data.id]!.set((p) => ({
@@ -794,6 +983,7 @@ const OrderMaterials: React.FC<{ order: Order }> = ({ order }) => {
                             notes: `Bayar ${materials$[data.materialId]!.name.get()} Ke ${suppliers$[data.supplierId]!.name.get()}`,
                             type: "bahan",
                             updatedAt: new Date().toISOString(),
+                            targetId: data.id,
                           }));
                         },
                       }}
@@ -806,9 +996,10 @@ const OrderMaterials: React.FC<{ order: Order }> = ({ order }) => {
                     inputProps={{
                       defaultValue: data.qty,
                       onBlur: (e) => {
-                        materials$[data.materialId]?.qty.set(
-                          (p) => p - (+e.target.value - data.qty),
-                        );
+                        materials$[data.materialId]?.qty.set((p) => {
+                          let newQty = p + data.qty;
+                          return newQty - +e.target.value;
+                        });
                         orderMaterials$[data.id]!.qty.set(+e.target.value);
                       },
                     }}
@@ -832,6 +1023,8 @@ const OrderMaterials: React.FC<{ order: Order }> = ({ order }) => {
             type: "inventory",
             supplierId: "",
             pay: 0,
+            createdAt: DateTime.now().setZone("Asia/Singapore").toISO()!,
+            inOut: "out",
           });
         }}
         data={materials ?? []}
@@ -927,11 +1120,16 @@ const OrderProucts: React.FC<{ order: Order }> = ({ order }) => {
                       expenses$[data.id]!.set({
                         id: data.id,
                         deleted: false,
-                        createdAt: new Date().toISOString(),
+                        targetId: data.id,
+                        createdAt: DateTime.now()
+                          .setZone("Asia/Singapore")
+                          .toISO()!,
                         expense: 0,
                         notes: "",
                         type: "",
-                        updatedAt: new Date().toISOString(),
+                        updatedAt: DateTime.now()
+                          .setZone("Asia/Singapore")
+                          .toISO()!,
                       });
                     } else {
                       expenses$[data.id]!.set((p) => ({
@@ -978,12 +1176,17 @@ const OrderProucts: React.FC<{ order: Order }> = ({ order }) => {
                           orderProducts$[data.id]!.pay.set(+e.target.value);
                           expenses$[data.id]!.set((p) => ({
                             id: data.id,
+                            targetId: data.id,
                             deleted: false,
-                            createdAt: p?.createdAt ?? new Date().toISOString(),
+                            createdAt:
+                              p?.createdAt ??
+                              DateTime.now().setZone("Asia/Singapore").toISO()!,
                             expense: +e.target.value,
                             notes: `Bayar ${products$[data.productId]!.name.get()} ${productVariants$[data.variantId]!.name.get()} Ke ${suppliers$[data.supplierId]!.name.get()}`,
                             type: "product",
-                            updatedAt: new Date().toISOString(),
+                            updatedAt: DateTime.now()
+                              .setZone("Asia/Singapore")
+                              .toISO()!,
                           }));
                         },
                       }}
@@ -996,9 +1199,10 @@ const OrderProucts: React.FC<{ order: Order }> = ({ order }) => {
                     inputProps={{
                       defaultValue: data.qty,
                       onBlur: (e) => {
-                        productVariants$[data.variantId]?.qty.set(
-                          (p) => p - (+e.target.value - data.qty),
-                        );
+                        productVariants$[data.variantId]?.qty.set((p) => {
+                          let newQty = p + data.qty;
+                          return newQty - +e.target.value;
+                        });
                         orderProducts$[data.id]!.qty.set(+e.target.value);
                       },
                     }}
@@ -1023,6 +1227,8 @@ const OrderProucts: React.FC<{ order: Order }> = ({ order }) => {
             supplierId: "",
             variantId: "",
             pay: 0,
+            createdAt: DateTime.now().setZone("Asia/Singapore").toISO()!,
+            inOut: "out",
           });
         }}
         data={products ?? []}
@@ -1154,35 +1360,39 @@ const Status: C_Order = ({ order }) => {
 
 const Deadline: C_Order = ({ order }) => {
   return (
-    <Authenticated
-      permission={order.status + "-update"}
-      fallback={() => (
-        <Button variant="outline">
-          {moment(order.deadline).locale("id").fromNow()}
-        </Button>
-      )}
-    >
-      <Popover>
-        <PopoverTrigger asChild>
-          <Button variant="outline">
-            {moment(order.deadline).locale("id").fromNow()}
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent>
-          <Calendar
-            mode="single"
-            locale={id}
-            selected={order.deadline ? new Date(order.deadline) : new Date()}
-            onSelect={(date: Date | undefined) => {
-              if (!date) return;
-              date.setHours(31, 59, 59, 59);
-              orders$[order.id]!.deadline.set(date.toISOString());
-            }}
-            className="rounded-md border"
-          />
-        </PopoverContent>
-      </Popover>
-    </Authenticated>
+    <Memo>
+      {() => {
+        const deadline =
+          orders$[order.id]!.deadline.get() ?? DateTime.now().toISO()!;
+        return (
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline">
+                {moment(deadline).locale("id").fromNow()}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent>
+              <Calendar
+                mode="single"
+                locale={id}
+                selected={DateTime.fromISO(deadline)
+                  .setZone("Asia/Singapore")
+                  .toJSDate()}
+                onSelect={(date: Date | undefined) => {
+                  if (!date) return;
+                  orders$[order.id]!.deadline.set(
+                    DateTime.fromJSDate(date)
+                      .setZone("Asia/Singapore")
+                      .toISO()!,
+                  );
+                }}
+                className="rounded-md border"
+              />
+            </PopoverContent>
+          </Popover>
+        );
+      }}
+    </Memo>
   );
 };
 

@@ -9,6 +9,7 @@ import {
 import Link from "next/link";
 import Loader from "./loader";
 import Authenticated from "@/components/hasan/auth/authenticated";
+import LogoutButton from "./logout-button";
 
 interface Menu {
   title: string;
@@ -33,6 +34,7 @@ export const menus: Menu[] = [
         title: "Resi",
         children: [],
         permission: "resi",
+        url: "/admin/resi",
       },
     ],
   },
@@ -73,6 +75,7 @@ export const menus: Menu[] = [
       {
         title: "Inventori",
         permission: "inventori",
+        url: "/admin/katalog/inventory",
         children: [],
       },
     ],
@@ -292,6 +295,7 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               </Authenticated>
             ))}
           </Accordion>
+          <LogoutButton />
         </div>
       </div>
       <div className="h-full grow">{children}</div>

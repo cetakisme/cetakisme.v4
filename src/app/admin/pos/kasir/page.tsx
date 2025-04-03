@@ -11,6 +11,7 @@ import type {
   Customer,
   Discount,
   Order,
+  OrderHistory,
   OrderVariant,
   Product,
   ProductVariant,
@@ -97,6 +98,9 @@ import { useSearchParams } from "next/navigation";
 import Conditional from "@/components/hasan/conditional";
 import { DialogProps } from "@radix-ui/react-dialog";
 import { CommandItem } from "@/components/ui/command";
+import ResiDialog from "@/components/hasan/resi-dialog";
+import { DB } from "@/lib/supabase/supabase";
+import { DateTime } from "luxon";
 
 interface IKasirContext {
   isLoadFromSave: boolean;
@@ -661,9 +665,9 @@ const PaySheet = () => {
       ? generateId()
       : ctx$.orderHistoryId.get();
 
-    orderHistories$[orderHistoryId]!.set({
+    const addedHistory: DB<"OrderHistory"> = {
       id: orderHistoryId,
-      created_at: new Date().toISOString(),
+      created_at: DateTime.now().setZone("Asia/Singapore").toISO()!,
       deleted: false,
       orderId: ctx$.orderId.get(),
       paid: pay$.amount.get(),
@@ -673,7 +677,10 @@ const PaySheet = () => {
       total: ctx$.totalAll.get(),
       totalAfterDiscount: ctx$.totalAfterDiscont.get(),
       totalBeforeDiscount: ctx$.totalBeforeDiscount.get(),
-    });
+    };
+
+    orderHistories$[orderHistoryId]!.set(addedHistory);
+    setHistory(addedHistory);
 
     discounts$.set((prev) => {
       const updated = { ...prev };
@@ -814,12 +821,17 @@ const PaySheet = () => {
         notes: `Pemasukan Dari Order ${ctx$.customer.name.get()}`,
         type: "order",
         updatedAt: new Date().toISOString(),
+        targetId: "",
       });
     }
 
     reset();
     toast.success("Order Berhasil Dibuat");
+    resiDialog.trigger();
   };
+
+  const [history, setHistory] = React.useState<DB<"OrderHistory"> | null>(null);
+  const resiDialog = useDialog();
 
   return (
     <>
@@ -927,6 +939,9 @@ const PaySheet = () => {
           </div>
         )}
       />
+      {history && (
+        <ResiDialog history={history} {...resiDialog.props} key={history.id} />
+      )}
     </>
   );
 };
