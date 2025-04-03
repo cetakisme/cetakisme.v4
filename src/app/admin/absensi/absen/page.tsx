@@ -93,7 +93,7 @@ const Absen = () => {
                         <Label>Status</Label>
                       </TableCell>
                       <TableCell>
-                        {abs?.isActive ? "Masuk" : "Belum Absen"}
+                        {abs?.isActive ? "Masuk" : "Pulang"}
                       </TableCell>
                     </TableRow>
                     <TableRow>
@@ -148,7 +148,7 @@ const Absen = () => {
                             exit: null,
                             userId: user$.id.get() ?? "",
                             isActive: true,
-                            totalHour: new Date(0),
+                            totalHour: new Date("January 1, 1970 00:00:00"),
                           };
 
                           absen.set(absensi);
@@ -232,6 +232,52 @@ const Absen = () => {
                         )}
                       </>
                     )}
+                    {/* <Button
+                      onClick={() => {
+                        const abs = absen.get();
+
+                        if (!abs) return;
+
+                        const data = doAbsen(
+                          {
+                            ...abs,
+                            id: "test",
+                            enter: new Date("April 4, 2025 23:00:00"),
+                            isActive: true,
+                          },
+                          new Date("April 6, 2025 3:00:00"),
+                        );
+
+                        if (data.isChangingDay) {
+                          absensi$[data.old.id]!.set({
+                            ...data.old,
+                            enter: isoDate(data.old.enter),
+                            totalHour: isoDate(data.old.totalHour),
+                            exit: data.old.exit ? isoDate(data.old.exit) : null,
+                          });
+
+                          const id = "test2";
+                          absensi$[id]!.set({
+                            ...data.new,
+                            id: id,
+                            enter: isoDate(data.new.enter),
+                            totalHour: isoDate(data.new.totalHour),
+                            exit: data.new.exit ? isoDate(data.new.exit) : null,
+                          });
+                        } else {
+                          absensi$[data.new.id]!.set({
+                            ...data.new,
+                            enter: isoDate(data.new.enter),
+                            totalHour: isoDate(data.new.totalHour),
+                            exit: data.new.exit ? isoDate(data.new.exit) : null,
+                          });
+                        }
+
+                        absen.set(data.new);
+                      }}
+                    >
+                      Test
+                    </Button> */}
                   </>
                 );
               }}

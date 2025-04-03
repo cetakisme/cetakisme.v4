@@ -1,3 +1,4 @@
+import { date } from "@/lib/utils";
 import { Absensi } from "@prisma/client";
 import { DateTime } from "luxon";
 
@@ -13,7 +14,7 @@ const isToday = (date: Date, now: Date): boolean => {
 function splitAtMidnight(
   enter: Date,
   exit: Date,
-): { yesterday: Date; today: Date } {
+): { yesterday: Date; today: Date; midnight: Date } {
   const midnight = new Date(enter);
 
   midnight.setHours(0, 0, 0, 0); // Set to the start of the day
@@ -27,18 +28,21 @@ function splitAtMidnight(
     return {
       yesterday: new Date(exit.getTime() - enter.getTime()),
       today: new Date(0),
+      midnight: midnight,
     };
   } else if (enter >= midnight) {
     // Entire duration is after midnight
     return {
       yesterday: new Date(0),
       today: new Date(exit.getTime() - enter.getTime()),
+      midnight: midnight,
     };
   } else {
     // Split occurs at midnight
     return {
       yesterday: new Date(midnight.getTime() - enter.getTime()), // Time before midnight
       today: new Date(exit.getTime() - midnight.getTime()), // Time after midnight
+      midnight: midnight,
     };
   }
 }
@@ -110,7 +114,10 @@ export function absen(
       },
     };
   } else {
-    const { yesterday, today } = splitAtMidnight(pastAbsensi.enter, now);
+    const { yesterday, today, midnight } = splitAtMidnight(
+      pastAbsensi.enter,
+      now,
+    );
 
     return {
       isChangingDay: true,
@@ -118,12 +125,13 @@ export function absen(
         ...pastAbsensi,
         isActive: false,
         totalHour: addDates(pastAbsensi.totalHour, yesterday),
-        exit: now,
+        exit: midnight,
       },
       new: {
         ...pastAbsensi,
         isActive: false,
-        totalHour: addDates(pastAbsensi.totalHour, today),
+        enter: midnight,
+        totalHour: addDates(date(new Date("January 1, 1970 00:00:00")), today),
         exit: now,
       },
     };

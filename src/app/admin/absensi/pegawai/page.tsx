@@ -25,6 +25,7 @@ import { dexie } from "@/server/local/dexie";
 import { DateTime } from "luxon";
 import Title from "@/components/hasan/title";
 import Authenticated from "@/components/hasan/auth/authenticated";
+import { dateDiff } from "@/server/functions/absen";
 
 const Page = () => {
   return (
@@ -157,12 +158,12 @@ const isTheSameDay = (target: Date, date: Date) => {
   );
 };
 
-function accumulateTimeIntervals(intervals: { start: Date; end: Date }[]) {
+function accumulateTimeIntervals(totals: Date[]) {
   let totalDuration = moment.duration(0);
 
-  intervals.forEach(({ start, end }) => {
-    let diff = moment(end).diff(moment(start)); // Difference in milliseconds
-    totalDuration.add(moment.duration(diff)); // Add to total duration
+  totals.forEach((total) => {
+    const diff = dateDiff(new Date("January 1, 1970 00:00:00"), total); // Difference in milliseconds
+    totalDuration.add(moment.duration(diff));
   });
 
   let hours = Math.floor(totalDuration.asHours());
@@ -189,7 +190,7 @@ const TotalJamKerja: React.FC<{
   if (!totalJamKerja) return null;
 
   const { hours, minutes, seconds } = accumulateTimeIntervals(
-    totalJamKerja.map((x) => ({ start: x.enter, end: x.exit! })),
+    totalJamKerja.map((x) => x.totalHour),
   );
 
   return `${hours}:${minutes}:${seconds}`;
@@ -211,23 +212,16 @@ const Hadir: React.FC<{ userId: string; date: Date }> = ({ userId, date }) => {
     <TableCell
       className={`${hadir && hadir.length > 0 && "bg-black"} text-center text-white`}
     >
-      <TotalJamKerjaPerhari
-        start={moment(hadir[0]!.enter)}
-        end={moment(hadir[0]!.exit ?? hadir[0]!.enter)}
-      />
+      <TotalJamKerjaPerhari total={hadir[0]!.totalHour} />
     </TableCell>
   );
 };
 
 const TotalJamKerjaPerhari: React.FC<{
-  end: moment.Moment;
-  start: moment.Moment;
-}> = ({ end, start }) => {
-  const diffHours = end.diff(start, "hours");
-  const diffMinutes = end.diff(start, "minutes") % 60;
-  const diffSeconds = end.diff(start, "seconds") % 60;
-
-  return `${diffHours}:${diffMinutes}:${diffSeconds}`;
+  total: Date;
+}> = ({ total }) => {
+  const jam = dateDiff(new Date("January 1, 1970 00:00:00"), total);
+  return `${jam.hours}:${jam.minutes}:${Math.trunc(jam.seconds)}`;
 };
 
 const DateButton: React.FC<{
