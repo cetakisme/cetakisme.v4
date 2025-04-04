@@ -4,6 +4,7 @@ import { user$ } from "@/server/local/auth";
 import {
   absensi$,
   addons$,
+  addonValues$,
   costs$,
   customer$,
   discounts$,
@@ -60,6 +61,7 @@ const Loader = () => {
     void whenReady(productAttributeValue$.get());
     void whenReady(productToAddons$.get());
     void whenReady(addons$.get());
+    void whenReady(addonValues$.get());
     void whenReady(productAttribute$.get());
     void whenReady(orders$.get());
     void whenReady(customer$.get());
