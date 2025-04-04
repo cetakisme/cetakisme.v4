@@ -103,13 +103,17 @@ const Role: React.FC<{ user: CustomUser }> = ({ user }) => {
     dexie.roles.filter((x) => !x.deleted).toArray(),
   );
 
-  const role = useLiveQuery(() => dexie.roles.get(user.roleId));
-
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="outline">
-          <Memo>{roles$[user.roleId]!.id.get() ?? "No Role"}</Memo>
+          <Memo>
+            {() => {
+              const roleId = users$[user.id]!.roleId.get();
+              const role = roles$[roleId]?.get();
+              return role?.id ?? "No Role";
+            }}
+          </Memo>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent>

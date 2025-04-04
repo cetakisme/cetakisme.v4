@@ -26,23 +26,17 @@ import { DataTablePagination } from "@/hooks/Table/DataTablePagination";
 import { DataTableViewOptions } from "@/hooks/Table/DataTableViewOptions";
 import { useTable } from "@/hooks/Table/useTable";
 import { useDialog } from "@/hooks/useDialog";
-import { DB } from "@/lib/supabase/supabase";
+import { useExportToExcel } from "@/hooks/useTableExcel";
+import { type DB } from "@/lib/supabase/supabase";
 import { now, toRupiah } from "@/lib/utils";
-import {
-  expenses$,
-  generateId,
-  incomes$,
-  incomeTypes$,
-  orderMaterials$,
-  orderProducts$,
-} from "@/server/local/db";
+import { generateId, incomes$, incomeTypes$ } from "@/server/local/db";
 import { dexie } from "@/server/local/dexie";
-import { Observable } from "@legendapp/state";
+import type { Observable } from "@legendapp/state";
 import { Memo, useObservable } from "@legendapp/state/react";
-import { Expense, Income, IncomeType } from "@prisma/client";
-import { ColumnDef } from "@tanstack/react-table";
+import type { Income, IncomeType } from "@prisma/client";
+import { type ColumnDef } from "@tanstack/react-table";
 import { useLiveQuery } from "dexie-react-hooks";
-import { LucidePlus, MoreHorizontal } from "lucide-react";
+import { LucideDownload, LucidePlus, MoreHorizontal } from "lucide-react";
 import moment from "moment";
 import { createContext, useContext } from "react";
 import { toast } from "sonner";
@@ -209,6 +203,7 @@ const Expenses = () => {
               <Authenticated permission="pemasukan-create">
                 <AddSheet />
               </Authenticated>
+              <DownloadExcel incomes={incomes ?? []} />
               <DataTableViewOptions table={table} />
             </div>
           </div>
@@ -217,6 +212,46 @@ const Expenses = () => {
         </div>
       </ScrollArea>
     </IncomeContext.Provider>
+  );
+};
+
+const donloadColumn: ColumnDef<Income>[] = [
+  {
+    id: "tanggal",
+    header: "Tanggal",
+    accessorFn: (original) => moment(original.createdAt).format("DD MMM YYYY"),
+  },
+  {
+    id: "name",
+    accessorKey: "notes",
+    header: "Nama",
+  },
+  {
+    id: "type",
+    header: "Tipe",
+    accessorKey: "type",
+  },
+  {
+    id: "pemasukan",
+    header: "Pemasukan",
+    accessorKey: "income",
+  },
+];
+
+const DownloadExcel: React.FC<{ incomes: Income[] }> = ({ incomes }) => {
+  const table = useTable({
+    data: incomes,
+    columns: donloadColumn,
+  });
+
+  const download = useExportToExcel(table, {
+    headers: ["Tanggal", "Nama", "Tipe", "Pemasukan"],
+    name: `pemasukan - ${moment(now().toJSDate()).format("DD MMM YYYY")}.xlsx`,
+  });
+  return (
+    <Button onClick={() => download()} variant={"outline"} size={"icon"}>
+      <LucideDownload />
+    </Button>
   );
 };
 

@@ -2,11 +2,11 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Authenticated from "@/components/hasan/auth/authenticated";
-import React, { createContext, useState } from "react";
+import React from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { dexie } from "@/server/local/dexie";
 import { useTable } from "@/hooks/Table/useTable";
-import { ColumnDef } from "@tanstack/react-table";
+import { type ColumnDef } from "@tanstack/react-table";
 import Title from "@/components/hasan/title";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { DataTableContent } from "@/hooks/Table/DataTableContent";
@@ -22,7 +22,7 @@ import {
   productVariants$,
   suppliers$,
 } from "@/server/local/db";
-import {
+import type {
   IngoingStockType,
   Material,
   OrderMaterial,
@@ -36,12 +36,7 @@ import moment from "moment";
 import { Badge } from "@/components/ui/badge";
 import { DataTableFilterName } from "@/hooks/Table/DataTableFilterName";
 import { DataTableViewOptions } from "@/hooks/Table/DataTableViewOptions";
-import {
-  Memo,
-  useMount,
-  useObservable,
-  useObserveEffect,
-} from "@legendapp/state/react";
+import { Memo, useMount, useObservable } from "@legendapp/state/react";
 import Sheet from "@/components/hasan/sheet";
 import InputWithLabel from "@/components/hasan/input-with-label";
 import { Combobox } from "@/components/hasan/combobox";
@@ -49,10 +44,9 @@ import { Button } from "@/components/ui/button";
 import { LucidePlus, MoreHorizontal } from "lucide-react";
 import { toast } from "sonner";
 import { Label } from "@/components/ui/label";
-import { DialogProps } from "@radix-ui/react-dialog";
+import { type DialogProps } from "@radix-ui/react-dialog";
 import { generateId } from "better-auth";
 import { useDialog } from "@/hooks/useDialog";
-import { SheetClose } from "@/components/ui/sheet";
 import { DateTime } from "luxon";
 import {
   DropdownMenuItem,
@@ -61,11 +55,10 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Observable } from "@legendapp/state";
 import Alert from "@/components/hasan/alert";
 import ControlledSheet from "@/components/hasan/controlled-sheet";
 import Dexie from "dexie";
-import { DB } from "@/lib/supabase/supabase";
+import { type DB } from "@/lib/supabase/supabase";
 import { now } from "@/lib/utils";
 import Conditional from "@/components/hasan/conditional";
 
@@ -145,10 +138,6 @@ const stockMasukColumn: ColumnDef<StokMasukType>[] = [
   },
 ];
 
-interface IStokMasukContext {
-  id: string;
-}
-
 const Actions: React.FC<{ data: StokMasukType }> = ({ data }) => {
   const deleteDialog = useDialog();
   const editDialog = useDialog();
@@ -197,11 +186,17 @@ const Actions: React.FC<{ data: StokMasukType }> = ({ data }) => {
           <Button
             onClick={() => {
               if (data.type === "Produk") {
+                const orderProduct = orderProducts$[data.id]!.get();
+
+                productVariants$[orderProduct.variantId]!.qty.set(
+                  (p) => p - data.qty,
+                );
+
                 orderProducts$[data.id]!.delete();
               }
 
               if (data.type === "Bahan") {
-                orderProducts$[data.id]!.delete();
+                orderMaterials$[data.id]!.delete();
               }
 
               expenses$[data.id]!.delete();
@@ -222,14 +217,30 @@ const StokMasukEdit: React.FC<
     <Sheet
       {...props}
       title="Stok Masuk"
-      content={() => (
-        <StokMasukEditContent stokMasuk={stokMasuk} onSubmit={onSubmit} />
-      )}
+      content={() => {
+        if (stokMasuk.type === "Bahan") {
+          return (
+            <StokMasukEditMaterialContent
+              stokMasuk={stokMasuk}
+              onSubmit={onSubmit}
+            />
+          );
+        }
+
+        if (stokMasuk.type === "Produk") {
+          return (
+            <StokMasukEditProductContent
+              stokMasuk={stokMasuk}
+              onSubmit={onSubmit}
+            />
+          );
+        }
+      }}
     />
   );
 };
 
-const StokMasukEditContent: React.FC<{
+const StokMasukEditProductContent: React.FC<{
   stokMasuk: StokMasukType;
   onSubmit: () => void;
 }> = ({ stokMasuk, onSubmit }) => {
@@ -262,6 +273,7 @@ const StokMasukEditContent: React.FC<{
             const id = stok.productId.get();
             return (
               <ProductSelector
+                disabled={true}
                 key={id}
                 selected={products$[id]!.name.get()}
                 onSelected={(e) => {
@@ -283,6 +295,7 @@ const StokMasukEditContent: React.FC<{
               <div className="flex flex-col gap-2">
                 <Label>Varian</Label>
                 <VariantSelector
+                  disabled={true}
                   key={id}
                   selected={productVariants$[stok.variantId.get()]!.name.get()}
                   onSelected={(e) => stok.variantId.set(e.id)}
@@ -332,16 +345,18 @@ const StokMasukEditContent: React.FC<{
           }
 
           const id = stok.id.get();
+
+          const order = await dexie.orderProducts.get(stokMasuk.id);
+          const variant = await dexie.productVariants.get(stok.variantId.get());
+
+          productVariants$[stok.variantId.get()]!.qty.set(
+            (_) => variant!.qty - order!.qty + stok.qty.get(),
+          );
+
           orderProducts$[id]!.set((p) => ({
             ...stok.get(),
             createdAt: p.createdAt,
           }));
-
-          const order = await dexie.orderProducts.get(stokMasuk.id);
-
-          productVariants$[stok.variantId.get()]!.qty.set(
-            (p) => p + order!.qty - stok.qty.get(),
-          );
 
           const pastOrder = await dexie.orderProducts
             .where("[variantId+createdAt]")
@@ -376,6 +391,156 @@ const StokMasukEditContent: React.FC<{
           }));
 
           productVariants$[stok.variantId.get()]!.costOfGoods.set(pastHpp);
+
+          onSubmit();
+        }}
+      >
+        Simpan
+      </Button>
+    </div>
+  );
+};
+
+const StokMasukEditMaterialContent: React.FC<{
+  stokMasuk: StokMasukType;
+  onSubmit: () => void;
+}> = ({ stokMasuk, onSubmit }) => {
+  const stok = useObservable<OrderMaterial>({
+    createdAt: new Date(),
+    id: "",
+    qty: 0,
+    type: "inventory",
+    deleted: false,
+    inOut: "in",
+    orderId: "",
+    pay: 0,
+    materialId: "",
+    supplierId: "",
+  });
+
+  useMount(async () => {
+    const order = await dexie.orderMaterials.get(stokMasuk.id);
+    if (!order) return;
+    stok.set(order);
+  });
+
+  return (
+    <div className="space-y-2">
+      <div className="flex flex-col gap-2">
+        <Label>Produk</Label>
+        <Memo>
+          {() => {
+            const id = stok.materialId.get();
+            return (
+              <MaterialSelector
+                disabled={true}
+                key={id}
+                selected={materials$[id]!.name.get()}
+                onSelected={(e) => {
+                  stok.materialId.set(e.id);
+                }}
+              />
+            );
+          }}
+        </Memo>
+      </div>
+      <Memo>
+        {() => {
+          const id = stok.materialId.get();
+
+          if (id === "") return;
+
+          return (
+            <>
+              <div className="flex flex-col gap-2">
+                <Label>Suplier</Label>
+                <SuplierSelector
+                  selected={suppliers$[stok.supplierId.get()]!.name.get()}
+                  onSelected={(e) => stok.supplierId.set(e.id)}
+                />
+              </div>
+              <Memo>
+                {() => (
+                  <InputWithLabel
+                    label="Qty"
+                    inputProps={{
+                      defaultValue: stok.qty.get(),
+                      onBlur: (e) => stok.qty.set(+e.target.value),
+                    }}
+                  />
+                )}
+              </Memo>
+              <Memo>
+                {() => (
+                  <InputWithLabel
+                    label="Bayar"
+                    inputProps={{
+                      defaultValue: stok.pay.get(),
+                      onBlur: (e) => stok.pay.set(+e.target.value),
+                    }}
+                  />
+                )}
+              </Memo>
+            </>
+          );
+        }}
+      </Memo>
+      <Button
+        className="w-full"
+        onClick={async () => {
+          const result = materialSchema.safeParse(stok.get());
+
+          if (!result.success) {
+            toast.error(result.error.errors[0]!.message);
+            return;
+          }
+
+          const id = stok.id.get();
+
+          const order = await dexie.orderMaterials.get(stokMasuk.id);
+
+          materials$[stok.materialId.get()]!.qty.set(
+            (p) => p - order!.qty + stok.qty.get(),
+          );
+
+          orderMaterials$[id]!.set((p) => ({
+            ...stok.get(),
+            createdAt: p.createdAt,
+          }));
+
+          const pastOrder = await dexie.orderMaterials
+            .where("[materialId+createdAt]")
+            .between(
+              [stok.materialId.get(), Dexie.minKey],
+              [stok.materialId.get(), Dexie.maxKey],
+            )
+            .filter((s) => s.inOut === "in")
+            .reverse()
+            .limit(20)
+            .toArray();
+
+          let pastHpp = 0;
+
+          if (pastOrder.length !== 0) {
+            pastHpp =
+              pastOrder.reduce((sum, x) => {
+                if (x.id !== stok.id.get()) {
+                  return sum + x.pay / x.qty;
+                } else {
+                  return sum + stok.pay.get() / stok.qty.get();
+                }
+              }, 0) / pastOrder.length;
+          }
+
+          expenses$[id]!.set((p) => ({
+            ...p,
+            expense: stok.pay.get(),
+            notes: `Beli ${stok.qty.get()} ${materials$[stok.materialId.get()]!.name.get()} Di ${suppliers$[stok.supplierId.get()]!.name.get()}`,
+            updatedAt: now().toISO()!,
+            targetId: stok.id.get(),
+          }));
+
+          materials$[stok.materialId.get()]!.costOfGoods.set(pastHpp);
 
           onSubmit();
         }}
@@ -602,7 +767,7 @@ const AddMaterialForm: React.FC<{ onSubmit: () => void }> = ({ onSubmit }) => {
             targetId: stok.id.get(),
           });
 
-          materials$[stok.materialId.get()]!.costOfGoods.set((p) => {
+          materials$[stok.materialId.get()]!.costOfGoods.set((_) => {
             if (pastHpp === 0) return hpp;
             return (pastHpp + hpp) / 2;
           });
@@ -729,7 +894,7 @@ const AddProductForm: React.FC<{ onSubmit: () => void }> = ({ onSubmit }) => {
             targetId: stok.id.get(),
           });
 
-          productVariants$[stok.variantId.get()]!.costOfGoods.set((p) => {
+          productVariants$[stok.variantId.get()]!.costOfGoods.set((_) => {
             if (pastHpp === 0) return hpp;
             return (pastHpp + hpp) / 2;
           });
@@ -838,7 +1003,8 @@ const VariantSelector: React.FC<{
   selected?: string;
   onSelected: (e: ProductVariant) => void;
   productId: string;
-}> = ({ selected, onSelected, productId }) => {
+  disabled?: boolean;
+}> = ({ selected, onSelected, productId, disabled = false }) => {
   const variants = useLiveQuery(() =>
     dexie.productVariants
       .where("product_id")
@@ -852,6 +1018,7 @@ const VariantSelector: React.FC<{
   return (
     <Combobox
       title="Order Produk"
+      disabled={disabled}
       onSelected={(e) => {
         setVariant(e.name);
         onSelected(e);
@@ -866,7 +1033,8 @@ const VariantSelector: React.FC<{
 const ProductSelector: React.FC<{
   selected?: string;
   onSelected: (e: Product) => void;
-}> = ({ selected, onSelected }) => {
+  disabled?: boolean;
+}> = ({ selected, onSelected, disabled = false }) => {
   const products = useLiveQuery(() =>
     dexie.products.filter((x) => !x.deleted).sortBy("name"),
   );
@@ -878,6 +1046,7 @@ const ProductSelector: React.FC<{
   return (
     <Combobox
       title="Produk"
+      disabled={disabled}
       onSelected={(e) => {
         setProduct(e.name);
         onSelected(e);
@@ -890,9 +1059,10 @@ const ProductSelector: React.FC<{
 };
 
 const MaterialSelector: React.FC<{
+  disabled?: boolean;
   selected?: string;
   onSelected: (e: Material) => void;
-}> = ({ selected, onSelected }) => {
+}> = ({ selected, onSelected, disabled = false }) => {
   const materials = useLiveQuery(() =>
     dexie.materials.filter((x) => !x.deleted).sortBy("name"),
   );
@@ -903,6 +1073,7 @@ const MaterialSelector: React.FC<{
 
   return (
     <Combobox
+      disabled={disabled}
       title="Material"
       onSelected={(e) => {
         setMaterial(e.name);
@@ -998,7 +1169,7 @@ const KeluarActions: React.FC<{ stok: StokKeluarType }> = ({ stok }) => {
           if (stok.type.includes("produk")) {
             const orderProduct = orderProducts$[stok.id]!.get();
             return (
-              <AddStockMasukProductForm
+              <AddStockKeluarProductForm
                 onSubmit={editDialog.dismiss}
                 stokKeluar={orderProduct}
               />
@@ -1023,13 +1194,24 @@ const KeluarActions: React.FC<{ stok: StokKeluarType }> = ({ stok }) => {
         renderCancel={() => <Button>Tidak</Button>}
         renderAction={() => (
           <Button
-            onClick={() => {
+            onClick={async () => {
               if (stok.type.includes("produk")) {
+                const orderProduct = orderProducts$[stok.id]!.get();
+                const variant = productVariants$[orderProduct.variantId]!.get();
+
+                productVariants$[variant.id]!.qty.set(
+                  variant.qty + orderProduct.qty,
+                );
+
                 orderProducts$[stok.id]!.delete();
                 return;
               }
 
               if (stok.type.includes("bahan")) {
+                const orderMaterial = orderMaterials$[stok.id]!.get();
+                materials$[orderMaterial.materialId]!.qty.set(
+                  (p) => p + orderMaterial.qty,
+                );
                 orderMaterials$[stok.id]!.delete();
                 return;
               }
@@ -1140,7 +1322,7 @@ const StokKeluarAddForm: React.FC<{
           </TabsTrigger>
         </TabsList>
         <TabsContent value="produk">
-          <AddStockMasukProductForm onSubmit={onSubmit} />
+          <AddStockKeluarProductForm onSubmit={onSubmit} />
         </TabsContent>
         <TabsContent value="bahan">
           <AddStockMaterialForm onSubmit={onSubmit} />
@@ -1163,7 +1345,7 @@ const ingoingMaterialStockSchema = z.object({
   qty: z.number().min(1, "Masukan Qty Dahulu"),
 });
 
-const AddStockMasukProductForm: React.FC<{
+const AddStockKeluarProductForm: React.FC<{
   stokKeluar?: DB<"OrderProduct">;
   onSubmit: () => void;
 }> = ({ stokKeluar, onSubmit }) => {
@@ -1252,6 +1434,25 @@ const AddStockMasukProductForm: React.FC<{
           if (!result.success) {
             toast.error(result.error.errors[0]!.message);
             return;
+          }
+
+          if (stokKeluar) {
+            const variant = await dexie.productVariants.get(
+              stok.variantId.get(),
+            );
+            const orderProduct = orderProducts$[stok.id.get()]!.get();
+
+            productVariants$[stok.variantId.get()]!.qty.set(
+              variant!.qty + orderProduct.qty - stok.qty.get(),
+            );
+          } else {
+            const variant = await dexie.productVariants.get(
+              stok.variantId.get(),
+            );
+
+            productVariants$[stok.variantId.get()]!.qty.set(
+              variant!.qty - stok.qty.get(),
+            );
           }
 
           orderProducts$[stok.id.get()]!.set(stok.get());
@@ -1416,6 +1617,18 @@ const AddStockMaterialForm: React.FC<{
           if (!result.success) {
             toast.error(result.error.errors[0]!.message);
             return;
+          }
+
+          if (material) {
+            const orderProduct = orderMaterials$[stok.id.get()]!.get();
+
+            materials$[stok.materialId.get()]!.qty.set(
+              (p) => p + orderProduct.qty - stok.qty.get(),
+            );
+          } else {
+            materials$[stok.materialId.get()]!.qty.set(
+              (p) => p - stok.qty.get(),
+            );
           }
 
           orderMaterials$[stok.id.get()]!.set(stok.get());

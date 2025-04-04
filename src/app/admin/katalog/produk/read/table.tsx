@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { generateId, products$, productVariants$ } from "@/server/local/db";
+import { generateId, products$ } from "@/server/local/db";
 import { observer } from "@legendapp/state/react";
 import Link from "next/link";
 import React from "react";
@@ -22,8 +22,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Switch } from "@/components/ui/switch";
 import { type Product } from "@prisma/client";
-import Dialog from "@/components/hasan/dialog";
-import DataTableAction from "@/hooks/Table/DataTableAction";
 import { LucidePlus, MoreHorizontal } from "lucide-react";
 import Title from "@/components/hasan/title";
 import { useLiveQuery } from "dexie-react-hooks";
@@ -42,7 +40,6 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import { List } from "@/components/hasan/render-list";
-import { DialogProps } from "@radix-ui/react-dialog";
 
 const EditButton: React.FC<{ data: Product }> = ({ data }) => {
   return (

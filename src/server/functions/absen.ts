@@ -1,5 +1,5 @@
 import { date } from "@/lib/utils";
-import { Absensi } from "@prisma/client";
+import { type Absensi } from "@prisma/client";
 import { DateTime } from "luxon";
 
 const isToday = (date: Date, now: Date): boolean => {

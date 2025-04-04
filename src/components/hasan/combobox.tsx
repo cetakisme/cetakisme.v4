@@ -24,6 +24,7 @@ export function Combobox<TData extends { name: string }>({
   onSelected,
   renderAddButton,
   renderItem,
+  disabled = false,
   ...props
 }: DialogProps & {
   title: string;
@@ -32,12 +33,14 @@ export function Combobox<TData extends { name: string }>({
   renderAddButton?: () => React.ReactNode;
   renderSelected: () => React.ReactNode;
   renderItem: (data: TData) => React.ReactNode;
+  disabled?: boolean;
 }) {
   // const [selectedData, setSelectedData] = React.useState<TData | null>(null);
   return (
     <Popover open={open} {...props}>
       <PopoverTrigger asChild>
         <Button
+          disabled={disabled}
           variant="outline"
           role="combobox"
           aria-expanded={open}

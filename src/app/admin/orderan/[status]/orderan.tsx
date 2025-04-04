@@ -10,15 +10,12 @@ import { useTable } from "@/hooks/Table/useTable";
 import {
   Table,
   TableBody,
-  TableCaption,
   TableCell,
-  TableFooter,
   TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
 import {
-  addons$,
   addonValues$,
   customer$,
   expenses$,
@@ -35,9 +32,8 @@ import {
 } from "@/server/local/db";
 import { dexie } from "@/server/local/dexie";
 import {
-  Cost,
-  Product,
-  ProductVariant,
+  type Cost,
+  type ProductVariant,
   type Discount,
   type Order,
   type OrderHistory,
@@ -81,7 +77,6 @@ import {
   LucideLink,
   LucidePlus,
   MoreHorizontal,
-  Scroll,
 } from "lucide-react";
 import { DataTableFilterName } from "@/hooks/Table/DataTableFilterName";
 import { DataTableViewOptions } from "@/hooks/Table/DataTableViewOptions";
@@ -95,13 +90,13 @@ import RenderList, { List } from "@/components/hasan/render-list";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Combobox } from "@/components/hasan/combobox";
 import Title from "@/components/hasan/title";
-import { Observable } from "@legendapp/state";
+import { type Observable } from "@legendapp/state";
 import { isoNow, toRupiah } from "@/lib/utils";
 import { getHistoryReceipt } from "../../resi/[id]/resi";
 import { toast } from "sonner";
 import Authenticated from "@/components/hasan/auth/authenticated";
 import { DateTime } from "luxon";
-import { DB } from "@/lib/supabase/supabase";
+import { type DB } from "@/lib/supabase/supabase";
 import ResiDialog from "@/components/hasan/resi-dialog";
 
 const columns: ColumnDef<Order & { status: string }>[] = [
@@ -619,7 +614,7 @@ const OrderHistoryDetailContent = () => {
             });
 
             downloadPNGFromSVG(svg, (pngUrl) => {
-              sendToPrinter(pngUrl);
+              void sendToPrinter(pngUrl);
             });
           }}
         >
@@ -704,7 +699,7 @@ const sendToPrinter = async (imageUrl: string) => {
       // console.log("Image sent to printer!");
       toast.success("Print Berhasil!");
     };
-  } catch (error) {
+  } catch {
     // console.error("Printing error:", error);
     toast.error("Tidak dapat terhubung ke printer!");
   }
@@ -872,7 +867,7 @@ const OrderMaterials: React.FC<{ order: Order }> = ({ order }) => {
         className="space-y-4"
         data={orderMaterials ?? []}
         getKey={(data) => data.id}
-        render={(data, index) => (
+        render={(data) => (
           <div className={`w-full space-y-2 border-b pb-4`}>
             <div className="flex w-full items-center justify-between">
               <div className="flex items-center gap-2">
@@ -1008,7 +1003,7 @@ const OrderMaterials: React.FC<{ order: Order }> = ({ order }) => {
                       defaultValue: data.qty,
                       onBlur: (e) => {
                         materials$[data.materialId]?.qty.set((p) => {
-                          let newQty = p + data.qty;
+                          const newQty = p + data.qty;
                           return newQty - +e.target.value;
                         });
                         orderMaterials$[data.id]!.qty.set(+e.target.value);
@@ -1067,7 +1062,7 @@ const OrderProucts: React.FC<{ order: Order }> = ({ order }) => {
         className="space-y-4"
         data={orderProducts ?? []}
         getKey={(data) => data.id}
-        render={(data, index) => (
+        render={(data) => (
           <div className={`w-full space-y-2 border-b pb-4`}>
             <div className="flex w-full items-center justify-between">
               <div className="flex items-center gap-2">
@@ -1202,11 +1197,20 @@ const OrderProucts: React.FC<{ order: Order }> = ({ order }) => {
                     inputProps={{
                       defaultValue: data.qty,
                       onBlur: (e) => {
-                        productVariants$[data.variantId]?.qty.set((p) => {
-                          let newQty = p + data.qty;
-                          return newQty - +e.target.value;
-                        });
-                        orderProducts$[data.id]!.qty.set(+e.target.value);
+                        const f = async () => {
+                          const variant = await dexie.productVariants.get(
+                            data.variantId,
+                          );
+                          if (!variant) return;
+                          productVariants$[data.variantId]?.qty.set((_) => {
+                            const newQty = variant.qty + data.qty;
+                            return newQty - +e.target.value;
+                          });
+
+                          orderProducts$[data.id]!.qty.set(+e.target.value);
+                        };
+
+                        void f();
                       },
                     }}
                   />
@@ -1383,9 +1387,7 @@ const Deadline: C_Order = ({ order }) => {
                 onSelect={(date: Date | undefined) => {
                   if (!date) return;
                   orders$[order.id]!.deadline.set(
-                    DateTime.fromJSDate(date)
-                      .setZone("Asia/Singapore")
-                      .toISO()!,
+                    DateTime.fromJSDate(date).setZone("Asia/Singapore").toISO(),
                   );
                 }}
                 className="rounded-md border"

@@ -28,20 +28,14 @@ import {
   receiptSettings$,
 } from "@/server/local/db";
 import { dexie } from "@/server/local/dexie";
-import { Observable } from "@legendapp/state";
-import {
-  Memo,
-  useMount,
-  useObservable,
-  useObserveEffect,
-} from "@legendapp/state/react";
-import { ReceiptModel } from "@prisma/client";
-import { ColumnDef } from "@tanstack/react-table";
+import { type Observable } from "@legendapp/state";
+import { Memo, useObservable, useObserveEffect } from "@legendapp/state/react";
+import { type ReceiptModel } from "@prisma/client";
+import { type ColumnDef } from "@tanstack/react-table";
 import { useLiveQuery } from "dexie-react-hooks";
 import { LucidePlus, MoreHorizontal } from "lucide-react";
 import Link from "next/link";
 import React, { useContext } from "react";
-import { toast } from "sonner";
 
 const Page = () => {
   return (

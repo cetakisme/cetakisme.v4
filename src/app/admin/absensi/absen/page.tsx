@@ -6,28 +6,14 @@ import { absensi$ } from "@/server/local/db";
 import { dexie } from "@/server/local/dexie";
 import { generateId } from "@/server/local/utils";
 import { Memo, useObservable, useObserveEffect } from "@legendapp/state/react";
-import { Absensi } from "@prisma/client";
+import { type Absensi } from "@prisma/client";
 import moment from "moment";
 import React from "react";
-import { DateTime } from "luxon";
-import { LucideLoader } from "lucide-react";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
-import { toast } from "sonner";
 import Authenticated from "@/components/hasan/auth/authenticated";
-import { DB } from "@/lib/supabase/supabase";
-import {
-  dateDiff,
-  dateToHMS,
-  absen as doAbsen,
-} from "@/server/functions/absen";
+import { dateDiff, absen as doAbsen } from "@/server/functions/absen";
 import { date, isoDate, now } from "@/lib/utils";
 
 const Page = () => {
@@ -44,7 +30,7 @@ const Absen = () => {
   const absen = useObservable<Absensi | null>(null);
 
   useObserveEffect(() => {
-    const _ = user$.get();
+    user$.get();
     reloadAbsensi();
   });
 
@@ -111,7 +97,7 @@ const Absen = () => {
                         <Label>Pulang</Label>
                       </TableCell>
                       <TableCell>
-                        {abs && abs.exit
+                        {abs?.exit
                           ? moment(date(abs.exit)).format("hh:mm:ss A")
                           : "-"}
                       </TableCell>

@@ -12,7 +12,7 @@ import { dexie } from "@/server/local/dexie";
 import { Memo, useMount, useObservable } from "@legendapp/state/react";
 import moment from "moment";
 import React from "react";
-import receiptline, { Printer } from "receiptline";
+import receiptline, { type Printer } from "receiptline";
 
 const display: Printer = {
   cpl: 42,

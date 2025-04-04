@@ -11,8 +11,6 @@ import type {
   Customer,
   Discount,
   Order,
-  OrderHistory,
-  OrderVariant,
   Product,
   ProductVariant,
 } from "@prisma/client";
@@ -96,9 +94,9 @@ import Authenticated from "@/components/hasan/auth/authenticated";
 import AuthFallback from "@/components/hasan/auth/auth-fallback";
 import { useSearchParams } from "next/navigation";
 import Conditional from "@/components/hasan/conditional";
-import { DialogProps } from "@radix-ui/react-dialog";
+import { type DialogProps } from "@radix-ui/react-dialog";
 import ResiDialog from "@/components/hasan/resi-dialog";
-import { DB } from "@/lib/supabase/supabase";
+import { type DB } from "@/lib/supabase/supabase";
 
 interface IKasirContext {
   isLoadFromSave: boolean;
@@ -167,8 +165,8 @@ const GetOrderComponent = () => {
       const data = await constructOrder(order, true);
       ctx$.set(data);
     };
-    f();
-  }, [searchParams]);
+    void f();
+  }, [searchParams, ctx$]);
   return <></>;
 };
 
@@ -611,7 +609,7 @@ const PaySheet = () => {
       });
     };
 
-    f();
+    void f();
   });
 
   const pay = () => {

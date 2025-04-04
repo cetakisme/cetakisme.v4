@@ -6,7 +6,6 @@ import { Combobox } from "@/components/hasan/combobox";
 import Conditional from "@/components/hasan/conditional";
 import ControlledSheet from "@/components/hasan/controlled-sheet";
 import InputWithLabel from "@/components/hasan/input-with-label";
-import { PopoverButton } from "@/components/hasan/popover-button";
 import Sheet from "@/components/hasan/sheet";
 import Title from "@/components/hasan/title";
 import { Badge } from "@/components/ui/badge";
@@ -20,15 +19,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { DataTableColumnHeader } from "@/hooks/Table/DataColumnHeader";
 import { DataTableContent } from "@/hooks/Table/DataTableContent";
 import { DataTableFilterName } from "@/hooks/Table/DataTableFilterName";
@@ -36,23 +26,17 @@ import { DataTablePagination } from "@/hooks/Table/DataTablePagination";
 import { DataTableViewOptions } from "@/hooks/Table/DataTableViewOptions";
 import { useTable } from "@/hooks/Table/useTable";
 import { useDialog } from "@/hooks/useDialog";
-import { DB } from "@/lib/supabase/supabase";
+import { useExportToExcel } from "@/hooks/useTableExcel";
+import { type DB } from "@/lib/supabase/supabase";
 import { now, toRupiah } from "@/lib/utils";
-import {
-  expenses$,
-  expenseTypes$,
-  generateId,
-  orderMaterials$,
-  orderProducts$,
-} from "@/server/local/db";
+import { expenses$, expenseTypes$, generateId } from "@/server/local/db";
 import { dexie } from "@/server/local/dexie";
-import { Observable } from "@legendapp/state";
+import { type Observable } from "@legendapp/state";
 import { Memo, useObservable } from "@legendapp/state/react";
-import { Expense, ExpenseType } from "@prisma/client";
-import { ColumnDef } from "@tanstack/react-table";
+import type { Expense, ExpenseType } from "@prisma/client";
+import { type ColumnDef } from "@tanstack/react-table";
 import { useLiveQuery } from "dexie-react-hooks";
-import { LucidePlus, MoreHorizontal } from "lucide-react";
-import { DateTime } from "luxon";
+import { LucideDownload, LucidePlus, MoreHorizontal } from "lucide-react";
 import moment from "moment";
 import React, { createContext, useContext } from "react";
 import { toast } from "sonner";
@@ -150,7 +134,9 @@ const Action: React.FC<{ expense: Expense }> = ({ expense }) => {
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 className="bg-destructive text-destructive-foreground"
-                onClick={() => deleteDialog.trigger()}
+                onClick={() => {
+                  deleteDialog.trigger();
+                }}
               >
                 Hapus
               </DropdownMenuItem>
@@ -172,24 +158,58 @@ const Action: React.FC<{ expense: Expense }> = ({ expense }) => {
         )}
         {...editDialog.props}
       />
-      <Conditional condition={expense.type === "keluar"}>
-        <Alert
-          {...deleteDialog.props}
-          title="Yakin Ingin Menghapus ?"
-          description="Pengeluaran yang dihapus tidak dapat dikembailkan lagi"
-          renderCancel={() => <Button>Tidak</Button>}
-          renderAction={() => (
-            <Button
-              onClick={() => {
-                expenses$[expense.id]!.delete();
-              }}
-            >
-              Ya
-            </Button>
-          )}
-        />
-      </Conditional>
+      <Alert
+        {...deleteDialog.props}
+        title="Yakin Ingin Menghapus ?"
+        description="Pengeluaran yang dihapus tidak dapat dikembailkan lagi"
+        renderCancel={() => <Button>Tidak</Button>}
+        renderAction={() => (
+          <Button
+            onClick={() => {
+              expenses$[expense.id]!.delete();
+            }}
+          >
+            Ya
+          </Button>
+        )}
+      />
     </>
+  );
+};
+
+const donloadColumn: ColumnDef<Expense>[] = [
+  {
+    id: "tanggal",
+    accessorFn: (original) => moment(original.createdAt).format("DD MMM YYYY"),
+  },
+  {
+    id: "name",
+    accessorKey: "notes",
+  },
+  {
+    id: "type",
+    accessorKey: "type",
+  },
+  {
+    id: "pengeluaran",
+    accessorKey: "expense",
+  },
+];
+
+const DownloadExcel: React.FC<{ expense: Expense[] }> = ({ expense }) => {
+  const table = useTable({
+    data: expense,
+    columns: donloadColumn,
+  });
+
+  const download = useExportToExcel(table, {
+    headers: ["Tanggal", "Nama", "Tipe", "Pengeluaran"],
+    name: `pengeluaran - ${moment(now().toJSDate()).format("DD MMM YYYY")}.xlsx`,
+  });
+  return (
+    <Button onClick={() => download()} variant={"outline"} size={"icon"}>
+      <LucideDownload />
+    </Button>
   );
 };
 
@@ -221,6 +241,7 @@ const Expenses = () => {
               <Authenticated permission="pengeluaran-create">
                 <AddSheet />
               </Authenticated>
+              <DownloadExcel expense={expenses ?? []} />
               <DataTableViewOptions table={table} />
             </div>
           </div>
@@ -233,8 +254,6 @@ const Expenses = () => {
 };
 
 const AddSheet = () => {
-  const ctx$ = useContext(ExpenseContext);
-
   return (
     <ControlledSheet
       title="Pengeluaran"
@@ -268,7 +287,7 @@ const ExpenseForm: React.FC<{
     createdAt: expense?.createdAt ?? "",
     deleted: expense?.deleted ?? false,
     expense: expense?.expense ?? 0,
-    id: expense?.id ?? "",
+    id: expense?.id ?? generateId(),
     notes: expense?.notes ?? "",
     targetId: expense?.targetId ?? "",
     type: expense?.type ?? "",
@@ -341,10 +360,8 @@ const ExpenseForm: React.FC<{
             return;
           }
 
-          const id = generateId();
-          expenses$[id]!.set({
+          expenses$[_expense.id.get()]!.set({
             ..._expense.get(),
-            id: id,
             createdAt: now().toISO()!,
             updatedAt: now().toISO()!,
           });

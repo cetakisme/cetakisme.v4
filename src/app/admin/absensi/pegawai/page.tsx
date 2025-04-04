@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Memo, useObservable, useObserveEffect } from "@legendapp/state/react";
-import { LucideArrowLeftRight, LucideDot } from "lucide-react";
+import { LucideArrowLeftRight } from "lucide-react";
 import moment from "moment";
 import React from "react";
 import {
@@ -112,7 +112,7 @@ const Absensi = () => {
                     <>
                       {_dates
                         .get()
-                        ?.map((x, i) => (
+                        ?.map((x) => (
                           <Hadir
                             date={x}
                             key={moment(x).format("DD-MM-YY")}
@@ -159,16 +159,16 @@ const isTheSameDay = (target: Date, date: Date) => {
 };
 
 function accumulateTimeIntervals(totals: Date[]) {
-  let totalDuration = moment.duration(0);
+  const totalDuration = moment.duration(0);
 
   totals.forEach((total) => {
     const diff = dateDiff(new Date("January 1, 1970 00:00:00"), total); // Difference in milliseconds
     totalDuration.add(moment.duration(diff));
   });
 
-  let hours = Math.floor(totalDuration.asHours());
-  let minutes = totalDuration.minutes();
-  let seconds = totalDuration.seconds();
+  const hours = Math.floor(totalDuration.asHours());
+  const minutes = totalDuration.minutes();
+  const seconds = totalDuration.seconds();
 
   return { hours, minutes, seconds };
 }
@@ -212,7 +212,7 @@ const Hadir: React.FC<{ userId: string; date: Date }> = ({ userId, date }) => {
     <TableCell
       className={`${hadir && hadir.length > 0 && "bg-black"} text-center text-white`}
     >
-      <TotalJamKerjaPerhari total={hadir[0]!.totalHour} />
+      <TotalJamKerjaPerhari total={hadir[0].totalHour} />
     </TableCell>
   );
 };

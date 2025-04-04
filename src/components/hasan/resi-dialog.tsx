@@ -11,21 +11,15 @@ import {
   receiptModels$,
 } from "@/server/local/db";
 import { dexie } from "@/server/local/dexie";
-import { OrderHistory } from "@prisma/client";
 import { DateTime } from "luxon";
 import moment from "moment";
 import React from "react";
-import receiptline, { Printer } from "receiptline";
+import receiptline, { type Printer } from "receiptline";
 import { Dialog, DialogContent, DialogTitle } from "../ui/dialog";
 import { ScrollArea } from "../ui/scroll-area";
-import {
-  Memo,
-  useMount,
-  useObservable,
-  useObserveEffect,
-} from "@legendapp/state/react";
-import { DialogDescription, DialogProps } from "@radix-ui/react-dialog";
-import { DB } from "@/lib/supabase/supabase";
+import { Memo, useObservable, useObserveEffect } from "@legendapp/state/react";
+import { DialogDescription, type DialogProps } from "@radix-ui/react-dialog";
+import { type DB } from "@/lib/supabase/supabase";
 import { Button } from "../ui/button";
 import { toast } from "sonner";
 
@@ -164,15 +158,22 @@ Kunjungi Website Kami di www.cetakisme.com
   const model = await dexie.receiptSettings.toArray();
 
   if (model[0]) {
-    let markdown = await receiptModels$[model[0].model]!.content.get();
-    markdown = transformQRString(markdown);
-    markdown = transformTanggalString(markdown);
-    markdown = transformBarangString(markdown, s);
-    markdown = transformDiskonString(markdown, d);
-    markdown = transformTotalString(markdown, orderHistory.total);
-    markdown = transformHistoryString(markdown, h);
+    let markdown = receiptModels$[model[0].model]?.content.get();
 
-    return receiptline.transform(markdown, display);
+    console.log(markdown);
+
+    if (markdown === undefined || markdown === "") {
+      return receiptline.transform(fallback, display);
+    } else {
+      markdown = transformQRString(markdown);
+      markdown = transformTanggalString(markdown);
+      markdown = transformBarangString(markdown, s);
+      markdown = transformDiskonString(markdown, d);
+      markdown = transformTotalString(markdown, orderHistory.total);
+      markdown = transformHistoryString(markdown, h);
+
+      return receiptline.transform(markdown, display);
+    }
   } else {
     return receiptline.transform(fallback, display);
   }
@@ -243,7 +244,7 @@ const Content: React.FC<{ history: DB<"OrderHistory"> } & DialogProps> = ({
             className="w-full"
             onClick={async () => {
               downloadPNGFromSVG(svg.get(), (pngUrl) => {
-                sendToPrinter(pngUrl);
+                void sendToPrinter(pngUrl);
               });
             }}
           >
@@ -324,7 +325,7 @@ const sendToPrinter = async (imageUrl: string) => {
       // console.log("Image sent to printer!");
       toast.success("Print Berhasil!");
     };
-  } catch (error) {
+  } catch {
     // console.error("Printing error:", error);
     toast.error("Tidak dapat terhubung ke printer!");
   }

@@ -1,17 +1,13 @@
 "use client";
 
 import React from "react";
-import {
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
-} from "@/components/ui/resizable";
+import { ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { Textarea } from "@/components/ui/textarea";
 import { Memo, useMount, useObservable } from "@legendapp/state/react";
-import receiptline, { Printer } from "receiptline";
+import receiptline, { type Printer } from "receiptline";
 import { receiptModels$ } from "@/server/local/db";
 import { dexie } from "@/server/local/dexie";
-import { ReceiptModel } from "@prisma/client";
+import { type ReceiptModel } from "@prisma/client";
 import Title from "@/components/hasan/title";
 import { DateTime } from "luxon";
 import { toRupiah } from "@/lib/utils";

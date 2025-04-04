@@ -20,13 +20,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
-} from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { DataTableColumnHeader } from "@/hooks/Table/DataColumnHeader";
 import { DataTableContent } from "@/hooks/Table/DataTableContent";
@@ -38,11 +32,11 @@ import { useDialog } from "@/hooks/useDialog";
 import { supplierContactPersons$, suppliers$ } from "@/server/local/db";
 import { dexie } from "@/server/local/dexie";
 import { generateId } from "@/server/local/utils";
-import { Observable } from "@legendapp/state";
+import { type Observable } from "@legendapp/state";
 import { Memo, useObservable } from "@legendapp/state/react";
-import { Supplier, SupplierContactPerson } from "@prisma/client";
-import { DialogProps } from "@radix-ui/react-dialog";
-import { ColumnDef } from "@tanstack/react-table";
+import { type Supplier } from "@prisma/client";
+import { type DialogProps } from "@radix-ui/react-dialog";
+import { type ColumnDef } from "@tanstack/react-table";
 import { useLiveQuery } from "dexie-react-hooks";
 import { LucidePlus, MoreHorizontal } from "lucide-react";
 import React, { createContext, useContext } from "react";
@@ -390,7 +384,7 @@ const Actions: React.FC<{ supplier: Supplier }> = ({ supplier }) => {
               };
 
               suppliers$[supplier.id]!.delete();
-              f();
+              void f();
             }}
           >
             Ya
