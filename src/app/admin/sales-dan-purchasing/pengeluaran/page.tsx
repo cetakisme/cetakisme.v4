@@ -5,6 +5,7 @@ import Authenticated from "@/components/hasan/auth/authenticated";
 import { Combobox } from "@/components/hasan/combobox";
 import Conditional from "@/components/hasan/conditional";
 import ControlledSheet from "@/components/hasan/controlled-sheet";
+import { DatePicker } from "@/components/hasan/date-picker";
 import InputWithLabel from "@/components/hasan/input-with-label";
 import Sheet from "@/components/hasan/sheet";
 import Title from "@/components/hasan/title";
@@ -26,13 +27,13 @@ import { DataTablePagination } from "@/hooks/Table/DataTablePagination";
 import { DataTableViewOptions } from "@/hooks/Table/DataTableViewOptions";
 import { useTable } from "@/hooks/Table/useTable";
 import { useDialog } from "@/hooks/useDialog";
-import { useExportToExcel } from "@/hooks/useTableExcel";
+import { useExportToExcel, useExportToExcel2 } from "@/hooks/useTableExcel";
 import { type DB } from "@/lib/supabase/supabase";
 import { now, toRupiah } from "@/lib/utils";
 import { expenses$, expenseTypes$, generateId } from "@/server/local/db";
 import { dexie } from "@/server/local/dexie";
 import { type Observable } from "@legendapp/state";
-import { Memo, useObservable } from "@legendapp/state/react";
+import { Memo, useObservable, useObserveEffect } from "@legendapp/state/react";
 import type { Expense, ExpenseType } from "@prisma/client";
 import { type ColumnDef } from "@tanstack/react-table";
 import { useLiveQuery } from "dexie-react-hooks";
@@ -67,6 +68,23 @@ const columns: ColumnDef<Expense>[] = [
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Tanggal" />
     ),
+    filterFn: (row, columnId, filterValue: [Date | null, Date | null]) => {
+      const rowDate = new Date(row.getValue(columnId));
+      const [start, end] = filterValue;
+
+      // Strip time from date
+      const rowTime = new Date(rowDate.setHours(0, 0, 0, 0)).getTime();
+
+      const startTime = start
+        ? new Date(start.setHours(0, 0, 0, 0)).getTime()
+        : null;
+      const endTime = end ? new Date(end.setHours(0, 0, 0, 0)).getTime() : null;
+
+      if (startTime && rowTime < startTime) return false;
+      if (endTime && rowTime > endTime) return false;
+
+      return true;
+    },
     cell: ({ row }) => moment(row.original.createdAt).format("DD MMM YYYY"),
   },
   {
@@ -180,7 +198,9 @@ const Action: React.FC<{ expense: Expense }> = ({ expense }) => {
 const donloadColumn: ColumnDef<Expense>[] = [
   {
     id: "tanggal",
-    accessorFn: (original) => moment(original.createdAt).format("DD MMM YYYY"),
+    accessorKey: "createdAt",
+    // accessorFn: (original) => moment(original.createdAt).format("DD MMM YYYY"),
+    cell: ({ row }) => row.original.createdAt,
   },
   {
     id: "name",
@@ -196,15 +216,108 @@ const donloadColumn: ColumnDef<Expense>[] = [
   },
 ];
 
-const DownloadExcel: React.FC<{ expense: Expense[] }> = ({ expense }) => {
+const DownloadExcel: React.FC<{ expense: Expense[]; range: [Date, Date] }> = ({
+  expense,
+  range,
+}) => {
   const table = useTable({
     data: expense,
     columns: donloadColumn,
   });
 
-  const download = useExportToExcel(table, {
-    headers: ["Tanggal", "Nama", "Tipe", "Pengeluaran"],
-    name: `pengeluaran - ${moment(now().toJSDate()).format("DD MMM YYYY")}.xlsx`,
+  const download = useExportToExcel2({
+    data: async () => {
+      const rows: any[] = table.getRowModel().rows.map((row) => {
+        const _rows = row.getVisibleCells().map((cell) => cell.getValue<any>());
+        return _rows;
+      });
+
+      const filtered = rows
+        .map((x) => {
+          const rowDate = new Date(x[0]);
+          const [start, end] = range;
+
+          // Strip time from date
+          const rowTime = new Date(rowDate.setHours(0, 0, 0, 0)).getTime();
+
+          const startTime = new Date(start.setHours(0, 0, 0, 0)).getTime();
+          const endTime = new Date(end.setHours(0, 0, 0, 0)).getTime();
+
+          if (rowTime < startTime) return undefined;
+          if (rowTime > endTime) return undefined;
+          return x;
+        })
+        .filter((x) => x !== undefined);
+
+      const cells = filtered.map((row) => ({
+        tanggal: row[0],
+        nama: row[1],
+        tipe: row[2],
+        pengeluaran: row[3],
+      }));
+
+      return [
+        {
+          tanggal: "Tanggal",
+          nama: "Nama",
+          tipe: "Tipe",
+          pengeluaran: "Pengeluaran",
+        },
+        ...cells.filter((x) => x !== undefined),
+      ];
+    },
+    headers: [
+      {
+        key: "tanggal",
+        name: "Tanggal",
+        width: 15,
+      },
+      {
+        key: "nama",
+        name: "Nama",
+        width: 35,
+      },
+      {
+        key: "tipe",
+        name: "Tipe",
+        width: 15,
+      },
+      {
+        key: "pengeluaran",
+        name: "Pengeluaran",
+        width: 15,
+      },
+    ],
+    name: `Pengeluaran - ${moment(now().toJSDate()).format("DD MMM YYYY - HH:mm A")}.xlsx`,
+    style: (sheet) => {
+      sheet.getRow(1).eachCell((cell) => {
+        cell.font = { bold: true };
+      });
+
+      sheet.eachRow({ includeEmpty: false }, (row) => {
+        row.eachCell({ includeEmpty: false }, (cell, colNumber) => {
+          if (colNumber === 1) {
+            cell.numFmt = "dd/mm/yyyy";
+          }
+
+          cell.border = {
+            top: { style: "thin" },
+            left: { style: "thin" },
+            bottom: { style: "thin" },
+            right: { style: "thin" },
+          };
+        });
+      });
+
+      sheet
+        .getColumn(4)
+        .eachCell({ includeEmpty: false }, (cell, rowNumber) => {
+          if (rowNumber !== 1) {
+            cell.numFmt = '"Rp. "#,##0';
+          }
+        });
+      return sheet;
+    },
   });
   return (
     <Button onClick={() => download()} variant={"outline"} size={"icon"}>
@@ -221,6 +334,21 @@ const Expenses = () => {
       .sortBy("createdAt"),
   );
 
+  React.useEffect(() => {
+    expenses$.set(expenses ?? []);
+  }, [expenses]);
+
+  const expenses$ = useObservable<Expense[]>([]);
+
+  const rangeDate = useObservable<[Date, Date]>([
+    now().toJSDate(),
+    now().toJSDate(),
+  ]);
+
+  useObserveEffect(() => {
+    table.getColumn("tanggal")?.setFilterValue(rangeDate.get());
+  });
+
   const table = useTable({
     data: expenses ?? [],
     columns,
@@ -235,15 +363,26 @@ const Expenses = () => {
       <ScrollArea className="h-screen p-8">
         <Title>Pengeluaran</Title>
         <div className="space-y-2">
-          <div className="flex h-9 justify-between">
-            <DataTableFilterName table={table} />
-            <div className="flex gap-2">
-              <Authenticated permission="pengeluaran-create">
-                <AddSheet />
-              </Authenticated>
-              <DownloadExcel expense={expenses ?? []} />
-              <DataTableViewOptions table={table} />
+          <div className="">
+            <div className="flex h-9 justify-between">
+              <DataTableFilterName table={table} />
+              <div className="flex gap-2">
+                <Authenticated permission="pengeluaran-create">
+                  <AddSheet />
+                </Authenticated>
+                <Memo>
+                  {() => (
+                    <DownloadExcel
+                      expense={expenses$.get()}
+                      range={rangeDate.get()}
+                    />
+                  )}
+                </Memo>
+                <DataTableViewOptions table={table} />
+              </div>
             </div>
+            <DatePicker onDateChange={(date) => rangeDate[0].set(date)} />
+            <DatePicker onDateChange={(date) => rangeDate[1].set(date)} />
           </div>
           <DataTableContent table={table} />
           <DataTablePagination table={table} />
