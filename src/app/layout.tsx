@@ -1,3 +1,4 @@
+import { Toaster } from "@/components/ui/sonner";
 import "@/styles/globals.css";
 
 import { GeistSans } from "geist/font/sans";
@@ -14,7 +15,19 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className={`${GeistSans.variable}`}>
-      <body>{children}</body>
+      {/* <head>
+        <script type="text/javascript" src="receipt.js"></script>
+        <script type="text/javascript" src="receipt-printer.js"></script>
+        <script type="text/javascript" src="receipt-serial.js"></script>
+        <script
+          type="text/javascript"
+          src="qrcode-generator/qrcode.js"
+        ></script>
+      </head> */}
+      <body>
+        {children}
+        <Toaster />
+      </body>
     </html>
   );
 }

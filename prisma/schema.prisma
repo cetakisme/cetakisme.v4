@@ -1,20 +1,450 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// // This is your Prisma schema file,
+// // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-    provider = "prisma-client-js"
+  provider = "prisma-client-js"
 }
 
 datasource db {
-    provider = "postgresql"
-    url      = env("DATABASE_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
-model Post {
-    id        Int      @id @default(autoincrement())
-    name      String
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
+model Absensi {
+  id          String      @id @default(uuid())
+  userId      String      @default("")
+  enter       DateTime    @default(now())
+  exit        DateTime?   @default(now())
+  totalHour   DateTime    @default(now())
+  isActive    Boolean     @default(false)
+}
 
-    @@index([name])
+model Income {
+  id          String      @id @default(uuid())
+  type        String      @default("")
+  targetId    String    @default("")
+  
+  notes       String      @default("")
+  income      Int         @default(0)
+
+  deleted     Boolean     @default(false)
+  createdAt   DateTime?   @default(now())
+  updatedAt   DateTime    @default(now())
+}
+
+model IncomeType {
+  id          String    @id @default(uuid())
+  name        String    @default("")
+  deleted     Boolean   @default(false)
+}
+
+model IngoingStockType {
+  id          String    @id @default(uuid())
+  name        String    @default("")
+  deleted     Boolean   @default(false)
+}
+
+model Expense {
+  id          String    @id @default(uuid())
+  type        String    @default("")
+  targetId    String    @default("")
+
+  notes       String    @default("")
+  expense      Int       @default(0)
+
+  deleted     Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime    @default(now())
+}
+
+model ExpenseType {
+  id          String    @id @default(uuid())
+  name        String    @default("")
+  deleted     Boolean   @default(false)
+}
+
+model Role {
+  id          String   @id @default(uuid())
+  permissions String[] @default([])
+  deleted     Boolean  @default(false)
+}
+
+model CustomUser {
+  id       String  @id @default(uuid())
+  username String  @default("")
+  password String  @default("")
+  deleted  Boolean @default(false)
+
+  roleId String @default("")
+}
+
+model Discount {
+  id      String  @id @default(uuid())
+  name    String  @default("")
+  value   Int     @default(0)
+  type    String  @default("")
+  deleted Boolean @default(false)
+
+  orderHistoryId String @default("")
+}
+
+model Cost {
+  id      String  @id @default(uuid())
+  name    String  @default("")
+  value   Int     @default(0)
+  type    String  @default("")
+  deleted Boolean @default(false)
+
+  orderHistoryId String @default("")
+}
+
+model Material {
+  id      String  @id @default(uuid())
+  name    String  @default("")
+  qty     Int     @default(0)
+  unit    String  @default("")
+  costOfGoods Int     @default(0)
+  aset    Boolean @default(false)
+  deleted Boolean @default(false)
+}
+
+model OrderMaterial {
+  id      String  @id @default(uuid())
+  qty     Int     @default(0)
+  pay     Int     @default(0)
+  type    String  @default("")
+  deleted Boolean @default(false)
+  createdAt DateTime @default(now())
+  
+  inOut String    @default("")
+
+  materialId  String   @default("")
+  orderId     String   @default("")
+  supplierId  String    @default("")
+}
+
+model OrderProduct {
+  id      String  @id @default(uuid())
+  qty     Int     @default(0)
+  pay     Int     @default(0)
+  type    String  @default("")
+  deleted Boolean @default(false)
+  createdAt DateTime @default(now())
+
+  inOut String    @default("")
+
+  productId           String  @default("")
+  orderId             String  @default("")
+  supplierId          String  @default("")
+  variantId           String  @default("")
+}
+
+model Order {
+  id               String    @id @default(uuid())
+  order_status     String    @default("")
+  payment_status   String    @default("")
+  deleted          Boolean   @default(false)
+  notes            String    @default("")
+  driveUrl         String    @default("")
+  deadline         DateTime?
+  customer_id      String    @default("")
+
+  created_at       DateTime  @default(now())
+}
+
+model OrderHistory {
+  id               String    @id @default(uuid())
+  payment_type     String    @default("")
+  payment_provider String    @default("")
+  total            Int       @default(0)
+  paid             Int       @default(0)
+  deleted          Boolean   @default(false)
+  created_at       DateTime  @default(now())
+  totalBeforeDiscount   Int   @default(0)
+  totalAfterDiscount    Int   @default(0)
+
+  orderId          String    @default("")
+}
+
+model OrderVariantAddon {
+  id      String  @id @default(uuid())
+  qty     Int     @default(0)
+  deleted Boolean @default(false)
+
+  addonValueId String @default("")
+
+  orderVariantId String @default("")
+}
+
+model OrderVariant {
+  id      String  @id @default(uuid())
+  qty     Int     @default(0)
+  deleted Boolean @default(false)
+  price   Int     @default(0)
+
+  orderHistoryId  String @default("")
+
+  variant_id      String @default("")
+}
+
+model Customer {
+  id      String  @id @default(uuid())
+  name    String  @default("")
+  address String  @default("")
+  phone   String  @default("")
+  job     String  @default("")
+  notes   String  @default("")
+  age     Int     @default(0)
+  deleted Boolean @default(false)
+}
+
+model Supplier {
+  id      String  @id @default(uuid())
+  name    String  @default("")
+  address String  @default("")
+  phone   String  @default("")
+  notes   String  @default("")
+  deleted Boolean @default(false)
+}
+
+model SupplierContactPerson {
+  id      String  @id @default(uuid())
+  name    String  @default("")
+  address String  @default("")
+  phone   String  @default("")
+  job     String  @default("")
+  notes   String  @default("")
+  age     Int     @default(0)
+  deleted Boolean @default(false)
+
+  supplierId String @default("")
+}
+
+model Product {
+  id          String   @id @default(uuid())
+  name        String   @default("")
+  base_price  Int      @default(0)
+  images      String[] @default(["", "", "", "", ""])
+  active      Boolean  @default(true)
+  deleted     Boolean  @default(false)
+  description String   @default("")
+  costOfGoods Int     @default(0)
+  created_at  DateTime @default(now())
+
+  addons     ProductToAddon[]
+  attributes ProductAttribute[]
+  variants   ProductVariant[]
+}
+
+model ProductToAddon {
+  id         String  @id @default(uuid())
+  product_id String
+  addon_id   String
+  product    Product @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  addon      Addon   @relation(fields: [addon_id], references: [id], onDelete: Cascade)
+  deleted    Boolean @default(false)
+}
+
+model Addon {
+  id      String  @id @default(uuid())
+  name    String  @default("")
+  deleted Boolean @default(false)
+
+  products ProductToAddon[]
+  values   AddonValue[]
+}
+
+model AddonValue {
+  id      String  @id @default(uuid())
+  name    String  @default("")
+  price   Int     @default(0)
+  deleted Boolean @default(false)
+
+  addon_id String
+  addon    Addon  @relation(fields: [addon_id], references: [id], onDelete: Cascade)
+}
+
+model Attribute {
+  id      String  @id @default(uuid())
+  name    String  @default("")
+  deleted Boolean @default(false)
+
+  products ProductAttribute[]
+}
+
+model ProductAttribute {
+  id      String  @id @default(uuid())
+  deleted Boolean @default(false)
+
+  product_id   String
+  product      Product   @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  attribute_id String
+  attribute    Attribute @relation(fields: [attribute_id], references: [id], onDelete: Cascade)
+
+  values ProductAttribteValue[]
+}
+
+model ProductAttribteValue {
+  id      String  @id @default(uuid())
+  value   String  @default("")
+  color   String  @default("")
+  image   String  @default("")
+  deleted Boolean @default(false)
+
+  attribute_id String
+  attribute    ProductAttribute @relation(fields: [attribute_id], references: [id], onDelete: Cascade)
+}
+
+model ProductVariant {
+  id      String  @id @default(uuid())
+  name    String  @default("")
+  price   Int     @default(0)
+  qty     Int     @default(0)
+  costOfGoods Int @default(0)
+  deleted Boolean @default(false)
+
+  product_id String
+  product    Product @relation(fields: [product_id], references: [id], onDelete: Cascade)
+}
+
+model ReceiptSettings {
+  id      String  @id @default(uuid())
+  model   String  @default("")
+}
+
+model ReceiptModel {
+  id      String  @id @default(uuid())
+  name    String  @default("")
+  content String  @default("")
+  deleted Boolean @default(false)
+}
+
+// model Product {
+//     id          String      @id @default(uuid())
+//     name        String      @default("")
+//     base_price  Int         @default(0)
+//     images      String[]    @default([])
+//     active      Boolean     @default(false)
+//     deleted     Boolean     @default(false)
+
+//     attributes ProductAttribute[]
+
+//     // addons      String[]    @default([])
+//     // attributes  String[]    @default([])
+// }
+
+// model ProductAttribute {
+//     id          String      @id @default(uuid())
+//     name        String      @default("")
+//     deleted     Boolean     @default(false)
+
+//     product_id  String
+//     product     Product     @relation(fields: [product_id], references: [id])
+
+//     // values      String[]    @default([])
+// }
+
+// model ProductAttributeValue {
+//     id          String      @id @default(uuid())
+//     value       String      @default("")
+//     color       String      @default("")
+//     image       String      @default("")
+//     deleted     Boolean     @default(false)
+// }
+
+// model Addon {
+//     id          String      @id @default(uuid())
+//     name        String      @default("")
+//     deleted     Boolean     @default(false)
+
+//     // values      String[]    @default([])
+// }
+
+// model AddonValue {
+//     id          String      @id @default(uuid())
+//     name        String      @default("")
+//     price       Int         @default(0)
+//     deleted     Boolean     @default(false)
+// }
+
+// model Attribute {
+//     id          String      @id @default(uuid())
+//     name        String      @default("")
+//     deleted     Boolean     @default(false)
+// }
+
+// model Color {
+//     id          String      @id @default(uuid())
+//     color       String      @default("")
+//     deleted     Boolean     @default(false)
+// } 
+
+model User {
+  id              String    @id
+  name            String
+  email           String
+  emailVerified   Boolean
+  image           String?
+  createdAt       DateTime
+  updatedAt       DateTime
+  username        String?
+  displayUsername String?
+  sessions        Session[]
+  accounts        Account[]
+
+  role       String?
+  banned     Boolean?
+  banReason  String?
+  banExpires DateTime?
+
+  @@unique([email])
+  @@unique([username])
+  @@map("user")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String
+  createdAt DateTime
+  updatedAt DateTime
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  impersonatedBy String?
+
+  @@unique([token])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime
+  updatedAt             DateTime
+
+  @@map("account")
+}
+
+model Verification {
+  id         String    @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime?
+  updatedAt  DateTime?
+
+  @@map("verification")
 }
