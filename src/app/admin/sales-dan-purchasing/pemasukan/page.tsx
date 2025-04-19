@@ -27,7 +27,7 @@ import { DataTablePagination } from "@/hooks/Table/DataTablePagination";
 import { DataTableViewOptions } from "@/hooks/Table/DataTableViewOptions";
 import { useTable } from "@/hooks/Table/useTable";
 import { useDialog } from "@/hooks/useDialog";
-import { useExportToExcel, useExportToExcel2 } from "@/hooks/useTableExcel";
+import { useExportToExcel2 } from "@/hooks/useTableExcel";
 import { type DB } from "@/lib/supabase/supabase";
 import { now, toRupiah } from "@/lib/utils";
 import {
@@ -207,10 +207,6 @@ const Expenses = () => {
       .sortBy("createdAt"),
   );
 
-  useEffect(() => {
-    incomes$.set(incomes ?? []);
-  }, [incomes]);
-
   const table = useTable({
     data: incomes ?? [],
     columns,
@@ -222,6 +218,10 @@ const Expenses = () => {
   ]);
 
   const incomes$ = useObservable<Income[]>([]);
+
+  useEffect(() => {
+    incomes$.set(incomes ?? []);
+  }, [incomes, incomes$]);
 
   useObserveEffect(() => {
     table.getColumn("tanggal")?.setFilterValue(rangeDate.get());

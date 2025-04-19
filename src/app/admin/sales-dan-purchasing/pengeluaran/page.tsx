@@ -27,7 +27,7 @@ import { DataTablePagination } from "@/hooks/Table/DataTablePagination";
 import { DataTableViewOptions } from "@/hooks/Table/DataTableViewOptions";
 import { useTable } from "@/hooks/Table/useTable";
 import { useDialog } from "@/hooks/useDialog";
-import { useExportToExcel, useExportToExcel2 } from "@/hooks/useTableExcel";
+import { useExportToExcel2 } from "@/hooks/useTableExcel";
 import { type DB } from "@/lib/supabase/supabase";
 import { now, toRupiah } from "@/lib/utils";
 import { expenses$, expenseTypes$, generateId } from "@/server/local/db";
@@ -334,11 +334,11 @@ const Expenses = () => {
       .sortBy("createdAt"),
   );
 
+  const expenses$ = useObservable<Expense[]>([]);
+
   React.useEffect(() => {
     expenses$.set(expenses ?? []);
-  }, [expenses]);
-
-  const expenses$ = useObservable<Expense[]>([]);
+  }, [expenses, expenses$]);
 
   const rangeDate = useObservable<[Date, Date]>([
     now().toJSDate(),

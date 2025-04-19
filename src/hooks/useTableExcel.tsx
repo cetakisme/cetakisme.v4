@@ -49,12 +49,7 @@ type Props = {
   style: (sheet: ExcelJS.Worksheet) => ExcelJS.Worksheet;
 };
 
-export function useExportToExcel2<TData extends { key: string }>({
-  data,
-  headers,
-  name,
-  style,
-}: Props) {
+export function useExportToExcel2({ data, headers, name, style }: Props) {
   const download = async () => {
     const workbook = new ExcelJS.Workbook();
     const sheet = workbook.addWorksheet("My Sheet");

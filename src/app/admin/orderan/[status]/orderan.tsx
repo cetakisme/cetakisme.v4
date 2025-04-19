@@ -1429,12 +1429,11 @@ const Orderan: React.FC<{ status: string }> = ({ status }) => {
       .sortBy("created_at"),
   );
 
-  useEffect(() => {
-    console.log(orders);
-    orders$.set(orders ?? []);
-  }, [orders]);
-
   const orders$ = useObservable<Order[]>([]);
+
+  useEffect(() => {
+    orders$.set(orders ?? []);
+  }, [orders, orders$]);
 
   const rangeDate$ = useObservable<[Date, Date]>([
     now().toJSDate(),
@@ -1571,7 +1570,7 @@ const DownloadExcel: React.FC<{ orders: Order[]; range: [Date, Date] }> = ({
         if (rowTime < startTime) return undefined;
         if (rowTime > endTime) return undefined;
 
-        const customer = await dexie.customers.get(x[2]!);
+        const customer = await dexie.customers.get(x[2]);
 
         return {
           tanggal: lastHistory.created_at,
@@ -1584,7 +1583,7 @@ const DownloadExcel: React.FC<{ orders: Order[]; range: [Date, Date] }> = ({
             lastHistory.paid > lastHistory.total
               ? lastHistory.total
               : lastHistory.paid,
-          deadline: order.deadline ? order.deadline : "-",
+          deadline: order.deadline ?? "-",
           notes: order.notes === "" ? "-" : order.notes,
           hutang:
             lastHistory.total - lastHistory.paid > 0
