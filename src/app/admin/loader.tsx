@@ -5,11 +5,14 @@ import {
   absensi$,
   addons$,
   addonValues$,
+  carouselSettings$,
+  categorySettings$,
   costs$,
   customer$,
   discounts$,
   expenses$,
   expenseTypes$,
+  gallerySettings$,
   incomes$,
   incomeTypes$,
   ingoingStockTypes$,
@@ -22,6 +25,7 @@ import {
   orderVariants$,
   productAttribute$,
   productAttributeValue$,
+  productPopularSettings$,
   products$,
   productToAddons$,
   productVariants$,
@@ -30,6 +34,7 @@ import {
   roles$,
   supplierContactPersons$,
   suppliers$,
+  testimonySettings$,
   users$,
 } from "@/server/local/db";
 import { dexie } from "@/server/local/dexie";
@@ -82,6 +87,11 @@ const Loader = () => {
     void whenReady(expenseTypes$.get());
     void whenReady(incomeTypes$.get());
     void whenReady(ingoingStockTypes$.get());
+    void whenReady(carouselSettings$.get());
+    void whenReady(categorySettings$.get());
+    void whenReady(gallerySettings$.get());
+    void whenReady(testimonySettings$.get());
+    void whenReady(productPopularSettings$.get());
   });
   return <></>;
 };

@@ -10,6 +10,7 @@ import Link from "next/link";
 import Loader from "./loader";
 import Authenticated from "@/components/hasan/auth/authenticated";
 import LogoutButton from "./logout-button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface Menu {
   title: string;
@@ -171,6 +172,24 @@ export const menus: Menu[] = [
       },
     ],
   },
+  {
+    title: "Website",
+    permission: "admin",
+    children: [
+      {
+        title: "Landing Page",
+        children: [],
+        url: "/admin/website/halaman-utama",
+        permission: "admin",
+      },
+      {
+        title: "Settings",
+        children: [],
+        url: "/admin/website/settings",
+        permission: "admin",
+      },
+    ],
+  },
 ] as const;
 
 type Navigation = {
@@ -216,8 +235,9 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     <main className="flex h-screen">
       <Loader />
       <div className="w-72 shrink-0 bg-black p-4 text-white">
+        {/* <ScrollArea className="h-screen"> */}
         <h1 className="text-3xl font-extrabold">Cetakisme</h1>
-        <div className="mt-6 flex flex-col gap-2">
+        <ScrollArea className="mt-6 flex flex-1 flex-col gap-2">
           <Accordion
             type="single"
             collapsible
@@ -296,7 +316,8 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             ))}
           </Accordion>
           <LogoutButton />
-        </div>
+        </ScrollArea>
+        {/* </ScrollArea> */}
       </div>
       <div className="h-full grow">{children}</div>
     </main>

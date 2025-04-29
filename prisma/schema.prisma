@@ -10,6 +10,47 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model WebsiteSetting {
+  id          String  @id @default(uuid())
+  address     String
+  phone       String
+  description String
+  facebook    String
+  youtube     String
+  twitter     String
+  instagram   String
+  tiktok      String
+}
+
+model PopularProductSetting {
+  id          String  @id @default(uuid())
+  productId   String
+}
+
+model CategorySetting {
+  id          String    @id @default(uuid())
+  name        String
+  url         String
+  imageUrl    String
+}
+
+model CarouselSetting {
+  id          String    @id @default(uuid())
+  imageUrl    String
+}
+
+model GallerySetting {
+  id          String    @id @default(uuid())
+  imageUrl    String
+}
+
+model TestimonySetting {
+  id          String    @id @default(uuid())
+  name        String
+  job         String
+  testimony   String
+}
+
 model Absensi {
   id          String      @id @default(uuid())
   userId      String      @default("")

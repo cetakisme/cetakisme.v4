@@ -3,12 +3,15 @@ import type {
   Addon,
   AddonValue,
   Attribute,
+  CarouselSetting,
+  CategorySetting,
   Cost,
   Customer,
   CustomUser,
   Discount,
   Expense,
   ExpenseType,
+  GallerySetting,
   Income,
   IncomeType,
   Material,
@@ -18,6 +21,7 @@ import type {
   OrderProduct,
   OrderVariant,
   OrderVariantAddon,
+  PopularProductSetting,
   Product,
   ProductAttribteValue,
   ProductAttribute,
@@ -28,8 +32,10 @@ import type {
   Role,
   Supplier,
   SupplierContactPerson,
+  TestimonySetting,
+  WebsiteSetting,
 } from "@prisma/client";
-import Dexie, { type EntityTable } from "dexie";
+import Dexie, { Entity, type EntityTable } from "dexie";
 import relationships from "dexie-relationships";
 
 const dexie = new Dexie("FriendsDatabase", {
@@ -68,6 +74,12 @@ const dexie = new Dexie("FriendsDatabase", {
   incomeTypes: EntityTable<IncomeType, "id">;
   expenseTypes: EntityTable<ExpenseType, "id">;
   ingoingStockTypes: EntityTable<ExpenseType, "id">;
+  carouselSettings: EntityTable<CarouselSetting, "id">;
+  categorySettings: EntityTable<CategorySetting, "id">;
+  gallerySettings: EntityTable<GallerySetting, "id">;
+  testimonySettings: EntityTable<TestimonySetting, "id">;
+  productPopulerSettings: EntityTable<PopularProductSetting, "id">;
+  websiteSettings: EntityTable<WebsiteSetting, "id">;
 };
 
 // Schema declaration:
@@ -104,6 +116,12 @@ dexie.version(1).stores({
   incomeTypes: "id",
   expenseTypes: "id",
   ingoingStockTypes: "id",
+  carouselSettings: "id",
+  categorySettings: "id",
+  gallerySettings: "id",
+  testimonySettings: "id",
+  productPopulerSettings: "id",
+  websiteSettings: "id",
 });
 
 export { dexie };
