@@ -142,8 +142,7 @@ dexie.version(1).stores({
   savedCosts: "id, savedOrderId",
   newOrders: "id, payment_status, order_status, cusomer_id, createdAt",
   savedAddons: "id",
-  exitItem:
-    "id, orderId, productId, materialId, variantId, supplierId, orderId",
+  exitItem: "id, orderId, productId, materialId, variantId, supplierId",
 });
 
 export { dexie };
