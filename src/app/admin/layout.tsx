@@ -28,7 +28,7 @@ export const menus: Menu[] = [
       {
         title: "Kasir",
         children: [],
-        url: "/admin/pos/kasir",
+        url: "/admin/pos/kasir2",
         permission: "kasir",
       },
       {
@@ -53,6 +53,12 @@ export const menus: Menu[] = [
         title: "Pemasukan",
         permission: "pemasukan",
         url: "/admin/sales-dan-purchasing/pemasukan",
+        children: [],
+      },
+      {
+        title: "Gabungan",
+        permission: "gabungan",
+        url: "/admin/sales-dan-purchasing/gabungan",
         children: [],
       },
     ],
@@ -105,7 +111,7 @@ export const menus: Menu[] = [
     children: [
       {
         title: "Pending",
-        url: "/admin/orderan/pending",
+        url: "/admin/orderan2/pending",
         permission: "pending",
         children: [],
       },
@@ -119,19 +125,19 @@ export const menus: Menu[] = [
         title: "Desain",
         children: [],
         permission: "desain",
-        url: "/admin/orderan/desain",
+        url: "/admin/orderan2/desain",
       },
       {
         title: "Ready",
         children: [],
         permission: "ready",
-        url: "/admin/orderan/ready",
+        url: "/admin/orderan2/ready",
       },
       {
         title: "Selesai",
         children: [],
         permission: "selesai",
-        url: "/admin/orderan/selesai",
+        url: "/admin/orderan2/selesai",
       },
     ],
   },

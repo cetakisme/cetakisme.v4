@@ -479,7 +479,7 @@ const OrderHistoryDetailContent = () => {
         .equals(ctx$.id.get() ?? "")
         .and((o) => !o.deleted)
         .toArray(),
-      dexie.discounts
+      dexie.costs
         .where("orderHistoryId")
         .equals(ctx$.id.get() ?? "")
         .and((o) => !o.deleted)
@@ -955,6 +955,7 @@ const OrderMaterials: React.FC<{ order: Order }> = ({ order }) => {
                           type: "",
                           updatedAt: isoNow(),
                           targetId: "",
+                          deletable: false,
                         });
                       } else {
                         expenses$[data.id]!.set((p) => ({
@@ -1010,6 +1011,7 @@ const OrderMaterials: React.FC<{ order: Order }> = ({ order }) => {
                             type: "bahan",
                             updatedAt: isoNow(),
                             targetId: data.id,
+                            deletable: false,
                           }));
                         },
                       }}
@@ -1152,6 +1154,7 @@ const OrderProucts: React.FC<{ order: Order }> = ({ order }) => {
                         notes: "",
                         type: "",
                         updatedAt: isoNow(),
+                        deletable: false,
                       });
                     } else {
                       expenses$[data.id]!.set((p) => ({
@@ -1205,6 +1208,7 @@ const OrderProucts: React.FC<{ order: Order }> = ({ order }) => {
                             notes: `Bayar ${products$[data.productId]!.name.get()} ${productVariants$[data.variantId]!.name.get()} Ke ${suppliers$[data.supplierId]!.name.get()}`,
                             type: "product",
                             updatedAt: isoNow(),
+                            deletable: false,
                           }));
                         },
                       }}
@@ -1595,18 +1599,6 @@ const DownloadExcel: React.FC<{ orders: Order[]; range: [Date, Date] }> = ({
       const filtered = await Promise.all(promisedFiltered);
 
       const cells = filtered.filter((x) => x !== undefined);
-
-      // const cells = filteredEmpty.map((row) => ({
-      //   tanggal: row[1],
-      //   nama: row[2],
-      //   orderStatus: row[3],
-      //   paymentStatus: row[4],
-      //   paymentProvider: row[5],
-      //   total: row[6],
-      //   bayar: row[7],
-      //   deadline: row[8],
-      //   notes: row[9],
-      // }));
 
       return [
         {

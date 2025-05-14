@@ -97,6 +97,16 @@ import Conditional from "@/components/hasan/conditional";
 import { type DialogProps } from "@radix-ui/react-dialog";
 import ResiDialog from "@/components/hasan/resi-dialog";
 import { type DB } from "@/lib/supabase/supabase";
+import { TabsContent } from "@radix-ui/react-tabs";
+import { z } from "zod";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormMessage,
+} from "@/components/ui/form";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 
 interface IKasirContext {
   isLoadFromSave: boolean;
@@ -559,12 +569,132 @@ const Page = () => {
           </ResizablePanel>
           <ResizablePanel defaultSize={40}>
             <ScrollArea className="h-full">
-              <ProductKatalog />
+              <Tabs defaultValue="inventory">
+                <TabsList className="w-full">
+                  <TabsTrigger value="inventory" className="w-full">
+                    Inventory
+                  </TabsTrigger>
+                  <TabsTrigger value="custom" className="w-full">
+                    Custom
+                  </TabsTrigger>
+                </TabsList>
+                <TabsContent value="inventory">
+                  <ProductKatalog />
+                </TabsContent>
+                <TabsContent value="custom">
+                  <CustomForm
+                    onSubmit={(data) => {
+                      const v: Variant = {
+                        id: `custom_${generateId()}`,
+                        variant: {
+                          id: `custom_${generateId()}`,
+                          qty: +data.qty,
+                          deleted: false,
+                          costOfGoods: 0,
+                          name: data.name,
+                          price: +data.price,
+                          product_id: `custom_${generateId()}`,
+                        },
+                        price: +data.price,
+                        qty: +data.qty,
+                        total: 0,
+                        addons: [],
+                      };
+
+                      ctx$.variants.set((p) => [
+                        ...p,
+                        { ...v, total: getTotal(v) },
+                      ]);
+                    }}
+                  />
+                </TabsContent>
+              </Tabs>
             </ScrollArea>
           </ResizablePanel>
         </ResizablePanelGroup>
       </KasirContext.Provider>
     </Authenticated>
+  );
+};
+
+function isNumber(str: string) {
+  return !isNaN(+str) && str.trim() !== "";
+}
+
+const customSchema = z.object({
+  name: z.string().min(1),
+  qty: z
+    .string()
+    .min(1)
+    .refine((data) => isNumber(data), "Tolong Masukan Angka"),
+  price: z
+    .string()
+    .min(1)
+    .refine((data) => isNumber(data), "Tolong Masukan Angka"),
+});
+
+const CustomForm: React.FC<{
+  onSubmit: (values: z.infer<typeof customSchema>) => void;
+}> = ({ onSubmit: _onSubmit }) => {
+  const form = useForm({
+    resolver: zodResolver(customSchema),
+    defaultValues: {
+      name: "",
+      qty: "",
+      price: "",
+    },
+  });
+
+  const onSubmit = (value: z.infer<typeof customSchema>) => {
+    _onSubmit(value);
+    form.reset();
+  };
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 p-4">
+        <FormField
+          control={form.control}
+          name="name"
+          render={({ field }) => (
+            <div className="space-y-2">
+              <Label>Nama</Label>
+              <FormControl>
+                <Input {...field} placeholder="Nama Produk" />
+              </FormControl>
+              <FormMessage />
+            </div>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="qty"
+          render={({ field }) => (
+            <div className="space-y-2">
+              <Label>Qty</Label>
+              <FormControl>
+                <Input {...field} />
+              </FormControl>
+              <FormMessage />
+            </div>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="price"
+          render={({ field }) => (
+            <div className="space-y-2">
+              <Label>Harga</Label>
+              <FormControl>
+                <Input {...field} />
+              </FormControl>
+              <FormMessage />
+            </div>
+          )}
+        />
+        <Button>Submit</Button>
+      </form>
+    </Form>
   );
 };
 
@@ -1326,7 +1456,7 @@ const constructOrder = async (order: Order, isEditMode: boolean) => {
       .and((o) => !o.deleted)
       .toArray(),
     dexie.customers.where("id").equals(order.customer_id).first(),
-    dexie.discounts
+    dexie.costs
       .where("orderHistoryId")
       .equals(orderHistoryId)
       .and((o) => !o.deleted)
@@ -1439,6 +1569,7 @@ const OrderItem: React.FC<{ order: Order }> = ({ order }) => {
 
   useMount(async () => {
     const data = await constructOrder(order, false);
+    console.log(data.variants);
     order$.set(data);
   });
 
@@ -1463,7 +1594,7 @@ const OrderItem: React.FC<{ order: Order }> = ({ order }) => {
                   {order$.variants.get().map((x) => (
                     <TableRow key={x.id}>
                       <TableCell>
-                        {products$[x.variant.product_id]!.name.get()}{" "}
+                        {products$[x.variant.product_id]?.name.get()}{" "}
                         {x.variant.name}
                       </TableCell>
                       <TableCell className="text-right">{x.qty}</TableCell>
@@ -1644,11 +1775,9 @@ const columns: ColumnDef<Variant>[] = [
     ),
     cell: ({ renderValue, row }) => (
       <div className="font-medium">
-        {products$[row.original.variant.product_id]!.name.get()}{" "}
+        {/* {products$[row.original.variant.product_id]?.name.get()}{" "} */}
         {renderValue<string>()}
-        {/* <Authenticated permission="kasir-update"> */}
         <PriceEditSheet index={row.index} orderVariant={row.original} />
-        {/* </Authenticated> */}
       </div>
     ),
     size: 1000,

@@ -38,7 +38,7 @@ const getHistoryReceipt = async (
     .and((a) => !a.deleted)
     .toArray();
 
-  const discounts = await dexie.discounts
+  const discounts = await dexie.costs
     .where("orderHistoryId")
     .equals(orderHistory.id)
     .and((a) => !a.deleted)

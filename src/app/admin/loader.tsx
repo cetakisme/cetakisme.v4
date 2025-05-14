@@ -10,6 +10,7 @@ import {
   costs$,
   customer$,
   discounts$,
+  exitItem$,
   expenses$,
   expenseTypes$,
   gallerySettings$,
@@ -62,15 +63,15 @@ const Loader = () => {
     void whenReady(orderVariantAddons$.get());
     void whenReady(discounts$.get());
     void whenReady(costs$.get());
-    void whenReady(productVariants$.get());
-    void whenReady(productAttributeValue$.get());
-    void whenReady(productToAddons$.get());
-    void whenReady(addons$.get());
-    void whenReady(addonValues$.get());
-    void whenReady(productAttribute$.get());
+    // void whenReady(productVariants$.get());
+    // void whenReady(productAttributeValue$.get());
+    // void whenReady(productToAddons$.get());
+    // void whenReady(addons$.get());
+    // void whenReady(addonValues$.get());
+    // void whenReady(productAttribute$.get());
     void whenReady(orders$.get());
     void whenReady(customer$.get());
-    void whenReady(products$.get());
+    // void whenReady(products$.get());
     void whenReady(users$.get());
     void whenReady(roles$.get());
     void whenReady(materials$.get());
@@ -87,11 +88,12 @@ const Loader = () => {
     void whenReady(expenseTypes$.get());
     void whenReady(incomeTypes$.get());
     void whenReady(ingoingStockTypes$.get());
-    void whenReady(carouselSettings$.get());
-    void whenReady(categorySettings$.get());
-    void whenReady(gallerySettings$.get());
-    void whenReady(testimonySettings$.get());
-    void whenReady(productPopularSettings$.get());
+    // void whenReady(carouselSettings$.get());
+    // void whenReady(categorySettings$.get());
+    // void whenReady(gallerySettings$.get());
+    // void whenReady(testimonySettings$.get());
+    // void whenReady(productPopularSettings$.get());
+    void whenReady(exitItem$.get());
   });
   return <></>;
 };

@@ -10,7 +10,7 @@ const Page = () => {
       <h1 className="text-4xl font-bold">
         Selamat Datang{" "}
         <span className="rounded-lg bg-black px-4 py-2 text-white">
-          <Memo>{user$.name}</Memo>
+          <Memo>{() => user$.name.get()}</Memo>
         </span>
       </h1>
     </div>

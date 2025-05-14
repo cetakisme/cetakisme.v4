@@ -765,6 +765,7 @@ const AddMaterialForm: React.FC<{ onSubmit: () => void }> = ({ onSubmit }) => {
             type: "bahan",
             updatedAt: now().toISO()!,
             targetId: stok.id.get(),
+            deletable: true,
           });
 
           materials$[stok.materialId.get()]!.costOfGoods.set((_) => {
@@ -892,6 +893,7 @@ const AddProductForm: React.FC<{ onSubmit: () => void }> = ({ onSubmit }) => {
             type: "produk",
             updatedAt: now().toISO()!,
             targetId: stok.id.get(),
+            deletable: true,
           });
 
           productVariants$[stok.variantId.get()]!.costOfGoods.set((_) => {

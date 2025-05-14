@@ -19,18 +19,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { id } from "date-fns/locale";
 
 interface DatePickerProps {
   startYear?: number;
   endYear?: number;
   onDateChange?: (date: Date) => void;
+  trigger?: () => React.ReactNode;
+  selectedDate?: Date;
 }
 export function DatePicker({
   startYear = getYear(new Date()) - 100,
   endYear = getYear(new Date()) + 100,
   onDateChange,
+  trigger,
+  selectedDate,
 }: DatePickerProps) {
-  const [date, setDate] = React.useState<Date>(new Date());
+  const [date, setDate] = React.useState<Date>(selectedDate ?? new Date());
 
   React.useEffect(() => {
     if (onDateChange) {
@@ -39,18 +44,18 @@ export function DatePicker({
   }, [date, onDateChange]);
 
   const months = [
-    "January",
-    "February",
-    "March",
+    "Januari",
+    "Februari",
+    "Maret",
     "April",
-    "May",
-    "June",
-    "July",
-    "August",
+    "Mei",
+    "Juni",
+    "Juli",
+    "Agustus",
     "September",
     "October",
     "November",
-    "December",
+    "Desember",
   ];
   const years = Array.from(
     { length: endYear - startYear + 1 },
@@ -76,16 +81,26 @@ export function DatePicker({
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button
-          variant={"outline"}
-          className={cn(
-            "w-[250px] justify-start text-left font-normal",
-            !date && "text-muted-foreground",
-          )}
-        >
-          <CalendarIcon className="mr-2 h-4 w-4" />
-          {date ? format(date, "PPP") : <span>Pick a date</span>}
-        </Button>
+        {trigger ? (
+          trigger()
+        ) : (
+          <Button
+            variant={"outline"}
+            className={cn(
+              "w-[250px] justify-start text-left font-normal",
+              !date && "text-muted-foreground",
+            )}
+          >
+            <CalendarIcon className="mr-2 h-4 w-4" />
+            {date ? (
+              format(date, "PPP", {
+                locale: id,
+              })
+            ) : (
+              <span>Pick a date</span>
+            )}
+          </Button>
+        )}
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0">
         <div className="flex justify-between p-2">
@@ -128,6 +143,7 @@ export function DatePicker({
           initialFocus
           month={date}
           onMonthChange={setDate}
+          locale={id}
         />
       </PopoverContent>
     </Popover>

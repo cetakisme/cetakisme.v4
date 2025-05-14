@@ -42,24 +42,30 @@ export function useExportToExcel<TData>(
   return download;
 }
 
-type Props = {
+type Props<TData> = {
   name: string;
   headers: any[];
-  data: () => Promise<any[]>;
-  style: (sheet: ExcelJS.Worksheet) => ExcelJS.Worksheet;
+  data: () => Promise<TData[]>;
+  style: (sheet: ExcelJS.Worksheet, data: TData[]) => ExcelJS.Worksheet;
 };
 
-export function useExportToExcel2({ data, headers, name, style }: Props) {
+export function useExportToExcel2<TData>({
+  data,
+  headers,
+  name,
+  style,
+}: Props<TData>) {
   const download = async () => {
     const workbook = new ExcelJS.Workbook();
     const sheet = workbook.addWorksheet("My Sheet");
     sheet.columns = headers;
 
-    (await data()).map((item) => {
+    const _data = await data();
+    _data.map((item) => {
       sheet.addRows([item]);
     });
 
-    style(sheet);
+    style(sheet, _data);
 
     const buffer = await workbook.xlsx.writeBuffer();
 

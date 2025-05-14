@@ -22,7 +22,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Switch } from "@/components/ui/switch";
 import { type Product } from "@prisma/client";
-import { LucidePlus, MoreHorizontal } from "lucide-react";
+import {
+  Headset,
+  LucideDownload,
+  LucidePlus,
+  MoreHorizontal,
+} from "lucide-react";
 import Title from "@/components/hasan/title";
 import { useLiveQuery } from "dexie-react-hooks";
 import { dexie } from "@/server/local/dexie";
@@ -40,6 +45,8 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import { List } from "@/components/hasan/render-list";
+import { useExportToExcel2 } from "@/hooks/useTableExcel";
+import { DateTime } from "luxon";
 
 const EditButton: React.FC<{ data: Product }> = ({ data }) => {
   return (
@@ -285,6 +292,7 @@ const ProdukTable: React.FC<{ products?: Product[] }> = ({ products }) => {
         <div className="flex h-9 justify-between">
           <DataTableFilterName table={table} />
           <div className="flex gap-2">
+            <DownloadExcel products={products ?? []} />
             <Authenticated permission="produk-create">
               <Button
                 size="icon"
@@ -328,3 +336,108 @@ const Table = () => {
 };
 
 export default observer(Table);
+
+const DownloadExcel: React.FC<{ products: Product[] }> = ({ products }) => {
+  const download = useExportToExcel2({
+    name: `Katalog Produk - ${DateTime.now().toLocaleString(DateTime.DATE_FULL, { locale: "id" })}`,
+    headers: [
+      {
+        key: "name",
+        name: "Nama Produk",
+        width: 35,
+      },
+      {
+        key: "variant",
+        name: "Varian",
+        width: 35,
+      },
+      {
+        key: "price",
+        name: "Harga",
+        width: 20,
+      },
+      {
+        key: "costOfGoods",
+        name: "HPP",
+        width: 20,
+      },
+    ],
+    data: async () => {
+      const productWithVariants = (
+        await Promise.all(
+          products.map(async (x) => {
+            const productVariants = await dexie.productVariants
+              .where("product_id")
+              .equals(x.id)
+              .sortBy("name");
+
+            return productVariants.map((p, i) => ({
+              name: i === 0 ? x.name : "",
+              variant: p.name,
+              variantCount: i === 0 ? productVariants.length - 1 : 0,
+              price: p.price,
+              costOfGoods: p.costOfGoods === 0 ? x.costOfGoods : p.costOfGoods,
+            }));
+          }),
+        )
+      ).flat();
+
+      return [
+        {
+          name: "Nama Produk",
+          variant: "Varian",
+          variantCount: 0,
+          price: "Harga",
+          costOfGoods: "HPP",
+        },
+        ...productWithVariants,
+      ];
+    },
+    style: (sheet, data) => {
+      sheet.getRow(1).eachCell((cell) => {
+        cell.font = { bold: true };
+      });
+
+      sheet.eachRow({ includeEmpty: false }, (row) => {
+        row.eachCell({ includeEmpty: false }, (cell, colNumber) => {
+          if (colNumber === 3 || colNumber === 4) {
+            cell.numFmt = '"Rp. "#,##0';
+          }
+          cell.border = {
+            top: { style: "thin" },
+            left: { style: "thin" },
+            bottom: { style: "thin" },
+            right: { style: "thin" },
+          };
+        });
+      });
+
+      let row = 2;
+
+      data.map((x, i) => {
+        if (i === 0) return;
+        if (x.variantCount === 0) return;
+        sheet.mergeCells(`A${row}:A${row + x.variantCount}`);
+        sheet.getCell(`A${row}`).alignment = {
+          vertical: "middle",
+          horizontal: "left",
+        };
+        row += x.variantCount;
+      });
+
+      return sheet;
+    },
+  });
+
+  return (
+    <Button
+      variant={"outline"}
+      size={"icon"}
+      onClick={() => {
+        void download();
+      }}
+    >
+      <LucideDownload />
+    </Button>
+  );
+};

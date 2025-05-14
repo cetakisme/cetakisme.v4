@@ -8,7 +8,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import React from "react";
+import React, { useState } from "react";
 import Image from "next/image";
 import Slider from "react-slick";
 import Carousel from "@/components/hasan/carousel";
@@ -24,9 +24,17 @@ import { gallerySettings$, websiteSettings$ } from "@/server/local/db";
 import { useLiveQuery } from "dexie-react-hooks";
 import { dexie } from "@/server/local/dexie";
 import { DB } from "@/lib/supabase/supabase";
-import { PopularProductSetting, Product } from "@prisma/client";
+import {
+  CategorySetting,
+  PopularProductSetting,
+  Product,
+} from "@prisma/client";
 import { toRupiah } from "@/lib/utils";
 import { AiFillInstagram, AiFillTikTok } from "react-icons/ai";
+import FilterSection, { FilterData } from "@/components/hasan/filter-section";
+import { List } from "@/components/hasan/render-list";
+import { CardComponent } from "@/components/hasan/card-component";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const image =
   "https://images.unsplash.com/photo-1743691478813-d44ca4cbdc04?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D";
@@ -46,7 +54,7 @@ export default function HomePage() {
                 <h2 className="text-xl font-bold text-gray-900 sm:text-3xl">
                   Produk Populer
                 </h2>
-                <Button
+                {/* <Button
                   asChild
                   variant="outline"
                   size={"sm"}
@@ -56,7 +64,7 @@ export default function HomePage() {
                     Lihat Semua
                     <LucideArrowRight />
                   </Link>
-                </Button>
+                </Button> */}
               </div>
 
               <p className="mt-4 max-w-md text-gray-500">
@@ -64,9 +72,7 @@ export default function HomePage() {
                 diminati pelanggan dan jadi favorit sepanjang waktu!
               </p>
             </header>
-            <ul className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <PopularProducts />
-            </ul>
+            <PopularProducts />
           </div>
         </section>
         <div className="px-4">
@@ -87,9 +93,7 @@ export default function HomePage() {
               </p>
             </header>
 
-            <ul className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <CategoryImages />
-            </ul>
+            <CategoryImages />
           </div>
         </section>
         <div className="px-4">
@@ -99,484 +103,27 @@ export default function HomePage() {
           <div className="mx-auto max-w-screen-xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8">
             <header>
               <h2 className="text-xl font-bold text-gray-900 sm:text-3xl">
-                Sesuaikan Keinginanmu
+                Sesuaikan Keinginganmu
               </h2>
 
               <p className="mt-4 max-w-md text-gray-500">
-                Setiap orang punya selera dan kebutuhan yang unik. Di sini, kamu
-                bisa menyesuaikan pilihan produk sesuai gaya, fungsi, dan
-                keinginanmu. Temukan yang paling pas untukmu, tanpa kompromi.
+                JPilih warna dan ukuran yang paling pas untukmu. Kami
+                menyediakan berbagai pilihan agar kamu bisa tampil percaya diri
+                dan nyaman dalam setiap aktivitas.
               </p>
             </header>
-
-            <div className="mt-8 block lg:hidden">
-              <button className="flex cursor-pointer items-center gap-2 border-b border-gray-400 pb-1 text-gray-900 transition hover:border-gray-600">
-                <span className="text-sm font-medium"> Filters & Sorting </span>
-
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth="1.5"
-                  stroke="currentColor"
-                  className="size-4 rtl:rotate-180"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M8.25 4.5l7.5 7.5-7.5 7.5"
-                  />
-                </svg>
-              </button>
-            </div>
-
-            <div className="mt-4 lg:mt-8 lg:grid lg:grid-cols-4 lg:items-start lg:gap-8">
-              <div className="hidden space-y-4 lg:block">
-                <div>
-                  <label
-                    htmlFor="SortBy"
-                    className="block text-xs font-medium text-gray-700"
-                  >
-                    {" "}
-                    Sort By{" "}
-                  </label>
-
-                  <select
-                    id="SortBy"
-                    className="mt-1 rounded-sm border-gray-300 text-sm"
-                  >
-                    <option>Sort By</option>
-                    <option value="Title, DESC">Title, DESC</option>
-                    <option value="Title, ASC">Title, ASC</option>
-                    <option value="Price, DESC">Price, DESC</option>
-                    <option value="Price, ASC">Price, ASC</option>
-                  </select>
-                </div>
-
-                <div>
-                  <p className="block text-xs font-medium text-gray-700">
-                    Filters
-                  </p>
-
-                  <div className="mt-1 space-y-2">
-                    <details className="overflow-hidden rounded-sm border border-gray-300 [&_summary::-webkit-details-marker]:hidden">
-                      <summary className="flex cursor-pointer items-center justify-between gap-2 p-4 text-gray-900 transition">
-                        <span className="text-sm font-medium">
-                          {" "}
-                          Availability{" "}
-                        </span>
-
-                        <span className="transition group-open:-rotate-180">
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            strokeWidth="1.5"
-                            stroke="currentColor"
-                            className="size-4"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M19.5 8.25l-7.5 7.5-7.5-7.5"
-                            />
-                          </svg>
-                        </span>
-                      </summary>
-
-                      <div className="border-t border-gray-200 bg-white">
-                        <header className="flex items-center justify-between p-4">
-                          <span className="text-sm text-gray-700">
-                            {" "}
-                            0 Selected{" "}
-                          </span>
-
-                          <button
-                            type="button"
-                            className="text-sm text-gray-900 underline underline-offset-4"
-                          >
-                            Reset
-                          </button>
-                        </header>
-
-                        <ul className="space-y-1 border-t border-gray-200 p-4">
-                          <li>
-                            <label
-                              htmlFor="FilterInStock"
-                              className="inline-flex items-center gap-2"
-                            >
-                              <input
-                                type="checkbox"
-                                id="FilterInStock"
-                                className="size-5 rounded-sm border-gray-300 shadow-sm"
-                              />
-
-                              <span className="text-sm font-medium text-gray-700">
-                                {" "}
-                                In Stock (5+){" "}
-                              </span>
-                            </label>
-                          </li>
-
-                          <li>
-                            <label
-                              htmlFor="FilterPreOrder"
-                              className="inline-flex items-center gap-2"
-                            >
-                              <input
-                                type="checkbox"
-                                id="FilterPreOrder"
-                                className="size-5 rounded-sm border-gray-300 shadow-sm"
-                              />
-
-                              <span className="text-sm font-medium text-gray-700">
-                                {" "}
-                                Pre Order (3+){" "}
-                              </span>
-                            </label>
-                          </li>
-
-                          <li>
-                            <label
-                              htmlFor="FilterOutOfStock"
-                              className="inline-flex items-center gap-2"
-                            >
-                              <input
-                                type="checkbox"
-                                id="FilterOutOfStock"
-                                className="size-5 rounded-sm border-gray-300 shadow-sm"
-                              />
-
-                              <span className="text-sm font-medium text-gray-700">
-                                {" "}
-                                Out of Stock (10+){" "}
-                              </span>
-                            </label>
-                          </li>
-                        </ul>
-                      </div>
-                    </details>
-
-                    <details className="overflow-hidden rounded-sm border border-gray-300 [&_summary::-webkit-details-marker]:hidden">
-                      <summary className="flex cursor-pointer items-center justify-between gap-2 p-4 text-gray-900 transition">
-                        <span className="text-sm font-medium"> Price </span>
-
-                        <span className="transition group-open:-rotate-180">
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            strokeWidth="1.5"
-                            stroke="currentColor"
-                            className="size-4"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M19.5 8.25l-7.5 7.5-7.5-7.5"
-                            />
-                          </svg>
-                        </span>
-                      </summary>
-
-                      <div className="border-t border-gray-200 bg-white">
-                        <header className="flex items-center justify-between p-4">
-                          <span className="text-sm text-gray-700">
-                            {" "}
-                            The highest price is $600{" "}
-                          </span>
-
-                          <button
-                            type="button"
-                            className="text-sm text-gray-900 underline underline-offset-4"
-                          >
-                            Reset
-                          </button>
-                        </header>
-
-                        <div className="border-t border-gray-200 p-4">
-                          <div className="flex justify-between gap-4">
-                            <label
-                              htmlFor="FilterPriceFrom"
-                              className="flex items-center gap-2"
-                            >
-                              <span className="text-sm text-gray-600">$</span>
-
-                              <input
-                                type="number"
-                                id="FilterPriceFrom"
-                                placeholder="From"
-                                className="shadow-xs w-full rounded-md border-gray-200 sm:text-sm"
-                              />
-                            </label>
-
-                            <label
-                              htmlFor="FilterPriceTo"
-                              className="flex items-center gap-2"
-                            >
-                              <span className="text-sm text-gray-600">$</span>
-
-                              <input
-                                type="number"
-                                id="FilterPriceTo"
-                                placeholder="To"
-                                className="shadow-xs w-full rounded-md border-gray-200 sm:text-sm"
-                              />
-                            </label>
-                          </div>
-                        </div>
-                      </div>
-                    </details>
-
-                    <details className="overflow-hidden rounded-sm border border-gray-300 [&_summary::-webkit-details-marker]:hidden">
-                      <summary className="flex cursor-pointer items-center justify-between gap-2 p-4 text-gray-900 transition">
-                        <span className="text-sm font-medium"> Colors </span>
-
-                        <span className="transition group-open:-rotate-180">
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            strokeWidth="1.5"
-                            stroke="currentColor"
-                            className="size-4"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M19.5 8.25l-7.5 7.5-7.5-7.5"
-                            />
-                          </svg>
-                        </span>
-                      </summary>
-
-                      <div className="border-t border-gray-200 bg-white">
-                        <header className="flex items-center justify-between p-4">
-                          <span className="text-sm text-gray-700">
-                            {" "}
-                            0 Selected{" "}
-                          </span>
-
-                          <button
-                            type="button"
-                            className="text-sm text-gray-900 underline underline-offset-4"
-                          >
-                            Reset
-                          </button>
-                        </header>
-
-                        <ul className="space-y-1 border-t border-gray-200 p-4">
-                          <li>
-                            <label
-                              htmlFor="FilterRed"
-                              className="inline-flex items-center gap-2"
-                            >
-                              <input
-                                type="checkbox"
-                                id="FilterRed"
-                                className="size-5 rounded-sm border-gray-300 shadow-sm"
-                              />
-
-                              <span className="text-sm font-medium text-gray-700">
-                                {" "}
-                                Red{" "}
-                              </span>
-                            </label>
-                          </li>
-
-                          <li>
-                            <label
-                              htmlFor="FilterBlue"
-                              className="inline-flex items-center gap-2"
-                            >
-                              <input
-                                type="checkbox"
-                                id="FilterBlue"
-                                className="size-5 rounded-sm border-gray-300 shadow-sm"
-                              />
-
-                              <span className="text-sm font-medium text-gray-700">
-                                {" "}
-                                Blue{" "}
-                              </span>
-                            </label>
-                          </li>
-
-                          <li>
-                            <label
-                              htmlFor="FilterGreen"
-                              className="inline-flex items-center gap-2"
-                            >
-                              <input
-                                type="checkbox"
-                                id="FilterGreen"
-                                className="size-5 rounded-sm border-gray-300 shadow-sm"
-                              />
-
-                              <span className="text-sm font-medium text-gray-700">
-                                {" "}
-                                Green{" "}
-                              </span>
-                            </label>
-                          </li>
-
-                          <li>
-                            <label
-                              htmlFor="FilterOrange"
-                              className="inline-flex items-center gap-2"
-                            >
-                              <input
-                                type="checkbox"
-                                id="FilterOrange"
-                                className="size-5 rounded-sm border-gray-300 shadow-sm"
-                              />
-
-                              <span className="text-sm font-medium text-gray-700">
-                                {" "}
-                                Orange{" "}
-                              </span>
-                            </label>
-                          </li>
-
-                          <li>
-                            <label
-                              htmlFor="FilterPurple"
-                              className="inline-flex items-center gap-2"
-                            >
-                              <input
-                                type="checkbox"
-                                id="FilterPurple"
-                                className="size-5 rounded-sm border-gray-300 shadow-sm"
-                              />
-
-                              <span className="text-sm font-medium text-gray-700">
-                                {" "}
-                                Purple{" "}
-                              </span>
-                            </label>
-                          </li>
-
-                          <li>
-                            <label
-                              htmlFor="FilterTeal"
-                              className="inline-flex items-center gap-2"
-                            >
-                              <input
-                                type="checkbox"
-                                id="FilterTeal"
-                                className="size-5 rounded-sm border-gray-300 shadow-sm"
-                              />
-
-                              <span className="text-sm font-medium text-gray-700">
-                                {" "}
-                                Teal{" "}
-                              </span>
-                            </label>
-                          </li>
-                        </ul>
-                      </div>
-                    </details>
-                  </div>
-                </div>
-              </div>
-
-              <div className="lg:col-span-3">
-                <ul className="grid grid-cols-2 gap-4 lg:grid-cols-3">
-                  <CardComponent />
-                  <CardComponent />
-                  <CardComponent />
-                </ul>
-              </div>
-            </div>
+            <SesuaikanKeinginanmu />
           </div>
         </section>
         <div className="hidden px-4 md:block">
           <Separator className="my-4 h-0.5 w-full rounded-full bg-gray-500" />
         </div>
-        {/* 
-        <section className="bg-white dark:bg-gray-900">
-          <div className="container mx-auto px-6 py-10">
-            <h1 className="text-center text-2xl font-bold capitalize text-gray-800 dark:text-white lg:text-3xl">
-              Testimoni
-            </h1>
-
-            <div className="mx-auto mt-6 flex justify-center">
-              <span className="inline-block h-1 w-40 rounded-full bg-blue-500"></span>
-              <span className="mx-1 inline-block h-1 w-3 rounded-full bg-blue-500"></span>
-              <span className="inline-block h-1 w-1 rounded-full bg-blue-500"></span>
-            </div>
-
-            <div className="mx-auto mt-16 flex max-w-6xl items-start">
-              <button
-                title="left arrow"
-                className="hidden rounded-full border p-2 text-gray-800 transition-colors duration-300 hover:bg-gray-100 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800 lg:block rtl:-scale-x-100"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-6 w-6"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M15 19l-7-7 7-7"
-                  />
-                </svg>
-              </button>
-
-              <div>
-                <p className="flex items-center text-center text-gray-500 lg:mx-8">
-                  Bajunya super nyaman dipakai! Bahan adem dan potongannya pas
-                  banget di badan. Baru sekali beli, tapi langsung jatuh cinta.
-                  Pasti bakal order lagi!
-                </p>
-
-                <div className="mt-8 flex flex-col items-center justify-center">
-                  <MdAccountCircle size={52} />
-
-                  <div className="mt-4 text-center">
-                    <h1 className="font-semibold text-gray-800 dark:text-white">
-                      Rinawati Linggar Jati
-                    </h1>
-                    <span className="text-sm text-gray-500 dark:text-gray-400">
-                      Dosen
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <button
-                title="right arrow"
-                className="hidden rounded-full border p-2 text-gray-800 transition-colors duration-300 hover:bg-gray-100 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800 lg:block rtl:-scale-x-100"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-6 w-6"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M9 5l7 7-7 7"
-                  />
-                </svg>
-              </button>
-            </div>
-          </div>
-        </section> */}
-
         <div className="p-4">
           <div className="mb-4 flex items-center justify-between">
             <h1 className="text-xl font-bold text-gray-900 sm:text-3xl">
               Gallery
             </h1>
-            <Button
+            {/* <Button
               asChild
               variant="outline"
               size={"sm"}
@@ -586,11 +133,10 @@ export default function HomePage() {
                 Lihat Semua
                 <LucideArrowRight />
               </Link>
-            </Button>
+            </Button> */}
           </div>
-          <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
-            <GalleryImages />
-          </div>
+
+          <GalleryImages />
         </div>
         <div className="px-4">
           <Separator className="my-4 h-0.5 w-full rounded-full bg-gray-500" />
@@ -598,7 +144,7 @@ export default function HomePage() {
         <div className="p-4">
           <div className="mb-4 flex items-center justify-between">
             <h1 className="text-xl font-bold">Testimony</h1>
-            <Button
+            {/* <Button
               asChild
               variant="outline"
               size={"sm"}
@@ -608,7 +154,7 @@ export default function HomePage() {
                 Lihat Semua
                 <LucideArrowRight />
               </Link>
-            </Button>
+            </Button> */}
           </div>
           <div className="grid grid-cols-1 gap-2">
             <Testomonials />
@@ -667,17 +213,14 @@ export default function HomePage() {
                     />
                   </svg>
                 </div>
-
-                {/* <p className="mt-4 max-w-xs text-gray-500 dark:text-gray-400">
-                  <Memo>{websiteSettings$["settings"]?.description}</Memo>
-                </p> */}
-
                 <p className="mt-4 max-w-xs text-gray-500 dark:text-gray-400">
-                  <Memo>{websiteSettings$["settings"]?.address}</Memo>
+                  <Memo>
+                    {() => websiteSettings$["settings"]?.address.get()}
+                  </Memo>
                 </p>
 
                 <p className="mt-4 max-w-xs text-gray-500 dark:text-gray-400">
-                  <Memo>{websiteSettings$["settings"]?.phone}</Memo>
+                  <Memo>{() => websiteSettings$["settings"]?.phone.get()}</Memo>
                 </p>
 
                 <ul className="mt-8 flex items-center gap-6">
@@ -801,168 +344,91 @@ export default function HomePage() {
 
               <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:col-span-2 lg:grid-cols-4">
                 <div>
+                  <FooterCategory />
+                </div>
+
+                <div>
                   <p className="font-medium text-gray-900 dark:text-white">
-                    Services
+                    Halaman
                   </p>
 
                   <ul className="mt-6 space-y-4 text-sm">
                     <li>
-                      <a
-                        href="#"
+                      <Link
+                        href="/"
                         className="text-gray-700 transition hover:opacity-75 dark:text-gray-200"
                       >
-                        1on1 Coaching
-                      </a>
+                        Home
+                      </Link>
                     </li>
 
                     <li>
-                      <a
-                        href="#"
+                      <Link
+                        href="/about-us"
                         className="text-gray-700 transition hover:opacity-75 dark:text-gray-200"
                       >
-                        Company Review
-                      </a>
+                        About Us
+                      </Link>
                     </li>
 
                     <li>
-                      <a
-                        href="#"
+                      <Link
+                        href="/search"
                         className="text-gray-700 transition hover:opacity-75 dark:text-gray-200"
                       >
-                        Accounts Review
-                      </a>
-                    </li>
-
-                    <li>
-                      <a
-                        href="#"
-                        className="text-gray-700 transition hover:opacity-75 dark:text-gray-200"
-                      >
-                        HR Consulting
-                      </a>
-                    </li>
-
-                    <li>
-                      <a
-                        href="#"
-                        className="text-gray-700 transition hover:opacity-75 dark:text-gray-200"
-                      >
-                        SEO Optimisation
-                      </a>
+                        Search
+                      </Link>
                     </li>
                   </ul>
                 </div>
 
                 <div>
                   <p className="font-medium text-gray-900 dark:text-white">
-                    Company
+                    Links
                   </p>
 
                   <ul className="mt-6 space-y-4 text-sm">
                     <li>
-                      <a
+                      <Link
                         href="#"
                         className="text-gray-700 transition hover:opacity-75 dark:text-gray-200"
                       >
-                        About
-                      </a>
+                        Produk Populer
+                      </Link>
                     </li>
 
                     <li>
-                      <a
+                      <Link
                         href="#"
                         className="text-gray-700 transition hover:opacity-75 dark:text-gray-200"
                       >
-                        Meet the Team
-                      </a>
+                        Kategori
+                      </Link>
                     </li>
 
                     <li>
-                      <a
+                      <Link
                         href="#"
                         className="text-gray-700 transition hover:opacity-75 dark:text-gray-200"
                       >
-                        Accounts Review
-                      </a>
+                        Sesuaikan Keinginanmu
+                      </Link>
                     </li>
-                  </ul>
-                </div>
-
-                <div>
-                  <p className="font-medium text-gray-900 dark:text-white">
-                    Helpful Links
-                  </p>
-
-                  <ul className="mt-6 space-y-4 text-sm">
                     <li>
-                      <a
+                      <Link
                         href="#"
                         className="text-gray-700 transition hover:opacity-75 dark:text-gray-200"
                       >
-                        Contact
-                      </a>
+                        Galeri
+                      </Link>
                     </li>
-
                     <li>
-                      <a
+                      <Link
                         href="#"
                         className="text-gray-700 transition hover:opacity-75 dark:text-gray-200"
                       >
-                        FAQs
-                      </a>
-                    </li>
-
-                    <li>
-                      <a
-                        href="#"
-                        className="text-gray-700 transition hover:opacity-75 dark:text-gray-200"
-                      >
-                        Live Chat
-                      </a>
-                    </li>
-                  </ul>
-                </div>
-
-                <div>
-                  <p className="font-medium text-gray-900 dark:text-white">
-                    Legal
-                  </p>
-
-                  <ul className="mt-6 space-y-4 text-sm">
-                    <li>
-                      <a
-                        href="#"
-                        className="text-gray-700 transition hover:opacity-75 dark:text-gray-200"
-                      >
-                        Accessibility
-                      </a>
-                    </li>
-
-                    <li>
-                      <a
-                        href="#"
-                        className="text-gray-700 transition hover:opacity-75 dark:text-gray-200"
-                      >
-                        Returns Policy
-                      </a>
-                    </li>
-
-                    <li>
-                      <a
-                        href="#"
-                        className="text-gray-700 transition hover:opacity-75 dark:text-gray-200"
-                      >
-                        Refund Policy
-                      </a>
-                    </li>
-
-                    <li>
-                      <a
-                        href="#"
-                        className="text-gray-700 transition hover:opacity-75 dark:text-gray-200"
-                      >
-                        Hiring-3 Statistics
-                      </a>
+                        Testimoni
+                      </Link>
                     </li>
                   </ul>
                 </div>
@@ -979,6 +445,32 @@ export default function HomePage() {
   );
 }
 
+const FooterCategory = () => {
+  const categories = useLiveQuery(() =>
+    dexie.categorySettings.filter((x) => x.name !== "").sortBy("id"),
+  );
+  return (
+    <>
+      <p className="font-medium text-gray-900 dark:text-white">Kategori</p>
+      <ul className="mt-6 space-y-4 text-sm">
+        <List
+          data={categories}
+          render={(category) => (
+            <li>
+              <Link
+                href={category.url}
+                className="text-gray-700 transition hover:opacity-75 dark:text-gray-200"
+              >
+                {category.name}
+              </Link>
+            </li>
+          )}
+        />
+      </ul>
+    </>
+  );
+};
+
 const PopularProducts = () => {
   const popular = useLiveQuery(() =>
     dexie.productPopulerSettings
@@ -986,7 +478,24 @@ const PopularProducts = () => {
       .filter((x) => x.productId !== "")
       .toArray(),
   );
-  return <>{popular?.map((x) => <ProductCard data={x} key={x.id} />)}</>;
+  const [products, setProducts] = useState<Product[]>([]);
+
+  React.useEffect(() => {
+    if (!popular) return;
+
+    const fetch = async () => {
+      const _products = await dexie.products
+        .where("id")
+        .anyOf(popular?.map((x) => x.productId))
+        .toArray();
+
+      setProducts(_products);
+    };
+
+    void fetch();
+  }, [popular]);
+
+  return <ProductsComponent products={products} />;
 };
 
 const Testomonials = () => {
@@ -1005,7 +514,29 @@ const CategoryImages = () => {
     dexie.categorySettings.filter((x) => x.name !== "").sortBy("id"),
   );
 
-  return <>{categories?.map((x) => <CategoryCard data={x} key={x.id} />)}</>;
+  // if (!categories) {
+  //   return <ul className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4"></ul>;
+  // }
+
+  return (
+    <ul className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {categories ? (
+        categories.map((x) => <CategoryCard data={x} key={x.id} />)
+      ) : (
+        <List
+          data={[{ id: "1" }, { id: "2" }, { id: "3" }, { id: "4" }]}
+          render={(data) => (
+            <div>
+              <Skeleton className="h-[250px]" />
+              <div className="mt-3 flex flex-col gap-2">
+                <Skeleton className="h-6 w-24" />
+              </div>
+            </div>
+          )}
+        />
+      )}
+    </ul>
+  );
 };
 
 const CarouselImages = () => {
@@ -1020,97 +551,106 @@ const GalleryImages = () => {
     dexie.gallerySettings.filter((x) => x.imageUrl !== "").sortBy("id"),
   );
 
-  return <>{gallery?.map((x) => <GalleryCard data={x} key={x.id} />)}</>;
-};
+  if (!gallery) {
+    return (
+      <ul className="grid grid-cols-2 gap-2 md:grid-cols-4">
+        <List
+          data={[
+            { id: "1" },
+            { id: "2" },
+            { id: "3" },
+            { id: "4" },
+            { id: "5" },
+            { id: "6" },
+          ]}
+          render={(data) => <Skeleton className="aspect-square" />}
+        />
+      </ul>
+    );
+  }
 
-const ProductCard: React.FC<{ data?: PopularProductSetting }> = ({ data }) => {
-  const product = useLiveQuery(() => dexie.products.get(data?.productId ?? ""));
-  if (!data || !product) return <></>;
   return (
-    <li>
-      <a href="#" className="group block overflow-hidden">
-        <div className="relative h-[250px] w-full sm:h-[250px]">
-          {product.images[0] !== "" ? (
-            <Image
-              src={product.images[0]!}
-              alt=""
-              fill
-              className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-            />
-          ) : (
-            <p>No Image</p>
-          )}
-
-          <div className="absolute bottom-2 left-2 w-full">
-            <div className="flex gap-0.5">
-              <div className="flex aspect-square w-5 items-center justify-center rounded-md bg-black text-[10px] font-medium text-white">
-                S
-              </div>
-              <div className="flex aspect-square w-5 items-center justify-center rounded-md bg-black text-[10px] font-medium text-white">
-                M
-              </div>
-              <div className="flex aspect-square w-5 items-center justify-center rounded-md bg-black text-[10px] font-medium text-white">
-                L
-              </div>
-              <div className="flex aspect-square w-5 items-center justify-center rounded-md bg-black text-[10px] font-medium text-white">
-                ...
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="relative bg-white pt-3">
-          <div className="mt-2">
-            <h1 className="line-clamp-1 text-ellipsis font-medium group-hover:underline group-hover:underline-offset-4">
-              {product.name}
-            </h1>
-            <p className="">
-              <span className="sr-only"> Regular Price </span>
-              <span className="tracking-wider text-gray-900">
-                {toRupiah(product.base_price)}
-              </span>
-            </p>
-          </div>
-        </div>
-      </a>
-    </li>
+    <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+      {gallery?.map((x) => <GalleryCard data={x} key={x.id} />)}
+    </div>
   );
 };
 
-const CardComponent = () => {
-  return (
-    <Link href="#" className="group block">
-      <div className="relative aspect-square">
-        <img
-          src="https://images.unsplash.com/photo-1592921870789-04563d55041c?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=774&q=80"
-          alt=""
-          className="h-full w-full rounded-sm object-cover"
-        />
-        <div className="absolute bottom-2 left-2 w-full">
-          <div className="flex gap-0.5">
-            <div className="flex aspect-square w-5 items-center justify-center rounded-md bg-black text-[10px] font-medium text-white">
-              S
-            </div>
-            <div className="flex aspect-square w-5 items-center justify-center rounded-md bg-black text-[10px] font-medium text-white">
-              M
-            </div>
-            <div className="flex aspect-square w-5 items-center justify-center rounded-md bg-black text-[10px] font-medium text-white">
-              L
-            </div>
-            <div className="flex aspect-square w-5 items-center justify-center rounded-md bg-black text-[10px] font-medium text-white">
-              ...
-            </div>
-          </div>
-        </div>
-      </div>
+const ProductsComponent: React.FC<{ products: Product[] }> = ({ products }) => {
+  const [data, setData] = React.useState<FilterData[]>([]);
 
-      <div className="mt-3">
-        <h3 className="line-clamp-1 text-ellipsis font-medium text-gray-900 group-hover:underline group-hover:underline-offset-4">
-          Simple Watch hahs ahah ahaha ahah
-        </h3>
-        <p className="text-sm text-gray-700">Rp. 150.000</p>
-      </div>
-    </Link>
+  React.useEffect(() => {
+    const f = async () => {
+      const asyncTasks: Promise<FilterData>[] = products.map(
+        async (product) => {
+          const attributes = await dexie.productAttributes
+            .where("product_id")
+            .equals(product.id)
+            .filter((attr) => !attr.deleted)
+            .toArray();
+
+          const colorAttr = attributes.find((attr) =>
+            attr.id.includes("warna"),
+          );
+          const sizeAttr = attributes.find((attr) =>
+            attr.id.includes("ukuran"),
+          );
+
+          const [colorValues, sizeValues] = await Promise.all([
+            colorAttr
+              ? dexie.productAttributeValues
+                  .where("attribute_id")
+                  .equals(colorAttr.id)
+                  .filter((v) => !v.deleted)
+                  .toArray()
+              : Promise.resolve([]),
+            sizeAttr
+              ? dexie.productAttributeValues
+                  .where("attribute_id")
+                  .equals(sizeAttr.id)
+                  .filter((v) => !v.deleted)
+                  .toArray()
+              : Promise.resolve([]),
+          ]);
+
+          return {
+            ...product,
+            colors: colorValues,
+            sizes: sizeValues,
+          };
+        },
+      );
+
+      const _data = await Promise.all(asyncTasks);
+      setData(_data);
+    };
+
+    void f();
+  }, [products]);
+
+  if (data.length === 0) {
+    return (
+      <ul className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <List
+          data={[{ id: "1" }, { id: "2" }]}
+          render={(data) => (
+            <div>
+              <Skeleton className="aspect-square" />
+              <div className="mt-3 flex flex-col gap-2">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-4 w-24" />
+              </div>
+            </div>
+          )}
+        />
+      </ul>
+    );
+  }
+
+  return (
+    <ul className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <List data={data} render={(data) => <CardComponent product={data} />} />
+    </ul>
   );
 };
 
@@ -1175,4 +715,14 @@ const TestimonialCard: React.FC<{ data: DB<"TestimonySetting"> }> = ({
       </CardContent>
     </Card>
   );
+};
+
+const SesuaikanKeinginanmu = () => {
+  const products = useLiveQuery(() =>
+    dexie.products
+      .orderBy("name")
+      .filter((x) => x.active)
+      .toArray(),
+  );
+  return <FilterSection products={products ?? []} slice={3} />;
 };

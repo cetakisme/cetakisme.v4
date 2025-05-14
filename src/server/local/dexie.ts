@@ -9,12 +9,14 @@ import type {
   Customer,
   CustomUser,
   Discount,
+  ExitItem,
   Expense,
   ExpenseType,
   GallerySetting,
   Income,
   IncomeType,
   Material,
+  NewOrder,
   Order,
   OrderHistory,
   OrderMaterial,
@@ -30,6 +32,11 @@ import type {
   ReceiptModel,
   ReceiptSettings,
   Role,
+  SavedAddon,
+  SavedCost,
+  SavedDiscount,
+  SavedOrder,
+  SavedOrderProduct,
   Supplier,
   SupplierContactPerson,
   TestimonySetting,
@@ -37,6 +44,7 @@ import type {
 } from "@prisma/client";
 import Dexie, { Entity, type EntityTable } from "dexie";
 import relationships from "dexie-relationships";
+import { exitItem$ } from "./db";
 
 const dexie = new Dexie("FriendsDatabase", {
   addons: [relationships],
@@ -80,6 +88,13 @@ const dexie = new Dexie("FriendsDatabase", {
   testimonySettings: EntityTable<TestimonySetting, "id">;
   productPopulerSettings: EntityTable<PopularProductSetting, "id">;
   websiteSettings: EntityTable<WebsiteSetting, "id">;
+  savedOrderProducts: EntityTable<SavedOrderProduct, "id">;
+  savedOrders: EntityTable<SavedOrder, "id">;
+  savedDiscounts: EntityTable<SavedDiscount, "id">;
+  savedCosts: EntityTable<SavedCost, "id">;
+  newOrders: EntityTable<NewOrder, "id">;
+  savedAddons: EntityTable<SavedAddon, "id">;
+  exitItem: EntityTable<ExitItem, "id">;
 };
 
 // Schema declaration:
@@ -97,7 +112,7 @@ dexie.version(1).stores({
   orders: "id, deleted, order_status, payment_status",
   orderVariants: "id, deleted, orderHistoryId, variant_id",
   orderVariantAddons: "id, deleted, orderVariantId, addonValueId",
-  customers: "id, deleted",
+  customers: "id, name, deleted",
   users: "id, userId, roleId",
   roles: "id, userId",
   materials: "id",
@@ -122,6 +137,14 @@ dexie.version(1).stores({
   testimonySettings: "id",
   productPopulerSettings: "id",
   websiteSettings: "id",
+  savedOrderProducts: "id, productId, variantId, savedOrderId",
+  savedOrders: "id, newOrderId",
+  savedDiscounts: "id, savedOrderId",
+  savedCosts: "id, savedOrderId",
+  newOrders: "id, payment_status, order_status, cusomer_id, createdAt",
+  savedAddons: "id",
+  exitItem:
+    "id, orderId, productId, materialId, variantId, supplierId, orderId",
 });
 
 export { dexie };

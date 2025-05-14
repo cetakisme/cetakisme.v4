@@ -135,18 +135,30 @@ const Action: React.FC<{ expense: Expense }> = ({ expense }) => {
         <DropdownMenuContent>
           <DropdownMenuItem className="font-medium">Opsi</DropdownMenuItem>
           <DropdownMenuSeparator />
-          <Authenticated permission="pengeluaran-update">
-            <DropdownMenuItem
-              onClick={() => {
-                ctx$.id.set(expense.id);
-                editDialog.trigger();
-              }}
-            >
-              Ubah
-            </DropdownMenuItem>
-          </Authenticated>
           <Conditional
-            condition={expense.type !== "produk" && expense.type !== "bahan"}
+            condition={
+              expense.type !== "produk" &&
+              expense.type !== "bahan" &&
+              expense.type !== "vendor"
+            }
+          >
+            <Authenticated permission="pengeluaran-update">
+              <DropdownMenuItem
+                onClick={() => {
+                  ctx$.id.set(expense.id);
+                  editDialog.trigger();
+                }}
+              >
+                Ubah
+              </DropdownMenuItem>
+            </Authenticated>
+          </Conditional>
+          <Conditional
+            condition={
+              expense.type !== "produk" &&
+              expense.type !== "bahan" &&
+              expense.type !== "vendor"
+            }
           >
             <Authenticated permission="pengeluaran-delete">
               <DropdownMenuSeparator />
@@ -431,6 +443,7 @@ const ExpenseForm: React.FC<{
     targetId: expense?.targetId ?? "",
     type: expense?.type ?? "",
     updatedAt: expense?.updatedAt ?? "",
+    deletable: true,
   });
 
   const types = useLiveQuery(() =>
