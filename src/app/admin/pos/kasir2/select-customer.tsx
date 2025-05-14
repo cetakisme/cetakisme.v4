@@ -2,7 +2,7 @@
 
 import { Combobox } from "@/components/hasan/combobox";
 import { dexie } from "@/server/local/dexie";
-import { Customer } from "@prisma/client";
+import type { Customer } from "@prisma/client";
 import { useLiveQuery } from "dexie-react-hooks";
 import React from "react";
 import { useKasir } from "./useKasir";

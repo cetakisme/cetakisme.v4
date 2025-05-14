@@ -11,8 +11,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Textarea } from "@/components/ui/textarea";
-import { DB } from "@/lib/supabase/supabase";
+import type { DB } from "@/lib/supabase/supabase";
 import { websiteSettings$ } from "@/server/local/db";
 import { Memo } from "@legendapp/state/react";
 import React from "react";
@@ -57,7 +56,7 @@ const page = () => {
                         address: e.target.value,
                       });
                     } else {
-                      websiteSettings$[id]!.address.set(e.target.value);
+                      websiteSettings$[id].address.set(e.target.value);
                     }
                   }}
                 />
@@ -78,7 +77,7 @@ const page = () => {
                         phone: e.target.value,
                       });
                     } else {
-                      websiteSettings$[id]!.phone.set(e.target.value);
+                      websiteSettings$[id].phone.set(e.target.value);
                     }
                   }}
                 />
@@ -131,7 +130,7 @@ const page = () => {
                         facebook: e.target.value,
                       });
                     } else {
-                      websiteSettings$[id]!.facebook.set(e.target.value);
+                      websiteSettings$[id].facebook.set(e.target.value);
                     }
                   }}
                 />
@@ -152,7 +151,7 @@ const page = () => {
                         youtube: e.target.value,
                       });
                     } else {
-                      websiteSettings$[id]!.youtube.set(e.target.value);
+                      websiteSettings$[id].youtube.set(e.target.value);
                     }
                   }}
                 />
@@ -173,7 +172,7 @@ const page = () => {
                         twitter: e.target.value,
                       });
                     } else {
-                      websiteSettings$[id]!.twitter.set(e.target.value);
+                      websiteSettings$[id].twitter.set(e.target.value);
                     }
                   }}
                 />
@@ -194,7 +193,7 @@ const page = () => {
                         instagram: e.target.value,
                       });
                     } else {
-                      websiteSettings$[id]!.instagram.set(e.target.value);
+                      websiteSettings$[id].instagram.set(e.target.value);
                     }
                   }}
                 />
@@ -215,7 +214,7 @@ const page = () => {
                         tiktok: e.target.value,
                       });
                     } else {
-                      websiteSettings$[id]!.tiktok.set(e.target.value);
+                      websiteSettings$[id].tiktok.set(e.target.value);
                     }
                   }}
                 />

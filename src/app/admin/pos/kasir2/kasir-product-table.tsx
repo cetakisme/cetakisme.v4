@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useMemo } from "react";
-import { Addon, SavedProduct, useKasir } from "./useKasir";
+import React from "react";
+import { type Addon, type SavedProduct, useKasir } from "./useKasir";
 import { DataTableContent } from "@/hooks/Table/DataTableContent";
 import { useTable } from "@/hooks/Table/useTable";
-import { ColumnDef } from "@tanstack/react-table";
+import type { ColumnDef } from "@tanstack/react-table";
 import { DataTableColumnHeader } from "@/hooks/Table/DataColumnHeader";
 import { Button } from "@/components/ui/button";
 import { LucideEdit, LucideTrash2 } from "lucide-react";
@@ -50,7 +50,6 @@ import {
 } from "@/components/ui/command";
 import { generateId } from "better-auth";
 import { toast } from "sonner";
-import { SavedAddon } from "@prisma/client";
 import { Badge } from "@/components/ui/badge";
 
 export const getDiscount = (
@@ -429,7 +428,7 @@ const KasirProductTable: React.FC<{ orderId: string | null }> = ({
   React.useEffect(() => {
     if (!orderId) return;
     editOrder(orderId);
-  }, [orderId]);
+  }, [orderId, editOrder]);
 
   return (
     <div className="space-y-2 p-1">

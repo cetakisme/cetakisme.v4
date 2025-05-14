@@ -23,7 +23,7 @@ import {
   LucideUpload,
 } from "lucide-react";
 import React from "react";
-import { Discount, useKasir } from "./useKasir";
+import { type Discount, useKasir } from "./useKasir";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -40,7 +40,6 @@ import { TabsContent } from "@radix-ui/react-tabs";
 import { generateId } from "better-auth";
 import { useDialog } from "@/hooks/useDialog";
 import {
-  discounts$,
   incomes$,
   newOrders$,
   orderStatuses,
@@ -61,7 +60,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { NewOrder } from "@prisma/client";
+import type { NewOrder } from "@prisma/client";
 import {
   Select,
   SelectContent,
@@ -233,7 +232,7 @@ const PayButton = () => {
       savedOrderProductsId: products.map((x) => x.id),
       deleted: false,
       id: savedOrderId,
-      creteadAt: isoNow()!,
+      creteadAt: isoNow(),
       totalCosts: totalCost,
       totalDiscounts: totalDiscount,
       totalProducts: totalProducts,
@@ -243,7 +242,7 @@ const PayButton = () => {
     });
 
     if (newOrders$[newOrderId]?.get() === undefined) {
-      newOrders$[newOrderId]!.set((p) => {
+      newOrders$[newOrderId]!.set(() => {
         return {
           customer_id: customer.id,
           deadline: null,
@@ -261,7 +260,7 @@ const PayButton = () => {
         };
       });
     } else {
-      newOrders$[newOrderId]!.set((p) => {
+      newOrders$[newOrderId].set((p) => {
         return {
           customer_id: customer.id,
           deadline: null,

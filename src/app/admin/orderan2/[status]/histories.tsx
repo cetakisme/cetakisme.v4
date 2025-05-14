@@ -22,18 +22,15 @@ import {
 } from "@/components/ui/table";
 import { useDialog } from "@/hooks/useDialog";
 import { dexie } from "@/server/local/dexie";
-import { SavedOrder, SavedOrderProduct } from "@prisma/client";
+import type { SavedOrder, SavedOrderProduct } from "@prisma/client";
 import { useLiveQuery } from "dexie-react-hooks";
 import { DateTime } from "luxon";
-import moment from "moment";
 import React, { Fragment } from "react";
 import { getDiscount } from "../../pos/kasir2/kasir-product-table";
 import { toRupiah } from "@/lib/utils";
 import Link from "next/link";
 import { LucideEdit } from "lucide-react";
-import { SavedProduct } from "../../pos/kasir2/useKasir";
 import Receipt from "./receipt";
-import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   newOrders$,
@@ -335,15 +332,12 @@ const History: React.FC<{
   if (!history) return null;
   return (
     <DropdownMenuItem onSelect={() => onSelect(history)}>
-      {
-        //@ts-ignore
-        DateTime.fromJSDate(history?.creteadAt).toLocaleString(
-          DateTime.DATE_FULL,
-          {
-            locale: "id",
-          },
-        )
-      }
+      {DateTime.fromJSDate(history?.creteadAt).toLocaleString(
+        DateTime.DATE_FULL,
+        {
+          locale: "id",
+        },
+      )}
     </DropdownMenuItem>
   );
 };

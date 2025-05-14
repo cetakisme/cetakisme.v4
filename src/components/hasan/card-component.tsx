@@ -1,13 +1,10 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Product, ProductAttribteValue } from "@prisma/client";
-import { LucideImage, LucideImageMinus } from "lucide-react";
+import type { ProductAttribteValue } from "@prisma/client";
+import { LucideImage } from "lucide-react";
 import { toRupiah } from "@/lib/utils";
-import { useLiveQuery } from "dexie-react-hooks";
-import { dexie } from "@/server/local/dexie";
-import { toast } from "sonner";
 import React from "react";
-import { FilterData } from "./filter-section";
+import type { FilterData } from "./filter-section";
 
 export const CardComponent: React.FC<{ product: FilterData }> = ({
   product,

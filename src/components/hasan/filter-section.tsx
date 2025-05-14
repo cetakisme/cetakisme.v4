@@ -3,13 +3,12 @@
 import React, { useState } from "react";
 import { CardComponent } from "./card-component";
 import { useTable } from "@/hooks/Table/useTable";
-import { Product, ProductAttribteValue } from "@prisma/client";
-import { ColumnDef } from "@tanstack/react-table";
-import { DataTableColumnHeader } from "@/hooks/Table/DataColumnHeader";
+import type { Product, ProductAttribteValue } from "@prisma/client";
+import { type ColumnDef } from "@tanstack/react-table";
 import { dexie } from "@/server/local/dexie";
 import { useLiveQuery } from "dexie-react-hooks";
 import { Checkbox } from "../ui/checkbox";
-import RenderList, { List } from "./render-list";
+import { List } from "./render-list";
 import { Skeleton } from "../ui/skeleton";
 
 const columns: ColumnDef<FilterData>[] = [
@@ -25,7 +24,7 @@ const columns: ColumnDef<FilterData>[] = [
     id: "colors",
     accessorKey: "colors",
     filterFn: (row, columnId, filterValue) => {
-      const data = (filterValue as string[]) ?? [];
+      // const data = (filterValue as string[]) ?? [];
       if (filterValue.length === 0) return true;
       return row.original.colors.some((x) => filterValue.includes(x.value));
     },
@@ -34,7 +33,7 @@ const columns: ColumnDef<FilterData>[] = [
     id: "sizes",
     accessorKey: "sizes",
     filterFn: (row, columnId, filterValue) => {
-      const data = (filterValue as string[]) ?? [];
+      // const data = (filterValue as string[]) ?? [];
       if (filterValue.length === 0) return true;
       return row.original.sizes.some((x) => filterValue.includes(x.value));
     },
@@ -502,7 +501,7 @@ const FilterSection: React.FC<{ products: Product[]; slice?: number }> = ({
             <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               <List
                 data={[{ id: "1" }, { id: "2" }]}
-                render={(data) => (
+                render={() => (
                   <div>
                     <Skeleton className="aspect-square" />
                     <div className="mt-3 flex flex-col gap-2">

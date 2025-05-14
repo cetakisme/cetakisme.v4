@@ -1,24 +1,10 @@
 "use client";
 
-import Alert from "@/components/hasan/alert";
 import Authenticated from "@/components/hasan/auth/authenticated";
-import { Combobox } from "@/components/hasan/combobox";
-import Conditional from "@/components/hasan/conditional";
-import ControlledSheet from "@/components/hasan/controlled-sheet";
 import { DatePicker } from "@/components/hasan/date-picker";
-import InputWithLabel from "@/components/hasan/input-with-label";
-import Sheet from "@/components/hasan/sheet";
 import Title from "@/components/hasan/title";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { DataTableColumnHeader } from "@/hooks/Table/DataColumnHeader";
 import { DataTableContent } from "@/hooks/Table/DataTableContent";
@@ -26,28 +12,15 @@ import { DataTableFilterName } from "@/hooks/Table/DataTableFilterName";
 import { DataTablePagination } from "@/hooks/Table/DataTablePagination";
 import { DataTableViewOptions } from "@/hooks/Table/DataTableViewOptions";
 import { useTable } from "@/hooks/Table/useTable";
-import { useDialog } from "@/hooks/useDialog";
 import { useExportToExcel2 } from "@/hooks/useTableExcel";
-import { type DB } from "@/lib/supabase/supabase";
 import { now, toRupiah } from "@/lib/utils";
-import {
-  generateId,
-  incomes$,
-  incomeTypes$,
-  products$,
-  productVariants$,
-} from "@/server/local/db";
 import { dexie } from "@/server/local/dexie";
-import type { Observable } from "@legendapp/state";
-import { Memo, useObservable, useObserveEffect } from "@legendapp/state/react";
-import type { Income, IncomeType } from "@prisma/client";
+import { useObservable, useObserveEffect } from "@legendapp/state/react";
 import { type ColumnDef } from "@tanstack/react-table";
 import { useLiveQuery } from "dexie-react-hooks";
-import { LucideDownload, LucidePlus, MoreHorizontal } from "lucide-react";
+import { LucideDownload } from "lucide-react";
 import moment from "moment";
-import React, { createContext, useContext, useEffect } from "react";
-import { toast } from "sonner";
-import { z } from "zod";
+import React from "react";
 
 const Page = () => {
   return (
@@ -59,13 +32,13 @@ const Page = () => {
 
 export default Page;
 
-interface IIncomeContext {
-  id: string;
-}
+// interface IIncomeContext {
+//   id: string;
+// }
 
-const IncomeContext = createContext<Observable<IIncomeContext>>(
-  undefined as any,
-);
+// const IncomeContext = createContext<Observable<IIncomeContext>>(
+//   undefined as any,
+// );
 
 const columns: ColumnDef<{
   harga: number;

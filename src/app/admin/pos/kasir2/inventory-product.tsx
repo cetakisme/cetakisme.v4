@@ -3,35 +3,17 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { useTable } from "@/hooks/Table/useTable";
 import { dexie } from "@/server/local/dexie";
-import { Product, ProductVariant } from "@prisma/client";
-import { ColumnDef } from "@tanstack/react-table";
+import type { Product, ProductVariant } from "@prisma/client";
+import type { ColumnDef } from "@tanstack/react-table";
 import { useLiveQuery } from "dexie-react-hooks";
-import Image from "next/image";
 import React from "react";
 import MyImage from "./image";
 import { Label } from "@/components/ui/label";
-import {
-  DropdownMenuSeparator,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuTrigger,
-  DropdownMenuItem,
-} from "@/components/ui/dropdown-menu";
 import { DataTableFilterName } from "@/hooks/Table/DataTableFilterName";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { string, z } from "zod";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { SavedProduct, useKasir } from "./useKasir";
+import { useKasir } from "./useKasir";
 import { generateId } from "better-auth";
 import { CustomForm } from "./custom-product";
 import {
@@ -47,7 +29,6 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import { toast } from "sonner";
 import { useDialog } from "@/hooks/useDialog";
 
 const Inventory = () => {

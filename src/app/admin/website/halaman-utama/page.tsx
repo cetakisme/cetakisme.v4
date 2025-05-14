@@ -11,12 +11,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { useDialog } from "@/hooks/useDialog";
-import { DB } from "@/lib/supabase/supabase";
 import {
   carouselSettings$,
   categorySettings$,
@@ -25,11 +23,10 @@ import {
   testimonySettings$,
 } from "@/server/local/db";
 import { dexie } from "@/server/local/dexie";
-import { Memo, useObserveEffect } from "@legendapp/state/react";
-import { Product } from "@prisma/client";
+import { Memo } from "@legendapp/state/react";
+import type { Product } from "@prisma/client";
 import { useLiveQuery } from "dexie-react-hooks";
 import React, { useEffect, useState } from "react";
-import { toast } from "sonner";
 
 const Page = () => {
   return (
@@ -174,7 +171,7 @@ const PopularProductDropdown: React.FC<{ products: Product[]; id: string }> = ({
       if (!product) return;
       setSelected(product);
     };
-    f();
+    void f();
   }, [popularProduct]);
 
   useEffect(() => {
@@ -185,9 +182,9 @@ const PopularProductDropdown: React.FC<{ products: Product[]; id: string }> = ({
         productId: selected.id,
       });
     } else {
-      productPopularSettings$[id]!.productId.set(selected.id);
+      productPopularSettings$[id].productId.set(selected.id);
     }
-  }, [selected]);
+  }, [selected, id]);
 
   // useEffect(() => {
   //   const f = async () => {
@@ -226,7 +223,7 @@ const TestimonyCard: React.FC<{ id: string }> = ({ id }) => {
         testimony: "",
       });
     } else {
-      testimonySettings$[id]!.name.set(name);
+      testimonySettings$[id].name.set(name);
     }
   };
 
@@ -239,7 +236,7 @@ const TestimonyCard: React.FC<{ id: string }> = ({ id }) => {
         testimony: "",
       });
     } else {
-      testimonySettings$[id]!.job.set(job);
+      testimonySettings$[id].job.set(job);
     }
   };
 
@@ -252,7 +249,7 @@ const TestimonyCard: React.FC<{ id: string }> = ({ id }) => {
         testimony: testimony,
       });
     } else {
-      testimonySettings$[id]!.testimony.set(testimony);
+      testimonySettings$[id].testimony.set(testimony);
     }
   };
   return (
@@ -312,7 +309,7 @@ const CategoryCard: React.FC<{ id: string }> = ({ id }) => {
         url: "",
       });
     } else {
-      categorySettings$[id]!.name.set(name);
+      categorySettings$[id].name.set(name);
     }
   };
 
@@ -325,7 +322,7 @@ const CategoryCard: React.FC<{ id: string }> = ({ id }) => {
         url: url,
       });
     } else {
-      categorySettings$[id]!.url.set(url);
+      categorySettings$[id].url.set(url);
     }
   };
 
@@ -338,7 +335,7 @@ const CategoryCard: React.FC<{ id: string }> = ({ id }) => {
         url: "",
       });
     } else {
-      categorySettings$[id]!.imageUrl.set(image);
+      categorySettings$[id].imageUrl.set(image);
     }
   };
 
@@ -394,7 +391,7 @@ const GalleryImageButtonDecorator: React.FC<{ id: string }> = ({ id }) => {
                 imageUrl: image,
               });
             } else {
-              gallerySettings$[id]!.imageUrl.set(image);
+              gallerySettings$[id].imageUrl.set(image);
             }
           }}
         />
@@ -416,7 +413,7 @@ const CategoryImageButtonDecorator: React.FC<{ id: string }> = ({ id }) => {
                 imageUrl: image,
               });
             } else {
-              carouselSettings$[id]!.imageUrl.set(image);
+              carouselSettings$[id].imageUrl.set(image);
             }
           }}
         />

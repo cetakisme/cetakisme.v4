@@ -1,5 +1,5 @@
 import { dexie } from "@/server/local/dexie";
-import { Customer, NewOrder } from "@prisma/client";
+import type { Customer, NewOrder } from "@prisma/client";
 import { generateId } from "better-auth";
 import { create } from "zustand";
 

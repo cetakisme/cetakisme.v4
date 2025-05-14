@@ -42,9 +42,8 @@ import type {
   TestimonySetting,
   WebsiteSetting,
 } from "@prisma/client";
-import Dexie, { Entity, type EntityTable } from "dexie";
+import Dexie, { type EntityTable } from "dexie";
 import relationships from "dexie-relationships";
-import { exitItem$ } from "./db";
 
 const dexie = new Dexie("FriendsDatabase", {
   addons: [relationships],

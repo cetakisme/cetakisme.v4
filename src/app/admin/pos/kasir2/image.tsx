@@ -1,9 +1,9 @@
 import React from "react";
-import Image, { ImageProps } from "next/image";
+import Image from "next/image";
 import { LucideImage } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-import { StaticImport } from "next/dist/shared/lib/get-img-props";
+import type { StaticImport } from "next/dist/shared/lib/get-img-props";
 
 const MyImage: React.FC<
   { src?: string | StaticImport; alt?: string; className?: string } & {

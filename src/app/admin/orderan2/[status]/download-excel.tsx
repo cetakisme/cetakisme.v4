@@ -3,9 +3,8 @@ import { useTable } from "@/hooks/Table/useTable";
 import { useExportToExcel2 } from "@/hooks/useTableExcel";
 import { now } from "@/lib/utils";
 import { dexie } from "@/server/local/dexie";
-import { NewOrder } from "@prisma/client";
-import { ColumnDef } from "@tanstack/react-table";
-import { useLiveQuery } from "dexie-react-hooks";
+import type { NewOrder } from "@prisma/client";
+import type { ColumnDef } from "@tanstack/react-table";
 import { LucideDownload } from "lucide-react";
 import moment from "moment";
 
@@ -49,14 +48,13 @@ const donloadColumn: ColumnDef<NewOrder>[] = [
 ];
 
 export const DownloadExcel: React.FC<{
-  //   orders: NewOrder[];
-  range: [Date, Date];
-}> = ({ range }) => {
-  const orders = useLiveQuery(() =>
-    dexie.newOrders.filter((x) => !x.deleted).sortBy("createdAt"),
-  );
+  orders: NewOrder[];
+}> = ({ orders }) => {
+  // const orders = useLiveQuery(() =>
+  //   dexie.newOrders.filter((x) => !x.deleted).sortBy("createdAt"),
+  // );
   const table = useTable({
-    data: orders ?? [],
+    data: orders,
     columns: donloadColumn,
   });
 
@@ -72,7 +70,7 @@ export const DownloadExcel: React.FC<{
         rows.map(async (x) => {
           const orderStatus = x[3]!;
           const paymentStatus = x[4]!;
-          const savedOrdersId: string[] = x[5]!;
+          const savedOrdersId: string[] = x[5];
           const notes = x[6]!;
           const deadline = x[7]!;
           const customerId = x[8]!;

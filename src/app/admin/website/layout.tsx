@@ -1,5 +1,5 @@
 import Authenticated from "@/components/hasan/auth/authenticated";
-import React, { PropsWithChildren } from "react";
+import React, { type PropsWithChildren } from "react";
 
 const Layout: React.FC<PropsWithChildren> = ({ children }) => {
   return <Authenticated permission="admin">{children}</Authenticated>;

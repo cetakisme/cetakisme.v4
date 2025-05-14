@@ -32,7 +32,7 @@ const Totals = () => {
           return sum + price * next.qty;
         }, 0),
       ),
-    [products],
+    [products, setTotalProduct],
   );
 
   React.useEffect(
@@ -44,7 +44,7 @@ const Totals = () => {
           0,
         ),
       ),
-    [totalProducts, discounts],
+    [totalProducts, discounts, setTotalDiscount],
   );
 
   React.useEffect(
@@ -57,7 +57,7 @@ const Totals = () => {
           0,
         ),
       ),
-    [totalDiscount, costs],
+    [totalDiscount, costs, setTotalCost, totalProducts],
   );
 
   return (

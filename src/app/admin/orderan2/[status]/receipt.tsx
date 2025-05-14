@@ -12,7 +12,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toRupiah } from "@/lib/utils";
 import { dexie } from "@/server/local/dexie";
-import { SavedOrder } from "@prisma/client";
+import type { SavedOrder } from "@prisma/client";
 import { DateTime } from "luxon";
 import React from "react";
 import receiptline, { type Printer } from "receiptline";
@@ -237,7 +237,7 @@ const getHistoryReceipt = async (order: SavedOrder): Promise<string> => {
     }
   }
 
-  let markdown = `^^^Cetakisme^^^^
+  const markdown = `^^^Cetakisme^^^^
    ---
   ${p}${d !== "" ? "\n" + d : ""}${b !== "" ? "\n" + b : ""}
   ---
@@ -249,7 +249,7 @@ const getHistoryReceipt = async (order: SavedOrder): Promise<string> => {
   const model = await dexie.receiptSettings.toArray();
 
   if (model[0]) {
-    let modelMarkdown = await dexie.receiptModel.get(model[0].model);
+    const modelMarkdown = await dexie.receiptModel.get(model[0].model);
     if (!modelMarkdown) {
       return receiptline.transform(markdown, display);
     } else {

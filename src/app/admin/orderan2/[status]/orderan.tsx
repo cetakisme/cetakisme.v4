@@ -5,15 +5,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { DataTableColumnHeader } from "@/hooks/Table/DataColumnHeader";
 import { useTable } from "@/hooks/Table/useTable";
 import { dexie } from "@/server/local/dexie";
-import {
-  ExitItem,
-  Material,
-  NewOrder,
-  Product,
-  ProductVariant,
-  Supplier,
-} from "@prisma/client";
-import { ColumnDef } from "@tanstack/react-table";
+import type { NewOrder } from "@prisma/client";
+import type { ColumnDef } from "@tanstack/react-table";
 import { useLiveQuery } from "dexie-react-hooks";
 import { DateTime } from "luxon";
 import React from "react";
@@ -21,7 +14,7 @@ import Customer from "./customer";
 import { Button } from "@/components/ui/button";
 import { DataTableContent } from "@/hooks/Table/DataTableContent";
 import Deadline from "./deadline";
-import { LucideLink, LucidePlus, MoreHorizontal } from "lucide-react";
+import { LucideLink, MoreHorizontal } from "lucide-react";
 import Link from "next/link";
 import Histories from "./histories";
 import { DataTableFilterName } from "@/hooks/Table/DataTableFilterName";
@@ -37,33 +30,15 @@ import {
   SheetContent,
   SheetHeader,
   SheetTitle,
-  SheetTrigger,
 } from "@/components/ui/sheet";
-import { DialogProps } from "@radix-ui/react-dialog";
-import { Combobox } from "@/components/hasan/combobox";
-import { PopoverButton } from "@/components/hasan/popover-button";
 import {
   exitItem$,
   incomes$,
   newOrders$,
-  orderProducts$,
   orderStatuses,
 } from "@/server/local/db";
-import { generateId } from "@/server/local/utils";
-import { isoNow, now } from "@/lib/utils";
+import { now } from "@/lib/utils";
 import { useDialog } from "@/hooks/useDialog";
-import RenderList from "@/components/hasan/render-list";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { DB } from "@/lib/supabase/supabase";
 import { AturBarangSheet } from "./atur-barang.sheet";
 import { Textarea } from "@/components/ui/textarea";
 import { useObservable, useObserveEffect } from "@legendapp/state/react";
@@ -269,11 +244,7 @@ const Actions: React.FC<{ data: NewOrder }> = ({ data }) => {
           />
         </SheetContent>
       </Sheet>
-      <AturBarangSheet
-        order={data}
-        {...aturDialog.props}
-        onCreate={(e) => {}}
-      />
+      <AturBarangSheet order={data} {...aturDialog.props} />
     </>
   );
 };
@@ -315,7 +286,7 @@ const Orderan: React.FC<{ status: string }> = ({ status }) => {
           <div className="flex h-9 justify-between">
             <DataTableFilterName table={table} />
             <div className="flex gap-2">
-              <DownloadExcel range={rangeDate$.get()} />
+              <DownloadExcel orders={orderan ?? []} />
             </div>
           </div>
           <DatePicker

@@ -1,5 +1,5 @@
 import { Combobox } from "@/components/hasan/combobox";
-import RenderList, { List } from "@/components/hasan/render-list";
+import { List } from "@/components/hasan/render-list";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -26,28 +26,28 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useDialog } from "@/hooks/useDialog";
-import { DB } from "@/lib/supabase/supabase";
+import type { DB } from "@/lib/supabase/supabase";
 import { isoNow, toRupiah } from "@/lib/utils";
 import { customer$, exitItem$, expenses$ } from "@/server/local/db";
 import { dexie } from "@/server/local/dexie";
 import { generateId } from "@/server/local/utils";
-import {
-  ExitItem,
+import type {
   Material,
   NewOrder,
   Product,
   ProductVariant,
   Supplier,
 } from "@prisma/client";
-import { DialogProps } from "@radix-ui/react-dialog";
+import type { DialogProps } from "@radix-ui/react-dialog";
 import { useLiveQuery } from "dexie-react-hooks";
 import { LucidePlus } from "lucide-react";
 import React from "react";
 import { toast } from "sonner";
 
-export const AturBarangSheet: React.FC<
-  DialogProps & { order: NewOrder; onCreate: (data: ExitItem) => void }
-> = ({ order, onCreate, ...props }) => {
+export const AturBarangSheet: React.FC<DialogProps & { order: NewOrder }> = ({
+  order,
+  ...props
+}) => {
   const dialog = useDialog();
 
   const exitItems = useLiveQuery(() =>

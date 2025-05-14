@@ -10,34 +10,27 @@ import {
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import React, { useState } from "react";
 import Image from "next/image";
-import Slider from "react-slick";
 import Carousel from "@/components/hasan/carousel";
 import Navbar from "@/components/hasan/navbar";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
 import { Separator } from "@radix-ui/react-select";
 import { FaSquareXTwitter, FaStar, FaYoutube } from "react-icons/fa6";
-import { LucideArrowRight } from "lucide-react";
-import { MdAccountCircle } from "react-icons/md";
-import { Memo, use$ } from "@legendapp/state/react";
-import { gallerySettings$, websiteSettings$ } from "@/server/local/db";
+import { Memo } from "@legendapp/state/react";
+import { websiteSettings$ } from "@/server/local/db";
 import { useLiveQuery } from "dexie-react-hooks";
 import { dexie } from "@/server/local/dexie";
-import { DB } from "@/lib/supabase/supabase";
-import {
-  CategorySetting,
-  PopularProductSetting,
-  Product,
-} from "@prisma/client";
-import { toRupiah } from "@/lib/utils";
+import type { DB } from "@/lib/supabase/supabase";
+import type { Product } from "@prisma/client";
 import { AiFillInstagram, AiFillTikTok } from "react-icons/ai";
-import FilterSection, { FilterData } from "@/components/hasan/filter-section";
+import FilterSection, {
+  type FilterData,
+} from "@/components/hasan/filter-section";
 import { List } from "@/components/hasan/render-list";
 import { CardComponent } from "@/components/hasan/card-component";
 import { Skeleton } from "@/components/ui/skeleton";
 
-const image =
-  "https://images.unsplash.com/photo-1743691478813-d44ca4cbdc04?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D";
+// const image =
+//   "https://images.unsplash.com/photo-1743691478813-d44ca4cbdc04?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D";
 
 export default function HomePage() {
   return (
@@ -214,19 +207,17 @@ export default function HomePage() {
                   </svg>
                 </div>
                 <p className="mt-4 max-w-xs text-gray-500 dark:text-gray-400">
-                  <Memo>
-                    {() => websiteSettings$["settings"]?.address.get()}
-                  </Memo>
+                  <Memo>{() => websiteSettings$.settings?.address.get()}</Memo>
                 </p>
 
                 <p className="mt-4 max-w-xs text-gray-500 dark:text-gray-400">
-                  <Memo>{() => websiteSettings$["settings"]?.phone.get()}</Memo>
+                  <Memo>{() => websiteSettings$.settings?.phone.get()}</Memo>
                 </p>
 
                 <ul className="mt-8 flex items-center gap-6">
                   <Memo>
                     {() => {
-                      const settings = websiteSettings$["settings"]?.get();
+                      const settings = websiteSettings$.settings?.get();
                       if (!settings) return null;
                       if (settings.facebook === "") return null;
                       return (
@@ -259,7 +250,7 @@ export default function HomePage() {
 
                   <Memo>
                     {() => {
-                      const settings = websiteSettings$["settings"]?.get();
+                      const settings = websiteSettings$.settings?.get();
                       if (!settings) return null;
                       const url = settings.instagram;
                       if (url === "") return null;
@@ -280,7 +271,7 @@ export default function HomePage() {
 
                   <Memo>
                     {() => {
-                      const settings = websiteSettings$["settings"]?.get();
+                      const settings = websiteSettings$.settings?.get();
                       if (!settings) return null;
                       const url = settings.twitter;
                       if (url === "") return null;
@@ -301,7 +292,7 @@ export default function HomePage() {
 
                   <Memo>
                     {() => {
-                      const settings = websiteSettings$["settings"]?.get();
+                      const settings = websiteSettings$.settings?.get();
                       if (!settings) return null;
                       const url = settings.youtube;
                       if (url === "") return null;
@@ -321,7 +312,7 @@ export default function HomePage() {
                   </Memo>
                   <Memo>
                     {() => {
-                      const settings = websiteSettings$["settings"]?.get();
+                      const settings = websiteSettings$.settings?.get();
                       if (!settings) return null;
                       const url = settings.tiktok;
                       if (url === "") return null;
@@ -525,7 +516,7 @@ const CategoryImages = () => {
       ) : (
         <List
           data={[{ id: "1" }, { id: "2" }, { id: "3" }, { id: "4" }]}
-          render={(data) => (
+          render={() => (
             <div>
               <Skeleton className="h-[250px]" />
               <div className="mt-3 flex flex-col gap-2">
@@ -563,7 +554,7 @@ const GalleryImages = () => {
             { id: "5" },
             { id: "6" },
           ]}
-          render={(data) => <Skeleton className="aspect-square" />}
+          render={() => <Skeleton className="aspect-square" />}
         />
       </ul>
     );
@@ -633,7 +624,7 @@ const ProductsComponent: React.FC<{ products: Product[] }> = ({ products }) => {
       <ul className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <List
           data={[{ id: "1" }, { id: "2" }]}
-          render={(data) => (
+          render={() => (
             <div>
               <Skeleton className="aspect-square" />
               <div className="mt-3 flex flex-col gap-2">
@@ -682,11 +673,14 @@ const CategoryCard: React.FC<{ data: DB<"CategorySetting"> }> = ({ data }) => {
 const GalleryCard: React.FC<{ data: DB<"GallerySetting"> }> = ({ data }) => {
   return (
     <Link href="#" className="group block">
-      <img
-        src={data.imageUrl}
-        alt=""
-        className="aspect-square w-full rounded-sm object-cover"
-      />
+      <div className="aspect-square">
+        <Image
+          src={data.imageUrl}
+          alt=""
+          className="h-full w-full rounded-sm object-cover"
+          fill
+        />
+      </div>
     </Link>
   );
 };

@@ -22,12 +22,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Switch } from "@/components/ui/switch";
 import { type Product } from "@prisma/client";
-import {
-  Headset,
-  LucideDownload,
-  LucidePlus,
-  MoreHorizontal,
-} from "lucide-react";
+import { LucideDownload, LucidePlus, MoreHorizontal } from "lucide-react";
 import Title from "@/components/hasan/title";
 import { useLiveQuery } from "dexie-react-hooks";
 import { dexie } from "@/server/local/dexie";
