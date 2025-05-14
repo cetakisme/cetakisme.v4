@@ -13,6 +13,7 @@ import {
   incomeTypes$,
   ingoingStockTypes$,
   materials$,
+  newOrders$,
   orderHistories$,
   orderMaterials$,
   orderProducts$,
@@ -22,6 +23,11 @@ import {
   receiptModels$,
   receiptSettings$,
   roles$,
+  savedAddons$,
+  savedCosts$,
+  savedDiscounts$,
+  savedOrderProducts$,
+  savedOrders$,
   supplierContactPersons$,
   suppliers$,
   users$,
@@ -76,6 +82,12 @@ const Loader = () => {
     void whenReady(expenseTypes$.get());
     void whenReady(incomeTypes$.get());
     void whenReady(ingoingStockTypes$.get());
+    void whenReady(newOrders$.get());
+    void whenReady(savedAddons$.get());
+    void whenReady(savedCosts$.get());
+    void whenReady(savedDiscounts$.get());
+    void whenReady(savedOrderProducts$.get());
+    void whenReady(savedOrders$.get());
     // void whenReady(carouselSettings$.get());
     // void whenReady(categorySettings$.get());
     // void whenReady(gallerySettings$.get());
