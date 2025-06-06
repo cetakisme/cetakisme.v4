@@ -75,7 +75,7 @@ export const DownloadExcel: React.FC<{
           const deadline = x[7]!;
           const customerId = x[8]!;
 
-          const lastSavedOrder = savedOrdersId.at(-1);
+          const lastSavedOrder = savedOrdersId.at(0);
 
           const savedOrder = await dexie.savedOrders.get(lastSavedOrder!);
           if (!savedOrder) {
@@ -84,9 +84,9 @@ export const DownloadExcel: React.FC<{
 
           const customer = await dexie.customers.get(customerId);
 
-          if (!customer) {
-            throw new Error("Customer Not Found");
-          }
+          // if (!customer) {
+          //   throw new Error("Customer Not Found");
+          // }
 
           const products = await dexie.savedOrderProducts
             .where("savedOrderId")
@@ -100,7 +100,7 @@ export const DownloadExcel: React.FC<{
 
           return {
             tanggal: savedOrder.creteadAt,
-            nama: customer?.name ?? "Not Found",
+            nama: customer?.name ?? "NOT FOUND",
             orderStatus: orderStatus,
             paymentStatus: paymentStatus,
             total: total,

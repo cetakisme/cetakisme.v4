@@ -43,7 +43,7 @@ export const CustomForm = () => {
       addon: [],
       id: generateId(),
       name: values.name,
-      price: +values.price / +values.qty,
+      price: +values.price,
       productId: "",
       qty: +values.qty,
       variantId: "",

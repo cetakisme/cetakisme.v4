@@ -139,6 +139,12 @@ export const menus: Menu[] = [
         permission: "selesai",
         url: "/admin/orderan2/selesai",
       },
+      {
+        title: "Semua",
+        children: [],
+        permission: "semua",
+        url: "/admin/orderan2/semua",
+      },
     ],
   },
   {

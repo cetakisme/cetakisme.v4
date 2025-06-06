@@ -138,13 +138,18 @@ const getHistoryReceipt = async (order: SavedOrder): Promise<string> => {
   let h = "";
 
   for (const product of productWithAddons) {
-    p += `${product.name} | ${product.qty} | ${toRupiah(product.price * product.qty)}\n`;
+    p += `${product.name} | ${product.qty} | ${toRupiah(product.price)}\n`;
     total += product.qty * product.price;
 
+    let addonTotal = 0;
+
     for (const addon of product.addons) {
-      p += `${addon.name} | ${addon.qty} x ${product.qty} | ${toRupiah(addon.price * addon.qty * product.qty)}\n`;
+      addonTotal += addon.price * addon.qty * product.qty;
+      p += `${addon.name} | ${addon.qty} x ${product.qty} | ${toRupiah(addon.price)}\n`;
       total += product.qty * addon.price * addon.qty;
     }
+
+    p += `Total | | ${toRupiah(product.qty * product.price + addonTotal)}`;
 
     if (product.isDiscounted) {
       const discount =
@@ -203,7 +208,11 @@ const getHistoryReceipt = async (order: SavedOrder): Promise<string> => {
         if (i === 1) {
           h += `DP | ${toRupiah(paid)}\n`;
         } else {
-          h += `Cicil ${i - pass} | ${toRupiah(paid - lastCicil)}\n`;
+          if (i - pass === 0) {
+            h += `DP | ${toRupiah(paid - lastCicil)}\n`;
+          } else {
+            h += `Cicil ${i - pass} | ${toRupiah(paid - lastCicil)}\n`;
+          }
         }
       }
       h += `Total Bayar | ${toRupiah(paid)}\n`;
@@ -227,7 +236,11 @@ const getHistoryReceipt = async (order: SavedOrder): Promise<string> => {
           if (i === 1) {
             h += `DP | ${toRupiah(paid)}\n`;
           } else {
-            h += `Cicil ${i - pass} | ${toRupiah(paid - lastCicil)}\n`;
+            if (i - pass === 0) {
+              h += `DP | ${toRupiah(paid - lastCicil)}\n`;
+            } else {
+              h += `Cicil ${i - pass} | ${toRupiah(paid - lastCicil)}\n`;
+            }
           }
         }
 

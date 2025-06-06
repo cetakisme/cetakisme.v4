@@ -3,12 +3,12 @@
 import Authenticated from "@/components/hasan/auth/authenticated";
 
 import React from "react";
-import Orderan from "./orderan";
+import Orderan, { AllOrderan } from "./orderan";
 
 const Order: React.FC<{ status: string }> = ({ status }) => {
   return (
     <Authenticated permission={status}>
-      <Orderan status={status} />
+      {status === "semua" ? <AllOrderan /> : <Orderan status={status} />}
     </Authenticated>
   );
 };

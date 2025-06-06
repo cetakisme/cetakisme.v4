@@ -307,3 +307,58 @@ const Orderan: React.FC<{ status: string }> = ({ status }) => {
 };
 
 export default Orderan;
+
+export const AllOrderan: React.FC = () => {
+  const orderan = useLiveQuery(() =>
+    dexie.newOrders
+      .filter((x) => !x.deleted)
+      .reverse()
+      .sortBy("createdAt"),
+  );
+
+  const table = useTable({
+    data: orderan ?? [],
+    columns,
+  });
+
+  const rangeDate$ = useObservable<[Date, Date]>([
+    now().toJSDate(),
+    now().toJSDate(),
+  ]);
+
+  useObserveEffect(() => {
+    table.getColumn("tanggal")?.setFilterValue(rangeDate$.get());
+  });
+
+  return (
+    <ScrollArea className="h-screen p-8">
+      <Title>
+        {status
+          .split("")
+          .map((x, i) => (i === 0 ? x.toUpperCase() : x))
+          .join("")}
+      </Title>
+      <div className="space-y-2 p-1">
+        <div className="">
+          <div className="flex h-9 justify-between">
+            <DataTableFilterName table={table} />
+            <div className="flex gap-2">
+              <DownloadExcel orders={orderan ?? []} />
+            </div>
+          </div>
+          <DatePicker
+            onDateChange={(date) => rangeDate$[0].set(date)}
+            startYear={2024}
+            endYear={2030}
+          />
+          <DatePicker
+            onDateChange={(date) => rangeDate$[1].set(date)}
+            startYear={2024}
+            endYear={2030}
+          />
+        </div>
+        <DataTableContent table={table} />
+      </div>
+    </ScrollArea>
+  );
+};
