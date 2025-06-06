@@ -29,9 +29,9 @@ const Resi: React.FC<{ id: string }> = ({ id }) => {
   });
 
   return (
-    <ResizablePanelGroup direction="horizontal" className="p-8">
+    <ResizablePanelGroup direction="horizontal" className="">
       <ResizablePanel defaultSize={50}>
-        <div className="p-1">
+        <div className="p-8">
           <Title>
             <Memo>{() => ctx$.name.get()}</Memo>
           </Title>
@@ -51,7 +51,7 @@ const Resi: React.FC<{ id: string }> = ({ id }) => {
         </div>
       </ResizablePanel>
       <ResizablePanel defaultSize={50}>
-        <div className="p-1">
+        <div className="">
           <Memo>{() => <Receipt content={ctx$.content.get()} />}</Memo>
         </div>
       </ResizablePanel>
@@ -140,9 +140,11 @@ const constructReceipt = (content: string) => {
 const Receipt: React.FC<{ content: string }> = ({ content }) => {
   const receipt = constructReceipt(content);
   return (
-    <ScrollArea className="flex h-screen justify-center">
-      <HtmlRenderer htmlString={receipt} />
-    </ScrollArea>
+    <div className="flex h-screen border-black p-8">
+      <ScrollArea className="min-h-1 flex-1">
+        <HtmlRenderer htmlString={receipt} />
+      </ScrollArea>
+    </div>
   );
 };
 

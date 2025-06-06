@@ -25,7 +25,7 @@ import { dexie } from "@/server/local/dexie";
 import type { SavedOrder, SavedOrderProduct } from "@prisma/client";
 import { useLiveQuery } from "dexie-react-hooks";
 import { DateTime } from "luxon";
-import React, { Fragment } from "react";
+import React, { Fragment, useState } from "react";
 import { getDiscount } from "../../pos/kasir2/kasir-product-table";
 import { toRupiah } from "@/lib/utils";
 import Link from "next/link";
@@ -40,6 +40,7 @@ import {
   savedOrderProducts$,
   savedOrders$,
 } from "@/server/local/db";
+import { DatePicker } from "@/components/hasan/date-picker";
 
 const Histories: React.FC<{ orderId: string; histories: string[] }> = ({
   orderId,
@@ -47,6 +48,7 @@ const Histories: React.FC<{ orderId: string; histories: string[] }> = ({
 }) => {
   const [order, setOrder] = React.useState<SavedOrder | null>(null);
   const dialog = useDialog();
+  const [date, setDate] = useState(new Date());
   return (
     <>
       <DropdownMenu>
@@ -82,6 +84,20 @@ const Histories: React.FC<{ orderId: string; histories: string[] }> = ({
               </Button>
             </SheetTitle>
           </SheetHeader>
+          <DatePicker
+            trigger={() => (
+              <Button>
+                {DateTime.fromJSDate(date)
+                  .setZone("Asia/Singapore")
+                  .setLocale("id")
+                  .toLocaleString(DateTime.DATE_FULL)}
+              </Button>
+            )}
+            selectedDate={date}
+            onDateChange={(date) => {
+              if (date) setDate(date);
+            }}
+          />
           <ScrollArea className="flex-1 pr-4">
             <Table>
               <TableHeader>
@@ -120,6 +136,7 @@ const Histories: React.FC<{ orderId: string; histories: string[] }> = ({
             </Table>
             <div className="flex flex-col gap-1">
               <Receipt
+                date={date}
                 order={order}
                 onDelete={(id) => {
                   const f = async () => {

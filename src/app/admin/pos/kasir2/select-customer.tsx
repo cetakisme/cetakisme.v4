@@ -8,7 +8,7 @@ import React from "react";
 import { useKasir } from "./useKasir";
 import { useDialog } from "@/hooks/useDialog";
 import { Label } from "@/components/ui/label";
-import { observable, Observable } from "@legendapp/state";
+import { observable } from "@legendapp/state";
 import ControlledSheet from "@/components/hasan/controlled-sheet";
 import { Button } from "@/components/ui/button";
 import { customer$ } from "@/server/local/db";

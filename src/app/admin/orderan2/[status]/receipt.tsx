@@ -24,11 +24,13 @@ function transformQRString(qr: string) {
   return qr.replace(/\$QR\{\s*"([^"]+)"\}/, `{code:$1; option:qrcode,4,L}`);
 }
 
-function transformTanggalString(qr: string) {
+function transformTanggalString(qr: string, date: Date) {
+  console.log(date);
   return qr.replace(
     "$TANGGAL",
-    DateTime.now()
+    DateTime.fromJSDate(date)
       .setZone("Asia/Singapore")
+      .setLocale("id")
       .toLocaleString(DateTime.DATETIME_SHORT_WITH_SECONDS),
   );
 }
@@ -74,7 +76,10 @@ const display: Printer = {
   encoding: "multilingual",
 };
 
-const getHistoryReceipt = async (order: SavedOrder): Promise<string> => {
+const getHistoryReceipt = async (
+  order: SavedOrder,
+  date: Date,
+): Promise<string> => {
   const products = await dexie.savedOrderProducts
     .where("id")
     .anyOf(order.savedOrderProductsId)
@@ -268,7 +273,7 @@ const getHistoryReceipt = async (order: SavedOrder): Promise<string> => {
     } else {
       let md = modelMarkdown.content;
       md = transformQRString(md);
-      md = transformTanggalString(md);
+      md = transformTanggalString(md, date);
       md = transformBarangString(md, p);
       md = transformDiskonString(md, d);
       md = transformBiayaString(md, b);
@@ -284,21 +289,23 @@ const getHistoryReceipt = async (order: SavedOrder): Promise<string> => {
 };
 
 const Receipt: React.FC<{
+  date: Date;
   order: SavedOrder | null;
   onDelete: (savedOrderId: string) => void;
-}> = ({ order, onDelete }) => {
+}> = ({ order, date, onDelete }) => {
   const [svg, setSvg] = React.useState("");
 
   React.useEffect(() => {
     if (!order) return;
 
     const f = async () => {
-      const s = await getHistoryReceipt(order);
+      const s = await getHistoryReceipt(order, date);
       setSvg(s);
     };
 
     void f();
-  }, [order]);
+  }, [order, date]);
+
   return (
     <>
       <Dialog>
