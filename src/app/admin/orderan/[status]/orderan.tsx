@@ -43,7 +43,7 @@ import {
 } from "@prisma/client";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useLiveQuery } from "dexie-react-hooks";
-import React, { createContext, useContext } from "react";
+import React, { createContext, useContext, useEffect } from "react";
 import moment from "moment";
 import {
   Popover,
@@ -74,6 +74,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import {
   LucideDot,
+  LucideDownload,
   LucideLink,
   LucidePlus,
   MoreHorizontal,
@@ -91,13 +92,15 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Combobox } from "@/components/hasan/combobox";
 import Title from "@/components/hasan/title";
 import { type Observable } from "@legendapp/state";
-import { isoNow, toRupiah } from "@/lib/utils";
+import { isoNow, now, toRupiah } from "@/lib/utils";
 import { getHistoryReceipt } from "../../resi/[id]/resi";
 import { toast } from "sonner";
 import Authenticated from "@/components/hasan/auth/authenticated";
 import { DateTime } from "luxon";
 import { type DB } from "@/lib/supabase/supabase";
 import ResiDialog from "@/components/hasan/resi-dialog";
+import { useExportToExcel2 } from "@/hooks/useTableExcel";
+import { DatePicker } from "@/components/hasan/date-picker";
 
 const columns: ColumnDef<Order & { status: string }>[] = [
   {
@@ -106,6 +109,23 @@ const columns: ColumnDef<Order & { status: string }>[] = [
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Tanggal" />
     ),
+    filterFn: (row, columnId, filterValue: [Date | null, Date | null]) => {
+      const rowDate = new Date(row.getValue(columnId));
+      const [start, end] = filterValue;
+
+      // Strip time from date
+      const rowTime = new Date(rowDate.setHours(0, 0, 0, 0)).getTime();
+
+      const startTime = start
+        ? new Date(start.setHours(0, 0, 0, 0)).getTime()
+        : null;
+      const endTime = end ? new Date(end.setHours(0, 0, 0, 0)).getTime() : null;
+
+      if (startTime && rowTime < startTime) return false;
+      if (endTime && rowTime > endTime) return false;
+
+      return true;
+    },
     cell: ({ row }) =>
       DateTime.fromJSDate(row.original.created_at).toLocaleString(
         DateTime.DATE_MED,
@@ -459,7 +479,7 @@ const OrderHistoryDetailContent = () => {
         .equals(ctx$.id.get() ?? "")
         .and((o) => !o.deleted)
         .toArray(),
-      dexie.discounts
+      dexie.costs
         .where("orderHistoryId")
         .equals(ctx$.id.get() ?? "")
         .and((o) => !o.deleted)
@@ -935,6 +955,7 @@ const OrderMaterials: React.FC<{ order: Order }> = ({ order }) => {
                           type: "",
                           updatedAt: isoNow(),
                           targetId: "",
+                          deletable: false,
                         });
                       } else {
                         expenses$[data.id]!.set((p) => ({
@@ -990,6 +1011,7 @@ const OrderMaterials: React.FC<{ order: Order }> = ({ order }) => {
                             type: "bahan",
                             updatedAt: isoNow(),
                             targetId: data.id,
+                            deletable: false,
                           }));
                         },
                       }}
@@ -1132,6 +1154,7 @@ const OrderProucts: React.FC<{ order: Order }> = ({ order }) => {
                         notes: "",
                         type: "",
                         updatedAt: isoNow(),
+                        deletable: false,
                       });
                     } else {
                       expenses$[data.id]!.set((p) => ({
@@ -1185,6 +1208,7 @@ const OrderProucts: React.FC<{ order: Order }> = ({ order }) => {
                             notes: `Bayar ${products$[data.productId]!.name.get()} ${productVariants$[data.variantId]!.name.get()} Ke ${suppliers$[data.supplierId]!.name.get()}`,
                             type: "product",
                             updatedAt: isoNow(),
+                            deletable: false,
                           }));
                         },
                       }}
@@ -1408,6 +1432,22 @@ const Orderan: React.FC<{ status: string }> = ({ status }) => {
       .reverse()
       .sortBy("created_at"),
   );
+
+  const orders$ = useObservable<Order[]>([]);
+
+  useEffect(() => {
+    orders$.set(orders ?? []);
+  }, [orders, orders$]);
+
+  const rangeDate$ = useObservable<[Date, Date]>([
+    now().toJSDate(),
+    now().toJSDate(),
+  ]);
+
+  useObserveEffect(() => {
+    table.getColumn("tanggal")?.setFilterValue(rangeDate$.get());
+  });
+
   const table = useTable({
     data: orders?.map((x) => ({ ...x, status: status })) ?? [],
     columns: columns,
@@ -1422,11 +1462,23 @@ const Orderan: React.FC<{ status: string }> = ({ status }) => {
     <ScrollArea className="h-screen p-8">
       <Title>{title}</Title>
       <div className="space-y-2">
-        <div className="flex h-9 justify-between gap-2">
-          <DataTableFilterName table={table} />
-          <div className="flex gap-2">
-            <DataTableViewOptions table={table} />
+        <div className="">
+          <div className="flex h-9 justify-between gap-2">
+            <DataTableFilterName table={table} />
+            <div className="flex gap-2">
+              <Memo>
+                {() => (
+                  <DownloadExcel
+                    orders={orders$.get()}
+                    range={rangeDate$.get()}
+                  />
+                )}
+              </Memo>
+              <DataTableViewOptions table={table} />
+            </div>
           </div>
+          <DatePicker onDateChange={(date) => rangeDate$[0].set(date)} />
+          <DatePicker onDateChange={(date) => rangeDate$[1].set(date)} />
         </div>
         <DataTableContent table={table} />
         <DataTablePagination table={table} />
@@ -1436,3 +1488,218 @@ const Orderan: React.FC<{ status: string }> = ({ status }) => {
 };
 
 export default Orderan;
+
+const donloadColumn: ColumnDef<Order>[] = [
+  {
+    id: "id",
+    accessorKey: "id",
+  },
+  {
+    id: "tanggal",
+    accessorKey: "createdAt",
+  },
+  {
+    id: "name",
+    accessorKey: "customer_id",
+  },
+  {
+    id: "orderStatus",
+    accessorKey: "order_status",
+  },
+  {
+    id: "paymentStatus",
+    accessorKey: "payment_status",
+  },
+  {
+    id: "paymentProvider",
+    accessorKey: "payment_provider",
+  },
+  {
+    id: "total",
+    accessorKey: "total",
+  },
+  {
+    id: "bayar",
+    accessorKey: "paid",
+  },
+  {
+    id: "notes",
+    accessorKey: "notes",
+  },
+  {
+    id: "deadline",
+    accessorKey: "deadline",
+  },
+];
+
+const DownloadExcel: React.FC<{ orders: Order[]; range: [Date, Date] }> = ({
+  orders,
+  range,
+}) => {
+  const table = useTable({
+    data: orders,
+    columns: donloadColumn,
+  });
+
+  const download = useExportToExcel2({
+    data: async () => {
+      const rows: any[] = table.getRowModel().rows.map((row) => {
+        const _rows = row.getVisibleCells().map((cell) => cell.getValue<any>());
+        return _rows;
+      });
+
+      const promisedFiltered = rows.map(async (x) => {
+        const orderHistory = await dexie.orderHistory
+          .where("orderId")
+          .equals(x[0])
+          .sortBy("created_at");
+        const lastHistory = orderHistory[orderHistory.length - 1];
+        const order = await dexie.orders.get(x[0]);
+        if (!order) {
+          throw new Error("Order not found");
+        }
+        if (!lastHistory) {
+          throw new Error("Order history not found");
+        }
+
+        const rowDate = lastHistory.created_at;
+        const [start, end] = range;
+
+        // Strip time from date
+        const rowTime = new Date(rowDate.setHours(0, 0, 0, 0)).getTime();
+
+        const startTime = new Date(start.setHours(0, 0, 0, 0)).getTime();
+        const endTime = new Date(end.setHours(0, 0, 0, 0)).getTime();
+
+        if (rowTime < startTime) return undefined;
+        if (rowTime > endTime) return undefined;
+
+        const customer = await dexie.customers.get(x[2]);
+
+        return {
+          tanggal: lastHistory.created_at,
+          nama: customer?.name ?? "Not Found",
+          orderStatus: order.order_status,
+          paymentStatus: order.payment_status,
+          paymentProvider: lastHistory.payment_provider,
+          total: lastHistory.total,
+          bayar:
+            lastHistory.paid > lastHistory.total
+              ? lastHistory.total
+              : lastHistory.paid,
+          deadline: order.deadline ?? "-",
+          notes: order.notes === "" ? "-" : order.notes,
+          hutang:
+            lastHistory.total - lastHistory.paid > 0
+              ? lastHistory.total - lastHistory.paid
+              : 0,
+        };
+      });
+
+      const filtered = await Promise.all(promisedFiltered);
+
+      const cells = filtered.filter((x) => x !== undefined);
+
+      return [
+        {
+          tanggal: "Tanggal",
+          nama: "Nama",
+          orderStatus: "Status Order",
+          paymentStatus: "Status Pembayaran",
+          paymentProvider: "Provider Pembayaran",
+          total: "Total",
+          bayar: "Bayar",
+          hutang: "Hutang",
+          deadline: "Deadline",
+          notes: "Notes",
+        },
+        ...cells.filter((x) => x !== undefined),
+      ];
+    },
+    headers: [
+      {
+        key: "tanggal",
+        name: "Tanggal",
+        width: 15,
+      },
+      {
+        key: "deadline",
+        name: "Deadline",
+        width: 15,
+      },
+      {
+        key: "nama",
+        name: "Nama",
+        width: 25,
+      },
+      {
+        key: "orderStatus",
+        name: "Status Order",
+        width: 25,
+      },
+      {
+        key: "paymentStatus",
+        name: "Status Pembayaran",
+        width: 25,
+      },
+      {
+        key: "paymentProvider",
+        name: "Provider Pembayaran",
+        width: 25,
+      },
+      {
+        key: "total",
+        name: "Total",
+        width: 15,
+      },
+      {
+        key: "bayar",
+        name: "Bayar",
+        width: 15,
+      },
+      {
+        key: "hutang",
+        name: "Hutang",
+        width: 15,
+      },
+
+      {
+        key: "notes",
+        name: "Notes",
+        width: 35,
+      },
+    ],
+    name: `Orderan - ${moment(now().toJSDate()).format("DD MMM YYYY - HH:mm A")}.xlsx`,
+    style: (sheet) => {
+      sheet.getRow(1).eachCell((cell) => {
+        cell.font = { bold: true };
+      });
+
+      sheet.eachRow({ includeEmpty: false }, (row) => {
+        row.eachCell({ includeEmpty: false }, (cell, colNumber) => {
+          if (colNumber === 1 || colNumber === 2) {
+            cell.numFmt = "dd/mm/yyyy";
+          }
+
+          if (colNumber === 7 || colNumber === 8 || colNumber === 9) {
+            cell.numFmt = '"Rp. "#,##0';
+          }
+
+          cell.border = {
+            top: { style: "thin" },
+            left: { style: "thin" },
+            bottom: { style: "thin" },
+            right: { style: "thin" },
+          };
+        });
+      });
+
+      return sheet;
+    },
+  });
+  return (
+    <Button onClick={() => download()} variant={"outline"} size={"icon"}>
+      <LucideDownload />
+    </Button>
+  );
+};

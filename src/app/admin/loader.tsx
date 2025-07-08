@@ -3,31 +3,31 @@ import { authClient } from "@/lib/better-auth/auth-client";
 import { user$ } from "@/server/local/auth";
 import {
   absensi$,
-  addons$,
-  addonValues$,
   costs$,
   customer$,
   discounts$,
+  exitItem$,
   expenses$,
   expenseTypes$,
   incomes$,
   incomeTypes$,
   ingoingStockTypes$,
   materials$,
+  newOrders$,
   orderHistories$,
   orderMaterials$,
   orderProducts$,
   orders$,
   orderVariantAddons$,
   orderVariants$,
-  productAttribute$,
-  productAttributeValue$,
-  products$,
-  productToAddons$,
-  productVariants$,
   receiptModels$,
   receiptSettings$,
   roles$,
+  savedAddons$,
+  savedCosts$,
+  savedDiscounts$,
+  savedOrderProducts$,
+  savedOrders$,
   supplierContactPersons$,
   suppliers$,
   users$,
@@ -57,15 +57,15 @@ const Loader = () => {
     void whenReady(orderVariantAddons$.get());
     void whenReady(discounts$.get());
     void whenReady(costs$.get());
-    void whenReady(productVariants$.get());
-    void whenReady(productAttributeValue$.get());
-    void whenReady(productToAddons$.get());
-    void whenReady(addons$.get());
-    void whenReady(addonValues$.get());
-    void whenReady(productAttribute$.get());
+    // void whenReady(productVariants$.get());
+    // void whenReady(productAttributeValue$.get());
+    // void whenReady(productToAddons$.get());
+    // void whenReady(addons$.get());
+    // void whenReady(addonValues$.get());
+    // void whenReady(productAttribute$.get());
     void whenReady(orders$.get());
     void whenReady(customer$.get());
-    void whenReady(products$.get());
+    // void whenReady(products$.get());
     void whenReady(users$.get());
     void whenReady(roles$.get());
     void whenReady(materials$.get());
@@ -82,6 +82,18 @@ const Loader = () => {
     void whenReady(expenseTypes$.get());
     void whenReady(incomeTypes$.get());
     void whenReady(ingoingStockTypes$.get());
+    void whenReady(newOrders$.get());
+    void whenReady(savedAddons$.get());
+    void whenReady(savedCosts$.get());
+    void whenReady(savedDiscounts$.get());
+    void whenReady(savedOrderProducts$.get());
+    void whenReady(savedOrders$.get());
+    // void whenReady(carouselSettings$.get());
+    // void whenReady(categorySettings$.get());
+    // void whenReady(gallerySettings$.get());
+    // void whenReady(testimonySettings$.get());
+    // void whenReady(productPopularSettings$.get());
+    void whenReady(exitItem$.get());
   });
   return <></>;
 };

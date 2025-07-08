@@ -61,12 +61,15 @@ import Dexie from "dexie";
 import { type DB } from "@/lib/supabase/supabase";
 import { now } from "@/lib/utils";
 import Conditional from "@/components/hasan/conditional";
+import { ContentLayout } from "@/components/admin-panel/content-layout";
 
 const Page = () => {
   return (
-    <Authenticated permission="inventory">
-      <Inventory />
-    </Authenticated>
+    <ContentLayout title="Inventory">
+      <Authenticated permission="inventory">
+        <Inventory />
+      </Authenticated>
+    </ContentLayout>
   );
 };
 
@@ -74,7 +77,7 @@ export default Page;
 
 const Inventory = () => {
   return (
-    <ScrollArea className="h-screen p-8">
+    <ScrollArea className="h-screen">
       <Tabs defaultValue="stok-masuk">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="stok-masuk">Stok Masuk</TabsTrigger>
@@ -765,6 +768,7 @@ const AddMaterialForm: React.FC<{ onSubmit: () => void }> = ({ onSubmit }) => {
             type: "bahan",
             updatedAt: now().toISO()!,
             targetId: stok.id.get(),
+            deletable: true,
           });
 
           materials$[stok.materialId.get()]!.costOfGoods.set((_) => {
@@ -892,6 +896,7 @@ const AddProductForm: React.FC<{ onSubmit: () => void }> = ({ onSubmit }) => {
             type: "produk",
             updatedAt: now().toISO()!,
             targetId: stok.id.get(),
+            deletable: true,
           });
 
           productVariants$[stok.variantId.get()]!.costOfGoods.set((_) => {

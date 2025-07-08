@@ -1,15 +1,22 @@
 import React from "react";
 
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-import Link from "next/link";
+// import {
+//   Accordion,
+//   AccordionContent,
+//   AccordionItem,
+//   AccordionTrigger,
+// } from "@/components/ui/accordion";
+// import Link from "next/link";
 import Loader from "./loader";
-import Authenticated from "@/components/hasan/auth/authenticated";
-import LogoutButton from "./logout-button";
+// import Authenticated from "@/components/hasan/auth/authenticated";
+// import LogoutButton from "./logout-button";
+// import { ScrollArea } from "@/components/ui/scroll-area";
+// import MobileNav, {
+//   MobilContextProvider,
+//   MobileNavTrigger,
+// } from "@/components/hasan/mobile-nav";
+import AdminPanelLayout from "@/components/admin-panel/admin-panel-layout";
+// import { ContentLayout } from "@/components/admin-panel/content-layout";
 
 interface Menu {
   title: string;
@@ -27,7 +34,7 @@ export const menus: Menu[] = [
       {
         title: "Kasir",
         children: [],
-        url: "/admin/pos/kasir",
+        url: "/admin/pos/kasir2",
         permission: "kasir",
       },
       {
@@ -52,6 +59,12 @@ export const menus: Menu[] = [
         title: "Pemasukan",
         permission: "pemasukan",
         url: "/admin/sales-dan-purchasing/pemasukan",
+        children: [],
+      },
+      {
+        title: "Gabungan",
+        permission: "gabungan",
+        url: "/admin/sales-dan-purchasing/gabungan",
         children: [],
       },
     ],
@@ -104,7 +117,7 @@ export const menus: Menu[] = [
     children: [
       {
         title: "Pending",
-        url: "/admin/orderan/pending",
+        url: "/admin/orderan2/pending",
         permission: "pending",
         children: [],
       },
@@ -118,19 +131,25 @@ export const menus: Menu[] = [
         title: "Desain",
         children: [],
         permission: "desain",
-        url: "/admin/orderan/desain",
+        url: "/admin/orderan2/desain",
       },
       {
         title: "Ready",
         children: [],
         permission: "ready",
-        url: "/admin/orderan/ready",
+        url: "/admin/orderan2/ready",
       },
       {
         title: "Selesai",
         children: [],
         permission: "selesai",
-        url: "/admin/orderan/selesai",
+        url: "/admin/orderan2/selesai",
+      },
+      {
+        title: "Semua",
+        children: [],
+        permission: "semua",
+        url: "/admin/orderan2/semua",
       },
     ],
   },
@@ -168,6 +187,24 @@ export const menus: Menu[] = [
         url: "/admin/absensi/absen",
         permission: "absen",
         exclude: "admin",
+      },
+    ],
+  },
+  {
+    title: "Website",
+    permission: "admin",
+    children: [
+      {
+        title: "Landing Page",
+        children: [],
+        url: "/admin/website/halaman-utama",
+        permission: "admin",
+      },
+      {
+        title: "Settings",
+        children: [],
+        url: "/admin/website/settings",
+        permission: "admin",
       },
     ],
   },
@@ -213,11 +250,12 @@ export function getNavigations() {
 
 const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
-    <main className="flex h-screen">
+    <main className="">
       <Loader />
-      <div className="w-72 shrink-0 bg-black p-4 text-white">
+      {/* 
+      <div className="hidden w-72 shrink-0 bg-black p-4 text-white lg:block">
         <h1 className="text-3xl font-extrabold">Cetakisme</h1>
-        <div className="mt-6 flex flex-col gap-2">
+        <ScrollArea className="mt-6 flex flex-1 flex-col gap-2">
           <Accordion
             type="single"
             collapsible
@@ -296,9 +334,17 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             ))}
           </Accordion>
           <LogoutButton />
-        </div>
+        </ScrollArea>
       </div>
-      <div className="h-full grow">{children}</div>
+      <MobilContextProvider>
+        <MobileNav />
+
+        <div className="relative h-full grow">
+          {children}
+          <MobileNavTrigger />
+        </div>
+      </MobilContextProvider> */}
+      <AdminPanelLayout>{children}</AdminPanelLayout>
     </main>
   );
 };

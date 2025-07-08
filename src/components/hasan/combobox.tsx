@@ -61,7 +61,6 @@ export function Combobox<TData extends { name: string }>({
                   key={i}
                   value={framework.name}
                   onSelect={() => {
-                    // setSelectedData(framework);
                     onSelected(framework);
                   }}
                 >

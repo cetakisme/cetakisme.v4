@@ -9,7 +9,7 @@ const InputWithLabel: React.FC<{
 }> = ({ label, inputProps, rootProps }) => {
   return (
     <div {...rootProps}>
-      <Label>{label}</Label>
+      <Label className="text-sm font-medium">{label}</Label>
       <Input {...inputProps} />
     </div>
   );

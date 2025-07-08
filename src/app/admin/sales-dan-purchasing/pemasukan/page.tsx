@@ -1,10 +1,12 @@
 "use client";
 
+import { ContentLayout } from "@/components/admin-panel/content-layout";
 import Alert from "@/components/hasan/alert";
 import Authenticated from "@/components/hasan/auth/authenticated";
 import { Combobox } from "@/components/hasan/combobox";
 import Conditional from "@/components/hasan/conditional";
 import ControlledSheet from "@/components/hasan/controlled-sheet";
+import { DatePicker } from "@/components/hasan/date-picker";
 import InputWithLabel from "@/components/hasan/input-with-label";
 import Sheet from "@/components/hasan/sheet";
 import Title from "@/components/hasan/title";
@@ -26,19 +28,26 @@ import { DataTablePagination } from "@/hooks/Table/DataTablePagination";
 import { DataTableViewOptions } from "@/hooks/Table/DataTableViewOptions";
 import { useTable } from "@/hooks/Table/useTable";
 import { useDialog } from "@/hooks/useDialog";
-import { useExportToExcel } from "@/hooks/useTableExcel";
+import { useExportToExcel2 } from "@/hooks/useTableExcel";
 import { type DB } from "@/lib/supabase/supabase";
 import { now, toRupiah } from "@/lib/utils";
-import { generateId, incomes$, incomeTypes$ } from "@/server/local/db";
+import {
+  generateId,
+  incomes$,
+  incomeTypes$,
+  products$,
+  productVariants$,
+} from "@/server/local/db";
 import { dexie } from "@/server/local/dexie";
 import type { Observable } from "@legendapp/state";
-import { Memo, useObservable } from "@legendapp/state/react";
+import { Memo, useObservable, useObserveEffect } from "@legendapp/state/react";
 import type { Income, IncomeType } from "@prisma/client";
+import { Scrollbar } from "@radix-ui/react-scroll-area";
 import { type ColumnDef } from "@tanstack/react-table";
 import { useLiveQuery } from "dexie-react-hooks";
 import { LucideDownload, LucidePlus, MoreHorizontal } from "lucide-react";
 import moment from "moment";
-import { createContext, useContext } from "react";
+import { createContext, useContext, useEffect } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -67,6 +76,23 @@ const columns: ColumnDef<Income>[] = [
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Tanggal" />
     ),
+    filterFn: (row, columnId, filterValue: [Date | null, Date | null]) => {
+      const rowDate = new Date(row.getValue(columnId));
+      const [start, end] = filterValue;
+
+      // Strip time from date
+      const rowTime = new Date(rowDate.setHours(0, 0, 0, 0)).getTime();
+
+      const startTime = start
+        ? new Date(start.setHours(0, 0, 0, 0)).getTime()
+        : null;
+      const endTime = end ? new Date(end.setHours(0, 0, 0, 0)).getTime() : null;
+
+      if (startTime && rowTime < startTime) return false;
+      if (endTime && rowTime > endTime) return false;
+
+      return true;
+    },
     cell: ({ row }) => moment(row.original.createdAt).format("DD MMM YYYY"),
   },
   {
@@ -188,38 +214,75 @@ const Expenses = () => {
     columns,
   });
 
+  const rangeDate = useObservable<[Date, Date]>([
+    now().toJSDate(),
+    now().toJSDate(),
+  ]);
+
+  const incomes$ = useObservable<Income[]>([]);
+
+  useEffect(() => {
+    incomes$.set(incomes ?? []);
+  }, [incomes, incomes$]);
+
+  useObserveEffect(() => {
+    table.getColumn("tanggal")?.setFilterValue(rangeDate.get());
+  });
+
   const ctx$ = useObservable<IIncomeContext>({
     id: "",
   });
 
   return (
-    <IncomeContext.Provider value={ctx$}>
-      <ScrollArea className="h-screen p-8">
-        <Title>Pemasukan</Title>
-        <div className="space-y-2">
-          <div className="flex h-9 justify-between">
-            <DataTableFilterName table={table} />
-            <div className="flex gap-2">
-              <Authenticated permission="pemasukan-create">
-                <AddSheet />
-              </Authenticated>
-              <DownloadExcel incomes={incomes ?? []} />
-              <DataTableViewOptions table={table} />
+    <ContentLayout title="pemasukan">
+      <IncomeContext.Provider value={ctx$}>
+        <ScrollArea className="h-screen w-screen p-2 lg:w-full">
+          <Scrollbar orientation="horizontal" />
+          <Title>Pemasukan</Title>
+          <div className="space-y-2">
+            <div className="">
+              <div className="flex h-9 justify-between">
+                <DataTableFilterName table={table} />
+                <div className="flex gap-2">
+                  <Authenticated permission="pemasukan-create">
+                    <AddSheet />
+                  </Authenticated>
+                  <Memo>
+                    {() => {
+                      return (
+                        <DownloadExcel
+                          incomes={incomes$.get()}
+                          range={rangeDate.get()}
+                        />
+                      );
+                    }}
+                  </Memo>
+                  <DataTableViewOptions table={table} />
+                </div>
+              </div>
+              <DatePicker onDateChange={(date) => rangeDate[0].set(date)} />
+              <DatePicker onDateChange={(date) => rangeDate[1].set(date)} />
             </div>
+            <DataTableContent table={table} />
+            <DataTablePagination table={table} />
           </div>
-          <DataTableContent table={table} />
-          <DataTablePagination table={table} />
-        </div>
-      </ScrollArea>
-    </IncomeContext.Provider>
+        </ScrollArea>
+      </IncomeContext.Provider>
+    </ContentLayout>
   );
 };
 
 const donloadColumn: ColumnDef<Income>[] = [
   {
+    id: "id",
+    accessorKey: "id",
+    header: "ID",
+  },
+  {
     id: "tanggal",
     header: "Tanggal",
-    accessorFn: (original) => moment(original.createdAt).format("DD MMM YYYY"),
+    // accessorFn: (original) => moment(original.createdAt).format("DD MMM YYYY"),
+    accessorKey: "createdAt",
   },
   {
     id: "name",
@@ -238,16 +301,179 @@ const donloadColumn: ColumnDef<Income>[] = [
   },
 ];
 
-const DownloadExcel: React.FC<{ incomes: Income[] }> = ({ incomes }) => {
+const DownloadExcel: React.FC<{ incomes: Income[]; range: [Date, Date] }> = ({
+  incomes,
+  range,
+}) => {
   const table = useTable({
     data: incomes,
     columns: donloadColumn,
   });
 
-  const download = useExportToExcel(table, {
-    headers: ["Tanggal", "Nama", "Tipe", "Pemasukan"],
-    name: `pemasukan - ${moment(now().toJSDate()).format("DD MMM YYYY")}.xlsx`,
+  const download = useExportToExcel2({
+    headers: [
+      {
+        key: "tanggal",
+        name: "Tanggal",
+        width: 15,
+      },
+      {
+        key: "nama",
+        name: "Nama",
+        width: 35,
+      },
+      {
+        key: "keterangan",
+        name: "Keterangan",
+        width: 35,
+      },
+      {
+        key: "tipe",
+        name: "Tipe",
+        width: 15,
+      },
+      {
+        key: "pemasukan",
+        name: "Pemasukan",
+        width: 15,
+      },
+    ],
+    data: async () => {
+      const rows = table.getRowModel().rows.map((row) => {
+        const _rows = row
+          .getVisibleCells()
+          .map((cell) => cell.getValue<string>());
+
+        return _rows;
+      });
+
+      const cells = rows.map(async (row) => {
+        const income = await dexie.income.get(row[0]!);
+
+        if (income === undefined) {
+          throw new Error("Income not found");
+        }
+
+        const rowDate = income.createdAt ?? now().toJSDate();
+        const [start, end] = range;
+
+        // Strip time from date
+        const rowTime = new Date(rowDate.setHours(0, 0, 0, 0)).getTime();
+
+        const startTime = new Date(start.setHours(0, 0, 0, 0)).getTime();
+        const endTime = new Date(end.setHours(0, 0, 0, 0)).getTime();
+
+        if (rowTime < startTime) return undefined;
+        if (rowTime > endTime) return undefined;
+
+        if (income.type === "order") {
+          const histories = await dexie.orderHistory
+            .where("orderId")
+            .equals(income.id)
+            .sortBy("created_at");
+
+          const lastHistory = histories[histories.length - 1];
+          if (lastHistory === undefined) {
+            throw new Error("No order history found");
+          }
+
+          const orderVariants = await dexie.orderVariants
+            .where("orderHistoryId")
+            .equals(lastHistory.id)
+            .and((o) => !o.deleted)
+            .toArray();
+
+          let i = 0;
+
+          const stringVariants = orderVariants.reduce((acc, curr) => {
+            const variant = productVariants$[curr.variant_id]!.get();
+            const product = products$[variant.product_id]!.get();
+            acc += `${curr.qty} ${product.name} ${variant.name}`;
+
+            if (i === orderVariants.length - 2) {
+              acc += ",\n";
+            }
+
+            i++;
+            return acc;
+          }, "");
+
+          return {
+            tanggal: income.createdAt,
+            nama: income.notes,
+            tipe: income.type,
+            pemasukan: income.income,
+            keterangan: stringVariants,
+          };
+        }
+
+        return {
+          tanggal: income.createdAt,
+          nama: income.notes,
+          tipe: income.type,
+          pemasukan: income.income,
+          keterangan: "-",
+        };
+      });
+
+      const resolvedCells = await Promise.all(cells);
+
+      return [
+        {
+          tanggal: "Tanggal",
+          nama: "Nama",
+          tipe: "Tipe",
+          pemasukan: "Pemasukan",
+          keterangan: "Keterangan",
+        },
+        ...resolvedCells.filter((x) => x !== undefined),
+      ];
+    },
+
+    name: `Pemasukan - ${moment(now().toJSDate()).format("DD MMM YYYY - HH:mm A")}.xlsx`,
+    style: (sheet) => {
+      sheet.getRow(1).eachCell((cell) => {
+        cell.font = { bold: true };
+      });
+
+      sheet.eachRow({ includeEmpty: false }, (row) => {
+        row.eachCell({ includeEmpty: false }, (cell, colNumber) => {
+          if (colNumber === 1) {
+            cell.numFmt = "dd/mm/yyyy";
+          }
+
+          cell.border = {
+            top: { style: "thin" },
+            left: { style: "thin" },
+            bottom: { style: "thin" },
+            right: { style: "thin" },
+          };
+
+          cell.alignment = {
+            ...cell.alignment,
+            vertical: "top",
+          };
+
+          if (colNumber === 3) {
+            cell.alignment = {
+              ...cell.alignment,
+              wrapText: true,
+            };
+          }
+        });
+      });
+
+      sheet
+        .getColumn(5)
+        .eachCell({ includeEmpty: false }, (cell, rowNumber) => {
+          if (rowNumber !== 1) {
+            cell.numFmt = '"Rp. "#,##0';
+          }
+        });
+      return sheet;
+    },
   });
+
   return (
     <Button onClick={() => download()} variant={"outline"} size={"icon"}>
       <LucideDownload />
@@ -448,59 +674,3 @@ const TypeSheetContent: React.FC<{ onSubmit: (e: IncomeType) => void }> = ({
     </div>
   );
 };
-
-// const Form = () => {
-//   const ctx$ = useContext(IncomeContext);
-
-//   return (
-//     <div className="space-y-2">
-//       <Memo>
-//         {() => {
-//           const disabled = incomes$[ctx$.id.get()]!.type.get() !== "masuk";
-//           return (
-//             <InputWithLabel
-//               label="Notes"
-//               inputProps={{
-//                 disabled: disabled,
-//                 defaultValue: incomes$[ctx$.id.get()]!.notes.get(),
-//                 onBlur: (e) => {
-//                   incomes$[ctx$.id.get()]!.set((p) => ({
-//                     ...p,
-//                     notes: e.target.value,
-//                     updatedAt: new Date().toISOString(),
-//                   }));
-//                 },
-//               }}
-//             />
-//           );
-//         }}
-//       </Memo>
-//       <Memo>
-//         {() => {
-//           const disabled = incomes$[ctx$.id.get()]!.type.get() !== "masuk";
-//           return (
-//             <InputWithLabel
-//               label="Pemasukan"
-//               inputProps={{
-//                 disabled: disabled,
-//                 defaultValue: incomes$[ctx$.id.get()]!.income.get(),
-//                 onBlur: (e) => {
-//                   incomes$[ctx$.id.get()]!.set((p) => ({
-//                     ...p,
-//                     expense: +e.target.value,
-//                     updatedAt: new Date().toISOString(),
-//                   }));
-
-//                   //   if (incomes$[ctx$.id.get()]!.type.get() === "product") {
-//                   //     orderProducts$[ctx$.id.get()]!.pay.set(+e.target.value);
-//                   //     return;
-//                   //   }
-//                 },
-//               }}
-//             />
-//           );
-//         }}
-//       </Memo>
-//     </div>
-//   );
-// };

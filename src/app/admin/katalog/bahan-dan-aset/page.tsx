@@ -1,5 +1,6 @@
 "use client";
 
+import { ContentLayout } from "@/components/admin-panel/content-layout";
 import Alert from "@/components/hasan/alert";
 import Authenticated from "@/components/hasan/auth/authenticated";
 import ControlledSheet from "@/components/hasan/controlled-sheet";
@@ -43,9 +44,11 @@ const BahanContext = createContext<Observable<IBahanContext>>(undefined as any);
 
 const Page = () => {
   return (
-    <Authenticated permission="bahan-dan-aset">
-      <Table />
-    </Authenticated>
+    <ContentLayout title="Bahan dan Aset">
+      <Authenticated permission="bahan-dan-aset">
+        <Table />
+      </Authenticated>
+    </ContentLayout>
   );
 };
 
@@ -165,7 +168,7 @@ const Table = () => {
 
   return (
     <BahanContext.Provider value={value$}>
-      <ScrollArea className="h-screen p-8">
+      <ScrollArea className="h-screen">
         <Title>Bahan Dan Aset</Title>
         <div className="space-y-2">
           <div className="flex h-9 justify-between">

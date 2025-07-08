@@ -116,7 +116,7 @@ export const customer$ = createSupabaseObservable({
 export const discounts$ = createSupabaseObservable({
   collection: "Discount",
   transform: async (value) => {
-    await dexie.discounts.put(value);
+    await dexie.costs.put(value);
     return value;
   },
 });
@@ -307,4 +307,132 @@ export const ingoingStockTypes$ = createSupabaseObservable({
   },
 });
 
-export const orderStatuses = ["pending", "desain", "ready", "selesai", "void"];
+export const categorySettings$ = createSupabaseObservable({
+  collection: "CategorySetting",
+  transform: async (value) => {
+    await dexie.categorySettings.put(value);
+    return value;
+  },
+});
+
+export const carouselSettings$ = createSupabaseObservable({
+  collection: "CarouselSetting",
+  transform: async (value) => {
+    await dexie.carouselSettings.put(value);
+    return value;
+  },
+});
+
+export const gallerySettings$ = createSupabaseObservable({
+  collection: "GallerySetting",
+  transform: async (value) => {
+    await dexie.gallerySettings.put(value);
+    return value;
+  },
+});
+
+export const testimonySettings$ = createSupabaseObservable({
+  collection: "TestimonySetting",
+  transform: async (value) => {
+    await dexie.testimonySettings.put(value);
+    return value;
+  },
+});
+
+export const productPopularSettings$ = createSupabaseObservable({
+  collection: "PopularProductSetting",
+  transform: async (value) => {
+    await dexie.productPopulerSettings.put(value);
+    return value;
+  },
+});
+
+export const websiteSettings$ = createSupabaseObservable({
+  collection: "WebsiteSetting",
+  transform: async (value) => {
+    await dexie.websiteSettings.put(value);
+    return value;
+  },
+});
+
+export const savedOrders$ = createSupabaseObservable({
+  collection: "SavedOrder",
+  transform: async (value) => {
+    await dexie.savedOrders.put({
+      ...value,
+      costsId: value.costsId ?? [],
+      savedOrderProductsId: value.savedOrderProductsId ?? [],
+      discountsId: value.discountsId ?? [],
+      creteadAt: new Date(value.creteadAt),
+    });
+    return value;
+  },
+});
+
+export const savedOrderProducts$ = createSupabaseObservable({
+  collection: "SavedOrderProduct",
+  transform: async (value) => {
+    await dexie.savedOrderProducts.put({ ...value, addon: value.addon ?? [] });
+    return value;
+  },
+});
+
+export const savedDiscounts$ = createSupabaseObservable({
+  collection: "SavedDiscount",
+  transform: async (value) => {
+    await dexie.savedDiscounts.put(value);
+    return value;
+  },
+});
+
+export const savedCosts$ = createSupabaseObservable({
+  collection: "SavedCost",
+  transform: async (value) => {
+    await dexie.savedCosts.put(value);
+    return value;
+  },
+});
+
+export const newOrders$ = createSupabaseObservable({
+  collection: "NewOrder",
+  transform: async (value) => {
+    await dexie.newOrders.put({
+      ...value,
+      savedOrdersId: value.savedOrdersId ?? [],
+      deadline: value.deadline ? new Date(value.deadline) : new Date(),
+      createdAt: new Date(value.createdAt),
+    });
+    return value;
+  },
+});
+
+export const savedAddons$ = createSupabaseObservable({
+  collection: "SavedAddon",
+  transform: async (value) => {
+    await dexie.savedAddons.put(value);
+    return value;
+  },
+});
+
+export const exitItem$ = createSupabaseObservable({
+  collection: "ExitItem",
+  transform: async (value) => {
+    await dexie.exitItem.put({
+      ...value,
+      createdAt: new Date(value.createdAt),
+    });
+    return value;
+  },
+});
+
+export const orderStatuses = [
+  "pending",
+  "desain",
+  "ready",
+  "selesai",
+  "void",
+] as const;
+
+export const paymentStatuses = ["DP", "CICIL", "LUNAS"] as const;
+
+export const expensetype = ["produk", "bahan", "beli vendor"] as const;

@@ -29,11 +29,11 @@ const Resi: React.FC<{ id: string }> = ({ id }) => {
   });
 
   return (
-    <ResizablePanelGroup direction="horizontal" className="p-8">
+    <ResizablePanelGroup direction="horizontal" className="">
       <ResizablePanel defaultSize={50}>
-        <div className="p-1">
+        <div className="p-8">
           <Title>
-            <Memo>{ctx$.name}</Memo>
+            <Memo>{() => ctx$.name.get()}</Memo>
           </Title>
           <Memo>
             {() => (
@@ -51,7 +51,7 @@ const Resi: React.FC<{ id: string }> = ({ id }) => {
         </div>
       </ResizablePanel>
       <ResizablePanel defaultSize={50}>
-        <div className="p-1">
+        <div className="">
           <Memo>{() => <Receipt content={ctx$.content.get()} />}</Memo>
         </div>
       </ResizablePanel>
@@ -68,43 +68,49 @@ function transformQRString(qr: string) {
 function transformTanggalString(qr: string) {
   return qr.replace(
     "$TANGGAL",
-    DateTime.now()
-      .setZone("Asia/Singapore")
-      .toLocaleString(DateTime.DATETIME_SHORT_WITH_SECONDS),
+    '"' +
+      DateTime.now()
+        .setZone("Asia/Singapore")
+        .toLocaleString(DateTime.DATETIME_SHORT_WITH_SECONDS),
   );
 }
 
 function transformBarangString(content: string) {
   return content.replace(
     "$BARANG",
-    `T-Shirt | 1 | ${toRupiah(30000)}
-    Polyflex A1 | 1 x 1 | ${toRupiah(30000)}
+    `"T-Shirt | "1 | "${toRupiah(30000)}
+    "Polyflex A1 | "1 x 1 | "${toRupiah(30000)}
+    "Diskon 10% | "${toRupiah(3000)}
     
-    Long Sleeve | 2 | ${toRupiah(30000)}
-    Polyflex A2 | 1 x 2 | ${toRupiah(30000)}
+    "Long Sleeve | "2 | "${toRupiah(30000)}
+    "Polyflex A2 | "1 x 2 | "${toRupiah(30000)}
     `,
   );
 }
 
 function transformDiskonString(content: string) {
-  return content.replace(
-    "$DISKON-BIAYA",
-    `Diskon 10% | ${toRupiah(30000)}
-    Biaya Ongkir | ${toRupiah(30000)}
-  `,
-  );
+  return content.replace("$DISKON", `"Diskon 10% | "${toRupiah(30000)}`);
+}
+
+function transformBiayaString(content: string) {
+  return content.replace("$BIAYA", `"Biaya Ongkir | "${toRupiah(30000)}`);
 }
 
 function transformTotalString(content: string) {
-  return content.replace("$TOTAL", `Total | ${toRupiah(30000)}`);
+  return content.replace(
+    "$TOTAL",
+    `"Total Produk | "${toRupiah(30000)}
+    "Total Saving | "${toRupiah(30000)}
+    "Total Akhir | "${toRupiah(30000)}`,
+  );
 }
 
 function transformHistoryString(content: string) {
   return content.replace(
     "$HISTORY",
-    `DP | ${toRupiah(30000)}
-    Cicil 1 | ${toRupiah(30000)}
-    Lunas | ${toRupiah(30000)}
+    `"DP | "${toRupiah(30000)}
+    "Cicil 1 | "${toRupiah(30000)}
+    "Lunas | "${toRupiah(30000)}
   `,
   );
 }
@@ -127,6 +133,7 @@ const constructReceipt = (content: string) => {
   markdown = transformTotalString(markdown);
   markdown = transformHistoryString(markdown);
   markdown = transformUserString(markdown);
+  markdown = transformBiayaString(markdown);
 
   return receiptline.transform(markdown, display);
 };
@@ -134,9 +141,11 @@ const constructReceipt = (content: string) => {
 const Receipt: React.FC<{ content: string }> = ({ content }) => {
   const receipt = constructReceipt(content);
   return (
-    <ScrollArea className="flex h-screen justify-center">
-      <HtmlRenderer htmlString={receipt} />
-    </ScrollArea>
+    <div className="flex h-screen border-black p-8">
+      <ScrollArea className="min-h-1 flex-1">
+        <HtmlRenderer htmlString={receipt} />
+      </ScrollArea>
+    </div>
   );
 };
 

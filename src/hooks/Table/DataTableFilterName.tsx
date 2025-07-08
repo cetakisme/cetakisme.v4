@@ -9,7 +9,7 @@ export function DataTableFilterName<TData>({ table }: { table: Table<TData> }) {
       onChange={(event) =>
         table.getColumn("name")?.setFilterValue(event.target.value)
       }
-      className="h-full max-w-sm"
+      className="h-full lg:max-w-sm"
     />
   );
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { ContentLayout } from "@/components/admin-panel/content-layout";
 import Alert from "@/components/hasan/alert";
 import Authenticated from "@/components/hasan/auth/authenticated";
 import ControlledSheet from "@/components/hasan/controlled-sheet";
@@ -43,9 +44,11 @@ import React, { createContext, useContext } from "react";
 
 const Page = () => {
   return (
-    <Authenticated permission="suplier">
-      <SupplierTable />
-    </Authenticated>
+    <ContentLayout title="Suplier">
+      <Authenticated permission="suplier">
+        <SupplierTable />
+      </Authenticated>
+    </ContentLayout>
   );
 };
 
@@ -465,7 +468,7 @@ const SupplierTable = () => {
 
   return (
     <SupplierContext.Provider value={ctx$}>
-      <ScrollArea className="h-screen p-8">
+      <ScrollArea className="h-screen">
         <Title>Suplier</Title>
         <div className="space-y-2">
           <div className="flex h-9 justify-between">

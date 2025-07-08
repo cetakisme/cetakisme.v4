@@ -335,12 +335,25 @@ const ImageButton: React.FC<{
     },
     (message) => toast.error(message),
   );
+
+  async function handleDeleteImage() {
+    setUploading(true);
+    try {
+      await deleteFile(image);
+      onImageChange("");
+    } catch {
+      toast.error("Sometings wrong when deleting");
+    } finally {
+      setUploading(false);
+    }
+  }
+
   return (
-    <>
+    <div className="relative aspect-square">
       <ImageUploader onImageChange={setImage} ref={imageRef} />
       <Button
         disabled={uploading}
-        className={`relative aspect-square h-full w-full overflow-hidden ${className}`}
+        className={`relative h-full w-full overflow-hidden ${className}`}
         variant="outline"
         onClick={() => imageRef.current?.click()}
       >
@@ -352,7 +365,17 @@ const ImageButton: React.FC<{
           <Img src={image} alt="" />
         )}
       </Button>
-    </>
+      {image !== "" && (
+        <Button
+          className="absolute right-2 top-2 h-5 w-5 text-white"
+          variant={"destructive"}
+          size={"icon"}
+          onClick={handleDeleteImage}
+        >
+          <LucideDot />
+        </Button>
+      )}
+    </div>
   );
 };
 

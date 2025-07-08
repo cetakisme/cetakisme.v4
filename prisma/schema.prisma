@@ -10,6 +10,121 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model SavedAddon {
+  id                    String  @id
+  addonId               String
+  addonValueId          String
+  name                  String
+  price                 Int
+  savedOrderProductId   String
+  deleted               Boolean
+}
+
+model SavedOrderProduct {
+  id                    String  @id @default(uuid())
+  isCustom              Boolean
+  savedOrderId          String
+  name                  String
+  productId             String
+  variantId             String
+  price                 Int
+  qty                   Int
+  addon                 String[]
+  isDiscounted          Boolean
+  discountValue         Int
+  discountType          String
+  discountName          String
+  deleted               Boolean
+}
+
+model NewOrder {
+  id               String @id
+  order_status     String    @default("")
+  payment_status   String    @default("")
+  deleted          Boolean   @default(false)
+  notes            String    @default("")
+  driveUrl         String    @default("")
+  deadline         DateTime?
+  customer_id      String    @default("")
+  savedOrdersId    String[]
+  createdAt        DateTime @default(now())
+}
+
+model SavedOrder {
+  id                    String  @id @default(uuid())
+  savedOrderProductsId   String[]
+  discountsId           String[]
+  costsId               String[]
+  deleted               Boolean
+  newOrderId            String
+  creteadAt             DateTime @default(now())
+  totalProducts     Int      @default(0)
+  totalDiscounts    Int      @default(0)
+  totalCosts        Int      @default(0)
+  paid              Int      @default(0)
+  method            String    @default("")
+  gateway           String    @default("")
+}
+
+model SavedDiscount {
+  id                    String  @id @default(uuid())
+  savedOrderId          String
+  name                  String
+  value                 Int
+  type                  String
+  deleted               Boolean
+}
+
+model SavedCost {
+  id                    String  @id @default(uuid())
+  savedOrderId          String
+  name                  String
+  value                 Int
+  type                  String
+  deleted               Boolean
+}
+
+model WebsiteSetting {
+  id          String  @id @default(uuid())
+  address     String
+  phone       String
+  description String
+  facebook    String
+  youtube     String
+  twitter     String
+  instagram   String
+  tiktok      String
+}
+
+model PopularProductSetting {
+  id          String  @id @default(uuid())
+  productId   String
+}
+
+model CategorySetting {
+  id          String    @id @default(uuid())
+  name        String
+  url         String
+  imageUrl    String
+}
+
+model CarouselSetting {
+  id          String    @id @default(uuid())
+  imageUrl    String
+}
+
+model GallerySetting {
+  id          String    @id @default(uuid())
+  imageUrl    String
+}
+
+model TestimonySetting {
+  id          String    @id @default(uuid())
+  name        String
+  job         String
+  testimony   String
+}
+
 model Absensi {
   id          String      @id @default(uuid())
   userId      String      @default("")
@@ -51,6 +166,7 @@ model Expense {
 
   notes       String    @default("")
   expense      Int       @default(0)
+  deletable   Boolean   @default(false)
 
   deleted     Boolean   @default(false)
   createdAt   DateTime  @default(now())
@@ -121,6 +237,27 @@ model OrderMaterial {
   materialId  String   @default("")
   orderId     String   @default("")
   supplierId  String    @default("")
+}
+
+model ExitItem {
+  id      String    @id  @default(uuid())
+  qty     Int       
+  pay     Int
+  type    String
+  deleted Boolean
+  createdAt DateTime
+  name    String
+  hpp     Int
+  price   Int
+  isVendor  Boolean
+  isCustom  Boolean
+
+  productId   String
+  variantId   String
+  orderId     String
+  supplierId  String
+  materialId  String
+  newOrderId  String  @default("")
 }
 
 model OrderProduct {

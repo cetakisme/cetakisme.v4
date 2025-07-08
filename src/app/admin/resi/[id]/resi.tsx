@@ -37,7 +37,7 @@ export const getHistoryReceipt = async (
     .and((a) => !a.deleted)
     .toArray();
 
-  const discounts = await dexie.discounts
+  const discounts = await dexie.costs
     .where("orderHistoryId")
     .equals(historyId)
     .and((a) => !a.deleted)
@@ -64,32 +64,32 @@ export const getHistoryReceipt = async (
     const element = prices[i]!;
     if (i === 0 && i === prices.length - 1) {
       if (orderHistory.total - element.price <= 0) {
-        h += `Lunas (${element.type}) | ${toRupiah(element.price)}\n`;
+        h += `"Lunas (${element.type}) | ${toRupiah(element.price)}\n`;
         continue;
       } else {
-        h += `DP (${element.type}) | ${toRupiah(element.price)}\n`;
-        h += `Utang (${element.type}) | ${toRupiah(orderHistory.total - element.price)}\n`;
+        h += `"DP (${element.type}) | ${toRupiah(element.price)}\n`;
+        h += `"Utang (${element.type}) | ${toRupiah(orderHistory.total - element.price)}\n`;
       }
       continue;
     }
 
     if (i === 0) {
-      h += `DP (${element.type}) | ${toRupiah(element.price)}\n`;
+      h += `"DP (${element.type}) | ${toRupiah(element.price)}\n`;
       continue;
     }
 
     if (i === prices.length - 1) {
       if (orderHistory.paid < orderHistory.total) {
-        h += `Utang (${element.type}) | ${toRupiah(orderHistory.total - element.price)}\n`;
+        h += `"Utang (${element.type}) | ${toRupiah(orderHistory.total - element.price)}\n`;
         continue;
       } else if (orderHistory.paid >= orderHistory.total) {
-        h += `Lunas (${element.type}) | ${toRupiah(element.price)}\n`;
-        h += `Kembalian | ${toRupiah(orderHistory.paid - orderHistory.total)}\n`;
+        h += `"Lunas (${element.type}) | ${toRupiah(element.price)}\n`;
+        h += `"Kembalian | ${toRupiah(orderHistory.paid - orderHistory.total)}\n`;
         continue;
       }
     }
 
-    h += `Cicilan ${i + 1} | ${toRupiah(element.price)}\n`;
+    h += `"Cicilan ${i + 1} | ${toRupiah(element.price)}\n`;
   }
 
   let s = "";
@@ -102,25 +102,25 @@ export const getHistoryReceipt = async (
       .and((a) => !a.deleted)
       .toArray();
 
-    s += `${product.name} ${variant.name} | ${element.qty} | ${toRupiah(element.price * element.qty)}\n`;
+    s += `"${product.name} ${variant.name} | ${element.qty} | ${toRupiah(element.price * element.qty)}\n`;
 
     for (const addon of addons) {
       const av = addonValues$[addon.addonValueId]!.get();
       const a = addons$[av.addon_id]!.get();
 
-      s += `${a.name + " " + av.name} | ${addon.qty + " x " + element.qty} | ${toRupiah(av.price * addon.qty * element.qty)}\n`;
+      s += `"${a.name + " " + av.name} | ${addon.qty + " x " + element.qty} | ${toRupiah(av.price * addon.qty * element.qty)}\n`;
     }
   }
 
   let d = "";
   for (const discount of discounts) {
-    d += `Diskon ${discount.name} ${discount.type === "percent" ? discount.value + "%" : ""} | - ${discount.type === "percent" ? toRupiah(discount.value * 0.01 * orderHistory.totalBeforeDiscount) : toRupiah(discount.value)}\n`;
+    d += `"Diskon ${discount.name} ${discount.type === "percent" ? discount.value + "%" : ""} | - ${discount.type === "percent" ? toRupiah(discount.value * 0.01 * orderHistory.totalBeforeDiscount) : toRupiah(discount.value)}\n`;
   }
   for (const discount of costs) {
-    d += `Biaya ${discount.name} ${discount.type === "percent" ? discount.value + "%" : ""} | ${discount.type === "percent" ? toRupiah(discount.value * 0.01 * orderHistory.totalAfterDiscount) : toRupiah(discount.value)}\n`;
+    d += `"Biaya ${discount.name} ${discount.type === "percent" ? discount.value + "%" : ""} | ${discount.type === "percent" ? toRupiah(discount.value * 0.01 * orderHistory.totalAfterDiscount) : toRupiah(discount.value)}\n`;
   }
 
-  const markdown = `^^^RECEIPT
+  const markdown = `"^^^RECEIPT
 -
 {code:https://cetakisme.com; option:qrcode,3,L}
 
