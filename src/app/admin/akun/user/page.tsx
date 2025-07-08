@@ -1,5 +1,6 @@
 "use client";
 
+import { ContentLayout } from "@/components/admin-panel/content-layout";
 import Alert from "@/components/hasan/alert";
 import AuthFallback from "@/components/hasan/auth/auth-fallback";
 import Authenticated from "@/components/hasan/auth/authenticated";
@@ -223,9 +224,11 @@ const Password: React.FC<{ user: CustomUser }> = ({ user }) => {
 
 const Page = () => {
   return (
-    <Authenticated permission="user" fallback={AuthFallback}>
-      <Users />
-    </Authenticated>
+    <ContentLayout title="User">
+      <Authenticated permission="user" fallback={AuthFallback}>
+        <Users />
+      </Authenticated>
+    </ContentLayout>
   );
 };
 
@@ -240,7 +243,7 @@ const Users = () => {
     columns: columns,
   });
   return (
-    <ScrollArea className="h-screen p-8">
+    <ScrollArea className="h-screen">
       <Title>User</Title>
       <div className="space-y-2">
         <div className="flex h-9 justify-between">

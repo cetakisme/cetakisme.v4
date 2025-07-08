@@ -1,16 +1,22 @@
 import React from "react";
 
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-import Link from "next/link";
+// import {
+//   Accordion,
+//   AccordionContent,
+//   AccordionItem,
+//   AccordionTrigger,
+// } from "@/components/ui/accordion";
+// import Link from "next/link";
 import Loader from "./loader";
-import Authenticated from "@/components/hasan/auth/authenticated";
-import LogoutButton from "./logout-button";
-import { ScrollArea } from "@/components/ui/scroll-area";
+// import Authenticated from "@/components/hasan/auth/authenticated";
+// import LogoutButton from "./logout-button";
+// import { ScrollArea } from "@/components/ui/scroll-area";
+// import MobileNav, {
+//   MobilContextProvider,
+//   MobileNavTrigger,
+// } from "@/components/hasan/mobile-nav";
+import AdminPanelLayout from "@/components/admin-panel/admin-panel-layout";
+// import { ContentLayout } from "@/components/admin-panel/content-layout";
 
 interface Menu {
   title: string;
@@ -244,10 +250,10 @@ export function getNavigations() {
 
 const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
-    <main className="flex h-screen">
+    <main className="">
       <Loader />
-      <div className="w-72 shrink-0 bg-black p-4 text-white">
-        {/* <ScrollArea className="h-screen"> */}
+      {/* 
+      <div className="hidden w-72 shrink-0 bg-black p-4 text-white lg:block">
         <h1 className="text-3xl font-extrabold">Cetakisme</h1>
         <ScrollArea className="mt-6 flex flex-1 flex-col gap-2">
           <Accordion
@@ -329,9 +335,16 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           </Accordion>
           <LogoutButton />
         </ScrollArea>
-        {/* </ScrollArea> */}
       </div>
-      <div className="h-full grow">{children}</div>
+      <MobilContextProvider>
+        <MobileNav />
+
+        <div className="relative h-full grow">
+          {children}
+          <MobileNavTrigger />
+        </div>
+      </MobilContextProvider> */}
+      <AdminPanelLayout>{children}</AdminPanelLayout>
     </main>
   );
 };

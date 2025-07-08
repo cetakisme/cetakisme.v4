@@ -73,7 +73,7 @@ const InventoryTable: React.FC<{ products: Product[] }> = ({ products }) => {
               <div className="h-9">
                 <DataTableFilterName table={table} />
               </div>
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
                 {table.getRowModel().rows.map((x) => (
                   <InventoryProductCard
                     product={x.original}

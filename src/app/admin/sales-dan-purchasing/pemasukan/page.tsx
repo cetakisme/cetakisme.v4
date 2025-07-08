@@ -1,5 +1,6 @@
 "use client";
 
+import { ContentLayout } from "@/components/admin-panel/content-layout";
 import Alert from "@/components/hasan/alert";
 import Authenticated from "@/components/hasan/auth/authenticated";
 import { Combobox } from "@/components/hasan/combobox";
@@ -41,6 +42,7 @@ import { dexie } from "@/server/local/dexie";
 import type { Observable } from "@legendapp/state";
 import { Memo, useObservable, useObserveEffect } from "@legendapp/state/react";
 import type { Income, IncomeType } from "@prisma/client";
+import { Scrollbar } from "@radix-ui/react-scroll-area";
 import { type ColumnDef } from "@tanstack/react-table";
 import { useLiveQuery } from "dexie-react-hooks";
 import { LucideDownload, LucidePlus, MoreHorizontal } from "lucide-react";
@@ -232,38 +234,41 @@ const Expenses = () => {
   });
 
   return (
-    <IncomeContext.Provider value={ctx$}>
-      <ScrollArea className="h-screen p-8">
-        <Title>Pemasukan</Title>
-        <div className="space-y-2">
-          <div className="">
-            <div className="flex h-9 justify-between">
-              <DataTableFilterName table={table} />
-              <div className="flex gap-2">
-                <Authenticated permission="pemasukan-create">
-                  <AddSheet />
-                </Authenticated>
-                <Memo>
-                  {() => {
-                    return (
-                      <DownloadExcel
-                        incomes={incomes$.get()}
-                        range={rangeDate.get()}
-                      />
-                    );
-                  }}
-                </Memo>
-                <DataTableViewOptions table={table} />
+    <ContentLayout title="pemasukan">
+      <IncomeContext.Provider value={ctx$}>
+        <ScrollArea className="h-screen w-screen p-2 lg:w-full">
+          <Scrollbar orientation="horizontal" />
+          <Title>Pemasukan</Title>
+          <div className="space-y-2">
+            <div className="">
+              <div className="flex h-9 justify-between">
+                <DataTableFilterName table={table} />
+                <div className="flex gap-2">
+                  <Authenticated permission="pemasukan-create">
+                    <AddSheet />
+                  </Authenticated>
+                  <Memo>
+                    {() => {
+                      return (
+                        <DownloadExcel
+                          incomes={incomes$.get()}
+                          range={rangeDate.get()}
+                        />
+                      );
+                    }}
+                  </Memo>
+                  <DataTableViewOptions table={table} />
+                </div>
               </div>
+              <DatePicker onDateChange={(date) => rangeDate[0].set(date)} />
+              <DatePicker onDateChange={(date) => rangeDate[1].set(date)} />
             </div>
-            <DatePicker onDateChange={(date) => rangeDate[0].set(date)} />
-            <DatePicker onDateChange={(date) => rangeDate[1].set(date)} />
+            <DataTableContent table={table} />
+            <DataTablePagination table={table} />
           </div>
-          <DataTableContent table={table} />
-          <DataTablePagination table={table} />
-        </div>
-      </ScrollArea>
-    </IncomeContext.Provider>
+        </ScrollArea>
+      </IncomeContext.Provider>
+    </ContentLayout>
   );
 };
 

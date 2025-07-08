@@ -31,6 +31,7 @@ import { dexie } from "@/server/local/dexie";
 import Authenticated from "@/components/hasan/auth/authenticated";
 import AuthFallback from "@/components/hasan/auth/auth-fallback";
 import Title from "@/components/hasan/title";
+import { ContentLayout } from "@/components/admin-panel/content-layout";
 
 const CustomerContext = createContext<Observable<ICustomerContext>>(
   undefined as any,
@@ -156,9 +157,11 @@ const Actions: React.FC<{ customer: Customer }> = ({ customer }) => {
 
 const Page = () => {
   return (
-    <Authenticated permission="pelanggan" fallback={AuthFallback}>
-      <Customers />
-    </Authenticated>
+    <ContentLayout title="Pelanggan">
+      <Authenticated permission="pelanggan" fallback={AuthFallback}>
+        <Customers />
+      </Authenticated>
+    </ContentLayout>
   );
 };
 
@@ -170,7 +173,7 @@ const Customers = () => {
   );
 
   return (
-    <ScrollArea className="h-screen p-8">
+    <ScrollArea className="h-screen">
       <Title>Pelanggan</Title>
       <CustomerContext.Provider value={customerId}>
         <Table data={customers ?? []} />

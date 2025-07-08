@@ -1,7 +1,7 @@
 "use client";
 
 import Title from "@/components/hasan/title";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { DataTableColumnHeader } from "@/hooks/Table/DataColumnHeader";
 import { useTable } from "@/hooks/Table/useTable";
 import { dexie } from "@/server/local/dexie";
@@ -44,6 +44,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useObservable, useObserveEffect } from "@legendapp/state/react";
 import { DatePicker } from "@/components/hasan/date-picker";
 import { DownloadExcel } from "./download-excel";
+import { DataTablePagination } from "@/hooks/Table/DataTablePagination";
 
 const columns: ColumnDef<NewOrder>[] = [
   {
@@ -274,7 +275,7 @@ const Orderan: React.FC<{ status: string }> = ({ status }) => {
   });
 
   return (
-    <ScrollArea className="h-screen p-8">
+    <ScrollArea className="h-screen">
       <Title>
         {status
           .split("")
@@ -301,7 +302,9 @@ const Orderan: React.FC<{ status: string }> = ({ status }) => {
           />
         </div>
         <DataTableContent table={table} />
+        <DataTablePagination table={table} />
       </div>
+      <ScrollBar orientation="horizontal" />
     </ScrollArea>
   );
 };
@@ -331,7 +334,7 @@ export const AllOrderan: React.FC = () => {
   });
 
   return (
-    <ScrollArea className="h-screen p-8">
+    <ScrollArea>
       <Title>
         {status
           .split("")
@@ -358,6 +361,7 @@ export const AllOrderan: React.FC = () => {
           />
         </div>
         <DataTableContent table={table} />
+        <DataTablePagination table={table} />
       </div>
     </ScrollArea>
   );

@@ -20,7 +20,7 @@ export const SelectCustomer = () => {
   const selected = useKasir((s) => s.customer);
   const onSelected = useKasir((s) => s.setCustomer);
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-2 px-2 lg:px-2">
       <Label>Customer : </Label>
       <SelectCustomerComponent onSelected={onSelected} selected={selected} />
     </div>

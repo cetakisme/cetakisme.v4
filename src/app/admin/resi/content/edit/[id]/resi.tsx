@@ -68,48 +68,49 @@ function transformQRString(qr: string) {
 function transformTanggalString(qr: string) {
   return qr.replace(
     "$TANGGAL",
-    DateTime.now()
-      .setZone("Asia/Singapore")
-      .toLocaleString(DateTime.DATETIME_SHORT_WITH_SECONDS),
+    '"' +
+      DateTime.now()
+        .setZone("Asia/Singapore")
+        .toLocaleString(DateTime.DATETIME_SHORT_WITH_SECONDS),
   );
 }
 
 function transformBarangString(content: string) {
   return content.replace(
     "$BARANG",
-    `T-Shirt | 1 | ${toRupiah(30000)}
-    Polyflex A1 | 1 x 1 | ${toRupiah(30000)}
-    Diskon 10% | ${toRupiah(3000)}
+    `"T-Shirt | "1 | "${toRupiah(30000)}
+    "Polyflex A1 | "1 x 1 | "${toRupiah(30000)}
+    "Diskon 10% | "${toRupiah(3000)}
     
-    Long Sleeve | 2 | ${toRupiah(30000)}
-    Polyflex A2 | 1 x 2 | ${toRupiah(30000)}
+    "Long Sleeve | "2 | "${toRupiah(30000)}
+    "Polyflex A2 | "1 x 2 | "${toRupiah(30000)}
     `,
   );
 }
 
 function transformDiskonString(content: string) {
-  return content.replace("$DISKON", `Diskon 10% | ${toRupiah(30000)}`);
+  return content.replace("$DISKON", `"Diskon 10% | "${toRupiah(30000)}`);
 }
 
 function transformBiayaString(content: string) {
-  return content.replace("$BIAYA", `Biaya Ongkir | ${toRupiah(30000)}`);
+  return content.replace("$BIAYA", `"Biaya Ongkir | "${toRupiah(30000)}`);
 }
 
 function transformTotalString(content: string) {
   return content.replace(
     "$TOTAL",
-    `Total Produk | ${toRupiah(30000)}
-    Total Saving | ${toRupiah(30000)}
-    Total Akhir | ${toRupiah(30000)}`,
+    `"Total Produk | "${toRupiah(30000)}
+    "Total Saving | "${toRupiah(30000)}
+    "Total Akhir | "${toRupiah(30000)}`,
   );
 }
 
 function transformHistoryString(content: string) {
   return content.replace(
     "$HISTORY",
-    `DP | ${toRupiah(30000)}
-    Cicil 1 | ${toRupiah(30000)}
-    Lunas | ${toRupiah(30000)}
+    `"DP | "${toRupiah(30000)}
+    "Cicil 1 | "${toRupiah(30000)}
+    "Lunas | "${toRupiah(30000)}
   `,
   );
 }

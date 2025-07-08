@@ -1,5 +1,6 @@
 "use client";
 
+import { ContentLayout } from "@/components/admin-panel/content-layout";
 import Authenticated from "@/components/hasan/auth/authenticated";
 import { DatePicker } from "@/components/hasan/date-picker";
 import Title from "@/components/hasan/title";
@@ -16,6 +17,7 @@ import { useExportToExcel2 } from "@/hooks/useTableExcel";
 import { now, toRupiah } from "@/lib/utils";
 import { dexie } from "@/server/local/dexie";
 import { useObservable, useObserveEffect } from "@legendapp/state/react";
+import { Scrollbar } from "@radix-ui/react-scroll-area";
 import { type ColumnDef } from "@tanstack/react-table";
 import { useLiveQuery } from "dexie-react-hooks";
 import { LucideDownload } from "lucide-react";
@@ -172,24 +174,27 @@ const Expenses = () => {
   });
 
   return (
-    <ScrollArea className="h-screen p-8">
-      <Title>Pemasukan</Title>
-      <div className="space-y-2">
-        <div className="">
-          <div className="flex h-9 justify-between">
-            <DataTableFilterName table={table} />
-            <div className="flex gap-2">
-              <DownloadExcel incomes={data} />
-              <DataTableViewOptions table={table} />
+    <ContentLayout title="Gabungan">
+      <ScrollArea className="h-screen w-screen p-2 lg:w-full">
+        <Scrollbar orientation="horizontal" />
+        <Title>Pemasukan</Title>
+        <div className="space-y-2">
+          <div className="">
+            <div className="flex h-9 justify-between gap-2">
+              <DataTableFilterName table={table} />
+              <div className="flex gap-2">
+                <DownloadExcel incomes={data} />
+                <DataTableViewOptions table={table} />
+              </div>
             </div>
+            <DatePicker onDateChange={(date) => rangeDate[0].set(date)} />
+            <DatePicker onDateChange={(date) => rangeDate[1].set(date)} />
           </div>
-          <DatePicker onDateChange={(date) => rangeDate[0].set(date)} />
-          <DatePicker onDateChange={(date) => rangeDate[1].set(date)} />
+          <DataTableContent table={table} />
+          <DataTablePagination table={table} />
         </div>
-        <DataTableContent table={table} />
-        <DataTablePagination table={table} />
-      </div>
-    </ScrollArea>
+      </ScrollArea>
+    </ContentLayout>
   );
 };
 

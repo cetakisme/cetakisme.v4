@@ -69,6 +69,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { isoNow, now } from "@/lib/utils";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 const ActionButtons = () => {
   return (
@@ -716,20 +717,22 @@ const LoadSavedOrderButton = () => {
         </Button>
       </SheetTrigger>
       <SheetContent>
-        <SheetHeader>
-          <SheetTitle>Load Order</SheetTitle>
-        </SheetHeader>
-        <RenderList
-          data={savedOrders}
-          render={(data) => (
-            <SavedOrderAccordion
-              newOrder={data}
-              customerId={data.customer_id}
-              savedOrderId={data.savedOrdersId.at(-1) ?? ""}
-              onSelect={dialog.dismiss}
-            />
-          )}
-        />
+        <ScrollArea className="h-screen pb-40">
+          <SheetHeader>
+            <SheetTitle>Load Order</SheetTitle>
+          </SheetHeader>
+          <RenderList
+            data={savedOrders}
+            render={(data) => (
+              <SavedOrderAccordion
+                newOrder={data}
+                customerId={data.customer_id}
+                savedOrderId={data.savedOrdersId.at(-1) ?? ""}
+                onSelect={dialog.dismiss}
+              />
+            )}
+          />
+        </ScrollArea>
       </SheetContent>
     </Sheet>
   );

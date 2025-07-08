@@ -1,5 +1,6 @@
 "use client";
 
+import { ContentLayout } from "@/components/admin-panel/content-layout";
 import Alert from "@/components/hasan/alert";
 import Authenticated from "@/components/hasan/auth/authenticated";
 import ControlledSheet from "@/components/hasan/controlled-sheet";
@@ -14,7 +15,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { DataTableColumnHeader } from "@/hooks/Table/DataColumnHeader";
 import { DataTableContent } from "@/hooks/Table/DataTableContent";
 import { DataTableFilterName } from "@/hooks/Table/DataTableFilterName";
@@ -197,22 +198,25 @@ const Receipt = () => {
   });
 
   return (
-    <ResiContext.Provider value={ctx$}>
-      <ScrollArea className="space-y-2 p-8">
-        <Title>Resi</Title>
-        <div className="space-y-2">
-          <div className="flex h-9 justify-between">
-            <DataTableFilterName table={table} />
-            <div className="flex gap-2">
-              <AddReceiptModel />
-              <DataTableViewOptions table={table} />
+    <ContentLayout title="Resi">
+      <ResiContext.Provider value={ctx$}>
+        <ScrollArea className="space-y-2">
+          <Title>Resi</Title>
+          <div className="space-y-2">
+            <div className="flex h-9 justify-between">
+              <DataTableFilterName table={table} />
+              <div className="flex gap-2">
+                <AddReceiptModel />
+                <DataTableViewOptions table={table} />
+              </div>
             </div>
+            <DataTableContent table={table} />
+            <DataTablePagination table={table} />
           </div>
-          <DataTableContent table={table} />
-          <DataTablePagination table={table} />
-        </div>
-      </ScrollArea>
-    </ResiContext.Provider>
+          <ScrollBar orientation="horizontal" />
+        </ScrollArea>
+      </ResiContext.Provider>
+    </ContentLayout>
   );
 };
 

@@ -1,5 +1,6 @@
 "use client";
 
+import { ContentLayout } from "@/components/admin-panel/content-layout";
 import Alert from "@/components/hasan/alert";
 import Authenticated from "@/components/hasan/auth/authenticated";
 import { Combobox } from "@/components/hasan/combobox";
@@ -19,7 +20,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { DataTableColumnHeader } from "@/hooks/Table/DataColumnHeader";
 import { DataTableContent } from "@/hooks/Table/DataTableContent";
 import { DataTableFilterName } from "@/hooks/Table/DataTableFilterName";
@@ -371,36 +372,39 @@ const Expenses = () => {
   });
 
   return (
-    <ExpenseContext.Provider value={ctx$}>
-      <ScrollArea className="h-screen p-8">
-        <Title>Pengeluaran</Title>
-        <div className="space-y-2">
-          <div className="">
-            <div className="flex h-9 justify-between">
-              <DataTableFilterName table={table} />
-              <div className="flex gap-2">
-                <Authenticated permission="pengeluaran-create">
-                  <AddSheet />
-                </Authenticated>
-                <Memo>
-                  {() => (
-                    <DownloadExcel
-                      expense={expenses$.get()}
-                      range={rangeDate.get()}
-                    />
-                  )}
-                </Memo>
-                <DataTableViewOptions table={table} />
+    <ContentLayout title="Pengeluaran">
+      <ExpenseContext.Provider value={ctx$}>
+        <ScrollArea className="h-screen w-screen p-2 lg:w-full">
+          <Title>Pengeluaran</Title>
+          <ScrollBar orientation="horizontal" />
+          <div className="space-y-2">
+            <div className="">
+              <div className="flex h-9 justify-between gap-2">
+                <DataTableFilterName table={table} />
+                <div className="flex gap-2">
+                  <Authenticated permission="pengeluaran-create">
+                    <AddSheet />
+                  </Authenticated>
+                  <Memo>
+                    {() => (
+                      <DownloadExcel
+                        expense={expenses$.get()}
+                        range={rangeDate.get()}
+                      />
+                    )}
+                  </Memo>
+                  <DataTableViewOptions table={table} />
+                </div>
               </div>
+              <DatePicker onDateChange={(date) => rangeDate[0].set(date)} />
+              <DatePicker onDateChange={(date) => rangeDate[1].set(date)} />
             </div>
-            <DatePicker onDateChange={(date) => rangeDate[0].set(date)} />
-            <DatePicker onDateChange={(date) => rangeDate[1].set(date)} />
+            <DataTableContent table={table} />
+            <DataTablePagination table={table} />
           </div>
-          <DataTableContent table={table} />
-          <DataTablePagination table={table} />
-        </div>
-      </ScrollArea>
-    </ExpenseContext.Provider>
+        </ScrollArea>
+      </ExpenseContext.Provider>
+    </ContentLayout>
   );
 };
 

@@ -28,10 +28,11 @@ function transformTanggalString(qr: string, date: Date) {
   console.log(date);
   return qr.replace(
     "$TANGGAL",
-    DateTime.fromJSDate(date)
-      .setZone("Asia/Singapore")
-      .setLocale("id")
-      .toLocaleString(DateTime.DATETIME_SHORT_WITH_SECONDS),
+    '"' +
+      DateTime.fromJSDate(date)
+        .setZone("Asia/Singapore")
+        .setLocale("id")
+        .toLocaleString(DateTime.DATETIME_SHORT_WITH_SECONDS),
   );
 }
 
@@ -59,6 +60,15 @@ function normalizeNewlines(text: string): string {
   return text.replace(/\n{3,}/g, "\n\n");
 }
 
+function transformCatatanString(content: string, data: string) {
+  return content.replace(
+    "$CATATAN",
+    data
+      .split("\n")
+      .map((x) => '"' + x)
+      .join("\n"),
+  );
+}
 function takeBeforeId<TData extends { id: string }>(
   arr: TData[],
   targetId: string,
@@ -143,18 +153,18 @@ const getHistoryReceipt = async (
   let h = "";
 
   for (const product of productWithAddons) {
-    p += `${product.name} | ${product.qty} | ${toRupiah(product.price)}\n`;
+    p += `"${product.name} | "${product.qty} | "${toRupiah(product.price)}\n`;
     total += product.qty * product.price;
 
     let addonTotal = 0;
 
     for (const addon of product.addons) {
       addonTotal += addon.price * addon.qty * product.qty;
-      p += `${addon.name} | ${addon.qty} x ${product.qty} | ${toRupiah(addon.price)}\n`;
+      p += `"${addon.name} | "${addon.qty} x ${product.qty} | "${toRupiah(addon.price)}\n`;
       total += product.qty * addon.price * addon.qty;
     }
 
-    p += `Total | | ${toRupiah(product.qty * product.price + addonTotal)}`;
+    p += `"Total | | "${toRupiah(product.qty * product.price + addonTotal)}`;
 
     if (product.isDiscounted) {
       const discount =
@@ -166,7 +176,7 @@ const getHistoryReceipt = async (
 
       saving += discount;
 
-      p += `Diskon ${product.discountName} ${product.discountType === "percent" ? product.discountValue + "%" : ""} | - ${toRupiah(
+      p += `"Diskon ${product.discountName} ${product.discountType === "percent" ? product.discountValue + "%" : ""} | - ${toRupiah(
         discount,
       )}\n\n`;
     } else {
@@ -181,7 +191,7 @@ const getHistoryReceipt = async (
       discount.value,
     );
     saving += price;
-    d += `Diskon ${discount.name} ${discount.type === "percent" ? discount.value + "%" : ""} | - ${toRupiah(price)}\n`;
+    d += `"Diskon ${discount.name} ${discount.type === "percent" ? discount.value + "%" : ""} | - ${toRupiah(price)}\n`;
   }
 
   for (const cost of costs) {
@@ -191,12 +201,12 @@ const getHistoryReceipt = async (
       cost.value,
     );
     total += price;
-    b += `Biaya ${cost.name} ${cost.type === "percent" ? cost.value + "%" : ""} | ${toRupiah(price)}\n`;
+    b += `"Biaya ${cost.name} ${cost.type === "percent" ? cost.value + "%" : ""} | ${toRupiah(price)}\n`;
   }
 
-  t += `Total Produk | ${toRupiah(total)}\n`;
-  if (saving !== 0) t += `Total Saving | ${toRupiah(saving)}\n`;
-  t += `Total Akhir | ${toRupiah(total - saving)}\n`;
+  t += `"Total Produk | "${toRupiah(total)}\n`;
+  if (saving !== 0) t += `"Total Saving | "${toRupiah(saving)}\n`;
+  t += `"Total Akhir | "${toRupiah(total - saving)}\n`;
 
   let i = 1;
   let pass = 1;
@@ -205,24 +215,24 @@ const getHistoryReceipt = async (
   for (const paid of paidHistory) {
     if (i === paidHistory.length) {
       if (paid >= total - saving) {
-        h += `Lunas | ${toRupiah(paid - lastCicil)}\n`;
+        h += `"Lunas | "${toRupiah(paid - lastCicil)}\n`;
         if (paid - (total - saving) > 0) {
-          kembalian += `Kembalian | ${toRupiah(paid - (total - saving))}\n`;
+          kembalian += `"Kembalian | "${toRupiah(paid - (total - saving))}\n`;
         }
       } else if (paid < total - saving) {
         if (i === 1) {
-          h += `DP | ${toRupiah(paid)}\n`;
+          h += `"DP | "${toRupiah(paid)}\n`;
         } else {
           if (i - pass === 0) {
-            h += `DP | ${toRupiah(paid - lastCicil)}\n`;
+            h += `"DP | "${toRupiah(paid - lastCicil)}\n`;
           } else {
-            h += `Cicil ${i - pass} | ${toRupiah(paid - lastCicil)}\n`;
+            h += `"Cicil ${i - pass} | "${toRupiah(paid - lastCicil)}\n`;
           }
         }
       }
-      h += `Total Bayar | ${toRupiah(paid)}\n`;
+      h += `"Total Bayar | "${toRupiah(paid)}\n`;
       if (paid < total - saving) {
-        h += `Hutang | ${toRupiah(total - saving - paid)}\n`;
+        h += `"Hutang | "${toRupiah(total - saving - paid)}\n`;
       }
       if (kembalian !== "") {
         h += kembalian;
@@ -233,18 +243,18 @@ const getHistoryReceipt = async (
         pass++;
       } else {
         if (paid >= total - saving) {
-          h += `Lunas | ${toRupiah(paid - lastCicil)}\n`;
+          h += `"Lunas | "${toRupiah(paid - lastCicil)}\n`;
           if (paid - total - saving > 0) {
-            h += `Kembalian | ${toRupiah(paid - total - saving)}\n`;
+            h += `"Kembalian | "${toRupiah(paid - total - saving)}\n`;
           }
         } else if (paid < total - saving) {
           if (i === 1) {
-            h += `DP | ${toRupiah(paid)}\n`;
+            h += `"DP | "${toRupiah(paid)}\n`;
           } else {
             if (i - pass === 0) {
-              h += `DP | ${toRupiah(paid - lastCicil)}\n`;
+              h += `"DP | "${toRupiah(paid - lastCicil)}\n`;
             } else {
-              h += `Cicil ${i - pass} | ${toRupiah(paid - lastCicil)}\n`;
+              h += `"Cicil ${i - pass} | "${toRupiah(paid - lastCicil)}\n`;
             }
           }
         }
@@ -279,6 +289,7 @@ const getHistoryReceipt = async (
       md = transformBiayaString(md, b);
       md = transformTotalString(md, t);
       md = transformHistoryString(md, h);
+      md = transformCatatanString(md, newOrder.notes);
       md = normalizeNewlines(md);
 
       return receiptline.transform(md, display);

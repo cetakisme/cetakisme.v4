@@ -48,6 +48,7 @@ import type { Observable } from "@legendapp/state";
 import Authenticated from "@/components/hasan/auth/authenticated";
 import AuthFallback from "@/components/hasan/auth/auth-fallback";
 import Title from "@/components/hasan/title";
+import { ContentLayout } from "@/components/admin-panel/content-layout";
 
 const columns: ColumnDef<Role>[] = [
   {
@@ -142,9 +143,11 @@ const DeleteUser: React.FC<{ role: Role } & DialogProps> = ({
 
 const Page = () => {
   return (
-    <Authenticated permission="role" fallback={AuthFallback}>
-      <Roles />
-    </Authenticated>
+    <ContentLayout title="Role">
+      <Authenticated permission="role" fallback={AuthFallback}>
+        <Roles />
+      </Authenticated>
+    </ContentLayout>
   );
 };
 
@@ -159,7 +162,7 @@ const Roles = () => {
     columns: columns,
   });
   return (
-    <ScrollArea className="h-screen p-8">
+    <ScrollArea className="h-screen">
       <Title>Role</Title>
       <div className="space-y-2">
         <div className="flex h-9 justify-between">

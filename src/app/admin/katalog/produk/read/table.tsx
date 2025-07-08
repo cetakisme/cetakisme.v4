@@ -284,7 +284,7 @@ const ProdukTable: React.FC<{ products?: Product[] }> = ({ products }) => {
     <div className="relative isolate space-y-2">
       <div className="sticky top-0 z-50 bg-white pb-2">
         <Title>Produk</Title>
-        <div className="flex h-9 justify-between">
+        <div className="flex h-9 justify-between gap-2">
           <DataTableFilterName table={table} />
           <div className="flex gap-2">
             <DownloadExcel products={products ?? []} />
